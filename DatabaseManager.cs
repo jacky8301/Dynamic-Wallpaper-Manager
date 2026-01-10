@@ -1,0 +1,144 @@
+﻿// DatabaseManager.cs
+using Microsoft.Data.Sqlite;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using WallpaperEngine.Models;
+
+namespace WallpaperEngine.Data
+{
+    public class DatabaseManager : IDisposable
+    {
+        private SqliteConnection _connection;
+        private readonly string _dbPath;
+
+        public DatabaseManager(string databasePath = "wallpapers.db")
+        {
+            _dbPath = databasePath;
+            InitializeDatabase();
+        }
+
+        private void InitializeDatabase()
+        {
+            var connectionString = $"Data Source={_dbPath}";
+            _connection = new SqliteConnection(connectionString);
+            _connection.Open();
+
+            // 创建壁纸表
+            var command = _connection.CreateCommand();
+            command.CommandText = @"
+                CREATE TABLE IF NOT EXISTS Wallpapers (
+                    Id TEXT PRIMARY KEY,
+                    FolderPath TEXT UNIQUE,
+                    FolderName TEXT,
+                    Title TEXT,
+                    Description TEXT,
+                    FileName TEXT,
+                    PreviewFile TEXT,
+                    WallpaperType TEXT,
+                    Tags TEXT,
+                    IsFavorite INTEGER DEFAULT 0,
+                    Category TEXT DEFAULT '未分类',
+                    AddedDate TEXT,
+                    ContentRating TEXT,
+                    Visibility TEXT
+                )";
+            command.ExecuteNonQuery();
+
+            // 创建索引以提高搜索性能
+            command.CommandText = @"
+                CREATE INDEX IF NOT EXISTS IX_Wallpapers_Title ON Wallpapers(Title);
+                CREATE INDEX IF NOT EXISTS IX_Wallpapers_Tags ON Wallpapers(Tags);
+                CREATE INDEX IF NOT EXISTS IX_Wallpapers_Category ON Wallpapers(Category);
+                CREATE INDEX IF NOT EXISTS IX_Wallpapers_IsFavorite ON Wallpapers(IsFavorite);";
+            command.ExecuteNonQuery();
+        }
+
+        public void SaveWallpaper(WallpaperItem wallpaper)
+        {
+            var command = _connection.CreateCommand();
+            command.CommandText = @"
+                INSERT OR REPLACE INTO Wallpapers 
+                (Id, FolderPath, FolderName, Title, Description, FileName, PreviewFile, 
+                 WallpaperType, Tags, IsFavorite, Category, AddedDate, ContentRating, Visibility)
+                VALUES 
+                ($id, $folderPath, $folderName, $title, $description, $fileName, $previewFile,
+                 $wallpaperType, $tags, $isFavorite, $category, $addedDate, $contentRating, $visibility)";
+
+            command.Parameters.AddWithValue("$id", wallpaper.Id);
+            command.Parameters.AddWithValue("$folderPath", wallpaper.FolderPath);
+            command.Parameters.AddWithValue("$folderName", wallpaper.FolderName);
+            command.Parameters.AddWithValue("$title", wallpaper.Project.Title);
+            command.Parameters.AddWithValue("$description", wallpaper.Project.Description);
+            command.Parameters.AddWithValue("$fileName", wallpaper.Project.File);
+            command.Parameters.AddWithValue("$previewFile", wallpaper.Project.Preview);
+            command.Parameters.AddWithValue("$wallpaperType", wallpaper.Project.Type);
+            command.Parameters.AddWithValue("$tags", string.Join(",", wallpaper.Project.Tags));
+            command.Parameters.AddWithValue("$isFavorite", wallpaper.IsFavorite ? 1 : 0);
+            command.Parameters.AddWithValue("$category", wallpaper.Category);
+            command.Parameters.AddWithValue("$addedDate", wallpaper.AddedDate.ToString("O"));
+            command.Parameters.AddWithValue("$contentRating", wallpaper.Project.ContentRating);
+            command.Parameters.AddWithValue("$visibility", wallpaper.Project.Visibility);
+
+            command.ExecuteNonQuery();
+        }
+
+        public List<WallpaperItem> SearchWallpapers(string searchTerm, string category = "", bool favoritesOnly = false)
+        {
+            var wallpapers = new List<WallpaperItem>();
+            var command = _connection.CreateCommand();
+
+            command.CommandText = @"
+                SELECT * FROM Wallpapers";
+            //    WHERE (Title LIKE $search OR Description LIKE $search OR Tags LIKE $search)
+            //    AND (@category = '' OR Category = @category)
+            //    AND (@favoritesOnly = 0 OR IsFavorite = 1)
+            //    ORDER BY IsFavorite DESC, AddedDate DESC
+            //    LIMIT 1000";
+
+            //command.Parameters.AddWithValue("$search", $"%{searchTerm}%");
+            //command.Parameters.AddWithValue("$category", category);
+            //command.Parameters.AddWithValue("$favoritesOnly", favoritesOnly ? 1 : 0);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                wallpapers.Add(new WallpaperItem
+                {
+                    Id = reader["Id"].ToString(),
+                    FolderPath = reader["FolderPath"].ToString(),
+                    Project = new WallpaperProject
+                    {
+                        Title = reader["Title"].ToString(),
+                        Description = reader["Description"].ToString(),
+                        File = reader["FileName"].ToString(),
+                        Preview = reader["PreviewFile"].ToString(),
+                        Type = reader["WallpaperType"].ToString(),
+                        Tags = reader["Tags"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                        ContentRating = reader["ContentRating"].ToString(),
+                        Visibility = reader["Visibility"].ToString()
+                    },
+                    IsFavorite = Convert.ToInt32(reader["IsFavorite"]) == 1,
+                    Category = reader["Category"].ToString(),
+                    AddedDate = DateTime.Parse(reader["AddedDate"].ToString())
+                });
+            }
+
+            return wallpapers;
+        }
+
+        public void DeleteWallpaper(string id)
+        {
+            var command = _connection.CreateCommand();
+            command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
+            command.Parameters.AddWithValue("$id", id);
+            command.ExecuteNonQuery();
+        }
+
+        public void Dispose()
+        {
+            _connection?.Close();
+            _connection?.Dispose();
+        }
+    }
+}
