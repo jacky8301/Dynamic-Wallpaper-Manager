@@ -1,0 +1,6 @@
+﻿<!-- PreviewWindow.xaml -->
+<Window x:Class="WallpaperEngine.Views.PreviewWindow"
+        Title="壁纸预览" Width="800" Height="600" 
+        WindowStartupLocation="CenterOwner" WindowStyle="SingleBorderWindow">
+    <views:PreviewControl x:Name="MainPreview"/>
+</Window>

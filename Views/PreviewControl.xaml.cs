@@ -8,7 +8,7 @@ using WallpaperEngine.Models;
 
 namespace WallpaperEngine.Views
 {
-    public partial class PreviewControl : UserControl
+    public partial class PreviewControl : System.Windows.Controls.UserControl
     {
         private WallpaperItem _currentWallpaper;
         private bool _isDragging = false;

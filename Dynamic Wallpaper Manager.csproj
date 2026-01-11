@@ -31,4 +31,11 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\" />
+    <Folder Include="Services\" />
+    <Folder Include="Views\" />
+    <Folder Include="ViewModels\" />
+  </ItemGroup>
+
 </Project>

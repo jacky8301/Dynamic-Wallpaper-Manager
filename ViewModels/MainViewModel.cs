@@ -266,6 +266,15 @@ namespace WallpaperEngine.ViewModels
         partial void OnSearchTextChanged(string value) => WallpapersView.Refresh();
         partial void OnSelectedCategoryChanged(string value) => WallpapersView.Refresh();
         partial void OnShowFavoritesOnlyChanged(bool value) => WallpapersView.Refresh();
+
+        partial void OnSelectedWallpaperChanged(WallpaperItem value)
+        {
+            // 通知视图更新预览
+            if (System.Windows.Application.Current.MainWindow is MainWindow mainWindow)
+            {
+                mainWindow.UpdateDetailPreview(value);
+            }
+        }
     }
 
     // 进度报告类
