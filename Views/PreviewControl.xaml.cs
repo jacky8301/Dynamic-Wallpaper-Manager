@@ -12,7 +12,7 @@ namespace WallpaperEngine.Views
     {
         private WallpaperItem _currentWallpaper;
         private bool _isDragging = false;
-        private Point _lastMousePosition;
+        private System.Windows.Point _lastMousePosition;
         private double _totalScale = 1.0;
         private double _rotationAngle = 0;
 
@@ -54,7 +54,7 @@ namespace WallpaperEngine.Views
                 bitmap.DecodePixelWidth = 800; // 限制解码尺寸优化内存[1](@ref)
                 bitmap.EndInit();
 
-                PreviewImage.Source = bitmap;
+                aPreviewImage.Source = bitmap;
                 FitToWindow();
             }
             catch
@@ -102,12 +102,12 @@ namespace WallpaperEngine.Views
 
         private void FitToWindow()
         {
-            if (PreviewImage.Source == null) return;
+            if (aPreviewImage.Source == null) return;
 
             var containerWidth = ActualWidth;
             var containerHeight = ActualHeight;
-            var imageWidth = PreviewImage.Source.Width;
-            var imageHeight = PreviewImage.Source.Height;
+            var imageWidth = aPreviewImage.Source.Width;
+            var imageHeight = aPreviewImage.Source.Height;
 
             var scale = Math.Min(containerWidth / imageWidth, containerHeight / imageHeight);
             _totalScale = scale;

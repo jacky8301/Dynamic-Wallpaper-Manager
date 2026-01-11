@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.ViewModels;
@@ -33,7 +33,6 @@ namespace WallpaperEngine.Services
                 throw new DirectoryNotFoundException($"目录不存在: {rootFolderPath}");
             }
 
-            // 重置取消令牌
             if (_cancellationTokenSource.IsCancellationRequested)
             {
                 _cancellationTokenSource = new CancellationTokenSource();
@@ -46,18 +45,11 @@ namespace WallpaperEngine.Services
                 progress?.Report(new ScanProgress { Status = "正在搜索壁纸文件夹..." });
 
                 var wallpaperFolders = Directory.GetDirectories(rootFolderPath);
-                int total = wallpaperFolders.Length;
-                int processed = 0;
-                int validCount = 0;
-
-                // 过滤出包含project.json的文件夹
                 var validFolders = new List<string>();
+
                 foreach (var folder in wallpaperFolders)
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        return false;
-                    }
+                    if (cancellationToken.IsCancellationRequested) return false;
 
                     var projectFile = Path.Combine(folder, "project.json");
                     if (File.Exists(projectFile))
@@ -66,15 +58,15 @@ namespace WallpaperEngine.Services
                     }
                 }
 
-                total = validFolders.Count;
+                int total = validFolders.Count;
+                int processed = 0;
+                int validCount = 0;
+
                 progress?.Report(new ScanProgress { Status = $"找到 {total} 个壁纸文件夹，开始处理..." });
 
                 foreach (var folder in validFolders)
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        return false;
-                    }
+                    if (cancellationToken.IsCancellationRequested) return false;
 
                     try
                     {
@@ -87,7 +79,6 @@ namespace WallpaperEngine.Services
 
                         processed++;
 
-                        // 报告进度
                         progress?.Report(new ScanProgress
                         {
                             Percentage = processed * 100 / Math.Max(1, total),
@@ -97,13 +88,11 @@ namespace WallpaperEngine.Services
                             Status = $"正在处理: {Path.GetFileName(folder)}"
                         });
 
-                        // 添加小延迟以避免UI阻塞
                         await Task.Delay(50, cancellationToken);
                     }
                     catch (Exception ex)
                     {
                         System.Diagnostics.Debug.WriteLine($"处理壁纸文件夹失败 {folder}: {ex.Message}");
-                        // 继续处理其他文件夹，不中断扫描
                     }
                 }
 
@@ -127,20 +116,17 @@ namespace WallpaperEngine.Services
             try
             {
                 var projectFile = Path.Combine(folderPath, "project.json");
-                if (!File.Exists(projectFile))
-                    return null;
+                if (!File.Exists(projectFile)) return null;
 
                 var jsonContent = await File.ReadAllTextAsync(projectFile);
                 var project = JsonConvert.DeserializeObject<WallpaperProject>(jsonContent);
 
-                if (project == null)
-                    return null;
+                if (project == null) return null;
 
-                // 验证必要文件是否存在
+                // 验证预览文件
                 var previewPath = Path.Combine(folderPath, project.Preview);
                 if (!File.Exists(previewPath))
                 {
-                    // 尝试查找常见的预览图名称
                     var commonPreviews = new[] { "preview.jpg", "preview.png", "thumbnail.jpg", "thumb.jpg" };
                     foreach (var commonPreview in commonPreviews)
                     {
@@ -153,16 +139,14 @@ namespace WallpaperEngine.Services
                         }
                     }
 
-                    //if (!File.Exists(previewPath))
-                    //    return null;
+                    if (!File.Exists(previewPath)) return null;
                 }
 
-                // 检查内容文件是否存在
+                // 验证内容文件
                 var contentPath = Path.Combine(folderPath, project.File);
-                if (!File.Exists(contentPath))
-                    return null;
+                if (!File.Exists(contentPath)) return null;
 
-                // 自动分类基于标签
+                // 自动分类
                 var category = "未分类";
                 if (project.Tags != null && project.Tags.Count > 0)
                 {

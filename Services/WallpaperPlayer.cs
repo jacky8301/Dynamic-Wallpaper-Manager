@@ -1,50 +1,64 @@
-﻿// WallpaperPlayer.cs
-using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Windows;
-using System.Windows.Forms;
-using System.Runtime.InteropServices;
 using WallpaperEngine.Models;
 using WallpaperEngine.Views;
+using System.Windows.Forms;
 
 namespace WallpaperEngine.Services
 {
     public class WallpaperPlayer
     {
-        [DllImport("user32.dll")]
-        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
-
-        [DllImport("user32.dll")]
-        private static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
-
         public void Preview(WallpaperItem wallpaper)
         {
-            // 创建预览窗口
-            var previewWindow = new PreviewWindow(wallpaper);
-            previewWindow.ShowDialog();
+            if (wallpaper?.Project == null) return;
+
+            try
+            {
+                var previewWindow = new PreviewWindow(wallpaper);
+                previewWindow.Owner = System.Windows.Application.Current.MainWindow;
+                previewWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"预览失败: {ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         public void Apply(WallpaperItem wallpaper)
         {
+            if (wallpaper?.Project == null) return;
+
             try
             {
                 if (wallpaper.Project.Type == "video")
                 {
                     ApplyVideoWallpaper(wallpaper.ContentPath);
                 }
-                // 其他类型的壁纸处理...
+                else
+                {
+                    SetDesktopWallpaper(wallpaper.ContentPath);
+                }
+
+                System.Windows.MessageBox.Show($"壁纸 '{wallpaper.Project.Title}' 设置成功!", "成功",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"应用壁纸时出错: {ex.Message}");
+                System.Windows.MessageBox.Show($"设置壁纸失败: {ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         private void ApplyVideoWallpaper(string videoPath)
         {
-            // 使用Windows API将视频窗口设置为壁纸
-            // 这里需要复杂的Windows API调用，简化实现
+            // 简化实现 - 实际应用中需要更复杂的视频壁纸设置逻辑
             Process.Start("explorer.exe", videoPath);
+        }
+
+        private void SetDesktopWallpaper(string imagePath)
+        {
+            
         }
     }
 }

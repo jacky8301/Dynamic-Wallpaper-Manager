@@ -2,6 +2,7 @@
 using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.IO;
 using WallpaperEngine.Models;
 
@@ -9,23 +10,23 @@ namespace WallpaperEngine.Data
 {
     public class DatabaseManager : IDisposable
     {
-        private SqliteConnection _connection;
-        private readonly string _dbPath;
+        private SqliteConnection m_connection;
+        private readonly string m_dbPath;
 
         public DatabaseManager(string databasePath = "wallpapers.db")
         {
-            _dbPath = databasePath;
+            m_dbPath = databasePath;
             InitializeDatabase();
         }
 
         private void InitializeDatabase()
         {
-            var connectionString = $"Data Source={_dbPath}";
-            _connection = new SqliteConnection(connectionString);
-            _connection.Open();
+            var connectionString = $"Data Source={m_dbPath}";
+            m_connection = new SqliteConnection(connectionString);
+            m_connection.Open();
 
             // 创建壁纸表
-            var command = _connection.CreateCommand();
+            var command = m_connection.CreateCommand();
             command.CommandText = @"
                 CREATE TABLE IF NOT EXISTS Wallpapers (
                     Id TEXT PRIMARY KEY,
@@ -53,10 +54,10 @@ namespace WallpaperEngine.Data
                 CREATE INDEX IF NOT EXISTS IX_Wallpapers_IsFavorite ON Wallpapers(IsFavorite);";
             command.ExecuteNonQuery();
         }
-
+        // 插入或更新壁纸记录
         public void SaveWallpaper(WallpaperItem wallpaper)
         {
-            var command = _connection.CreateCommand();
+            var command = m_connection.CreateCommand();
             command.CommandText = @"
                 INSERT OR REPLACE INTO Wallpapers 
                 (Id, FolderPath, FolderName, Title, Description, FileName, PreviewFile, 
@@ -86,19 +87,29 @@ namespace WallpaperEngine.Data
         public List<WallpaperItem> SearchWallpapers(string searchTerm, string category = "", bool favoritesOnly = false)
         {
             var wallpapers = new List<WallpaperItem>();
-            var command = _connection.CreateCommand();
+            var command = m_connection.CreateCommand();
 
-            command.CommandText = @"
-                SELECT * FROM Wallpapers";
-            //    WHERE (Title LIKE $search OR Description LIKE $search OR Tags LIKE $search)
-            //    AND (@category = '' OR Category = @category)
-            //    AND (@favoritesOnly = 0 OR IsFavorite = 1)
-            //    ORDER BY IsFavorite DESC, AddedDate DESC
-            //    LIMIT 1000";
+            string whereClause = "WHERE 1=1";
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                whereClause += " AND (Title LIKE @search OR Description LIKE @search OR Tags LIKE @search)";
+                command.Parameters.AddWithValue("@search", $"%{searchTerm}%");
+            }
+            if (!string.IsNullOrEmpty(category))
+            {
+                whereClause += " AND Category = @category";
+                command.Parameters.AddWithValue("@category", category);
+            }
+            if (favoritesOnly)
+            {
+                whereClause += " AND IsFavorite = 1";
+            }
 
-            //command.Parameters.AddWithValue("$search", $"%{searchTerm}%");
-            //command.Parameters.AddWithValue("$category", category);
-            //command.Parameters.AddWithValue("$favoritesOnly", favoritesOnly ? 1 : 0);
+            command.CommandText = $@"
+                SELECT * FROM Wallpapers 
+                {whereClause}
+                ORDER BY IsFavorite DESC, AddedDate DESC
+                LIMIT 1000";
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -129,7 +140,7 @@ namespace WallpaperEngine.Data
 
         public void DeleteWallpaper(string id)
         {
-            var command = _connection.CreateCommand();
+            var command = m_connection.CreateCommand();
             command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
             command.Parameters.AddWithValue("$id", id);
             command.ExecuteNonQuery();
@@ -137,8 +148,13 @@ namespace WallpaperEngine.Data
 
         public void Dispose()
         {
-            _connection?.Close();
-            _connection?.Dispose();
+            m_connection?.Close();
+            m_connection?.Dispose();
+        }
+
+        internal void UpdateFavoriteStatus(string id, bool isFavorite)
+        {
+            throw new NotImplementedException();
         }
     }
 }

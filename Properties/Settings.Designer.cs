@@ -34,5 +34,16 @@ namespace WallpaperEngine.Properties {
                 this["LastScanFolder"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.DateTime LastScanTime {
+            get {
+                return ((global::System.DateTime)(this["LastScanTime"]));
+            }
+            set {
+                this["LastScanTime"] = value;
+            }
+        }
     }
 }
