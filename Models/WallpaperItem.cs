@@ -15,5 +15,6 @@ namespace WallpaperEngine.Models
 
         public string PreviewImagePath => Path.Combine(FolderPath, Project.Preview);
         public string ContentPath => Path.Combine(FolderPath, Project.File);
+        public bool IsSelected { get; set; }
     }
 }

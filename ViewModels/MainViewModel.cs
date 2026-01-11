@@ -13,6 +13,7 @@ using System.Windows.Forms;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
+using WallpaperEngine.Views;
 
 namespace WallpaperEngine.ViewModels
 {
@@ -28,7 +29,7 @@ namespace WallpaperEngine.ViewModels
 
         [ObservableProperty]
         private WallpaperItem _selectedWallpaper;
-
+     
         [ObservableProperty]
         private string _searchText = string.Empty;
 
@@ -80,6 +81,96 @@ namespace WallpaperEngine.ViewModels
 
             LoadWallpapers();
             CheckLastScanTime();
+        }
+
+        //[RelayCommand]
+        //private void PreviewWallpaper(object parameter)
+        //{
+        //    if (parameter is WallpaperItem wallpaper)
+        //    {
+        //        // 更新选中项
+        //        SelectedWallpaper = wallpaper;
+
+        //        // 打开预览窗口
+        //        var previewWindow = new PreviewWindow(wallpaper);
+        //        previewWindow.Owner = System.Windows.Application.Current.MainWindow;
+        //        previewWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        //        previewWindow.ShowDialog();
+        //    }
+        //}
+
+        // 原有的预览命令也可以保留，用于按钮点击
+        // 预览壁纸命令
+        [RelayCommand]
+        private void PreviewWallpaper()
+        {
+            if (SelectedWallpaper == null)
+            {
+                System.Windows.MessageBox.Show("请先选择一个壁纸进行预览", "提示",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            OpenPreviewWindow(SelectedWallpaper);
+        }
+
+        //// 带参数的重载版本，支持双击预览
+        //[RelayCommand]
+        //private void PreviewWallpaper(object parameter)
+        //{
+        //    if (parameter is WallpaperItem wallpaper)
+        //    {
+        //        SelectedWallpaper = wallpaper; // 更新选中项
+        //        OpenPreviewWindow(wallpaper);
+        //    }
+        //    else if (parameter is string wallpaperId)
+        //    {
+        //        // 通过ID查找壁纸
+        //        var wallpaper = Wallpapers.FirstOrDefault(w => w.Id == wallpaperId);
+        //        if (wallpaper != null)
+        //        {
+        //            SelectedWallpaper = wallpaper;
+        //            OpenPreviewWindow(wallpaper);
+        //        }
+        //    }
+        //}
+
+        // 实际的预览窗口打开逻辑
+        private void OpenPreviewWindow(WallpaperItem wallpaper)
+        {
+            if (wallpaper?.Project == null)
+            {
+                System.Windows.MessageBox.Show("壁纸数据无效，无法预览", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            try
+            {
+                var previewWindow = new PreviewWindow(wallpaper)
+                {
+                    Owner = System.Windows.Application.Current.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+
+                // 处理预览窗口关闭后的回调
+                previewWindow.Closed += (s, e) =>
+                {
+                    // 可以在这里处理预览后的操作，比如应用壁纸
+                    if (previewWindow.DialogResult == true)
+                    {
+                        // 用户点击了"应用壁纸"
+                        
+                    }
+                };
+
+                previewWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"打开预览窗口失败: {ex.Message}", "错误",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         [RelayCommand]
@@ -157,14 +248,14 @@ namespace WallpaperEngine.ViewModels
             LoadWallpapers();
         }
 
-        [RelayCommand]
-        private void PreviewWallpaper()
-        {
-            if (SelectedWallpaper != null)
-            {
-                _player.Preview(SelectedWallpaper);
-            }
-        }
+        //[RelayCommand]
+        //private void PreviewWallpaper()
+        //{
+        //    if (SelectedWallpaper != null)
+        //    {
+        //        _player.Preview(SelectedWallpaper);
+        //    }
+        //}
 
         [RelayCommand]
         private void ApplyWallpaper()
@@ -408,6 +499,45 @@ namespace WallpaperEngine.ViewModels
         partial void OnSearchTextChanged(string value) => WallpapersView.Refresh();
         partial void OnSelectedCategoryChanged(string value) => WallpapersView.Refresh();
         partial void OnShowFavoritesOnlyChanged(bool value) => WallpapersView.Refresh();
+
+        // 选择命令
+        [RelayCommand]
+        private void SelectWallpaper(object parameter)
+        {
+            if (parameter is WallpaperItem wallpaper)
+            {
+                // 更新选择状态
+                UpdateSelection(wallpaper);
+
+                // 可以在这里触发预览或其他操作
+                PreviewWallpaperCommand.Execute(wallpaper);
+            }
+        }
+
+        private void UpdateSelection(WallpaperItem selectedWallpaper)
+        {
+            // 清除之前的选择
+            foreach (var wallpaper in Wallpapers.Where(w => w.IsSelected))
+            {
+                wallpaper.IsSelected = false;
+            }
+
+            // 设置新的选择
+            selectedWallpaper.IsSelected = true;
+            SelectedWallpaper = selectedWallpaper;
+        }
+
+        // 监听集合变化，确保选择状态同步
+        protected override void OnPropertyChanged(PropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+
+            if (e.PropertyName == nameof(Wallpapers))
+            {
+                // 当壁纸集合更新时，重置选择状态
+                SelectedWallpaper = null;
+            }
+        }
     }
 
     public class ScanProgress

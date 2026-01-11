@@ -4,12 +4,53 @@
         xmlns:vm="clr-namespace:WallpaperEngine.ViewModels"
         Title="Wallpaper Engine 管理工具" Height="800" Width="1200"
         xmlns:converters="clr-namespace:WallpaperEngine.Converters"
+        xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Style x:Key="WallpaperItemStyle" TargetType="ContentControl">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Border x:Name="MainBorder" Background="Transparent" 
+                        BorderThickness="2" BorderBrush="Transparent"
+                        Width="200" Height="150" Margin="5"
+                        Cursor="Hand">
 
-    <Window.DataContext>
-        <vm:MainViewModel />
-    </Window.DataContext>
+                        <ContentPresenter/>
 
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <!-- 鼠标悬停效果 -->
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="BorderBrush" Value="#CCCCCC"/>
+                                    </Trigger>
+
+                                    <!-- 选中状态效果 -->
+                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#007ACC"/>
+                                        <Setter Property="Background" Value="#F0F8FF"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                    </Border>
+
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                            <Setter TargetName="MainBorder" Property="Effect">
+                                <Setter.Value>
+                                    <DropShadowEffect BlurRadius="10" ShadowDepth="0" 
+                                                Color="#007ACC" Opacity="0.5"/>
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        </Style>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -94,9 +135,13 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border BorderBrush="#E0E0E0" BorderThickness="1" Margin="5" 
-                                    Width="200" Height="150" Cursor="Hand"
-                                    
-                                        >
+                                    Width="200" Height="150" Cursor="Hand">
+                                <i:Interaction.Triggers>
+                                    <i:EventTrigger EventName="MouseDoubleClick">
+                                        <i:InvokeCommandAction Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                               CommandParameter="{Binding}"/>
+                                    </i:EventTrigger>
+                                </i:Interaction.Triggers>
                                 <Grid>
                                     <Image Source="{Binding PreviewImagePath}" Stretch="UniformToFill"/>
                                     <Border Background="#80000000" VerticalAlignment="Bottom">
