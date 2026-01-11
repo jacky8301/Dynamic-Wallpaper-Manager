@@ -136,12 +136,18 @@
                         <DataTemplate>
                             <Border BorderBrush="#E0E0E0" BorderThickness="1" Margin="5" 
                                     Width="200" Height="150" Cursor="Hand">
-                                <i:Interaction.Triggers>
-                                    <i:EventTrigger EventName="MouseDoubleClick">
+                                <Border.InputBindings>
+                                    <!-- 关键配置：将左键双击手势绑定到命令 -->
+                                    <MouseBinding Gesture="LeftDoubleClick"
+                                        Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        CommandParameter="{Binding}" />
+                                </Border.InputBindings>
+                                <!--<i:Interaction.Triggers>
+                                    <i:EventTrigger EventName="LeftDoubleClick">
                                         <i:InvokeCommandAction Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                CommandParameter="{Binding}"/>
                                     </i:EventTrigger>
-                                </i:Interaction.Triggers>
+                                </i:Interaction.Triggers>-->
                                 <Grid>
                                     <Image Source="{Binding PreviewImagePath}" Stretch="UniformToFill"/>
                                     <Border Background="#80000000" VerticalAlignment="Bottom">

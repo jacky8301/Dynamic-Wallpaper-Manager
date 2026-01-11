@@ -101,39 +101,36 @@ namespace WallpaperEngine.ViewModels
 
         // 原有的预览命令也可以保留，用于按钮点击
         // 预览壁纸命令
-        [RelayCommand]
-        private void PreviewWallpaper()
-        {
-            if (SelectedWallpaper == null)
-            {
-                System.Windows.MessageBox.Show("请先选择一个壁纸进行预览", "提示",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
+        //[RelayCommand]
+        //private void PreviewWallpaper()
+        //{
+        //    if (SelectedWallpaper == null)
+        //    {
+        //        System.Windows.MessageBox.Show("请先选择一个壁纸进行预览", "提示",
+        //            MessageBoxButton.OK, MessageBoxImage.Information);
+        //        return;
+        //    }
 
-            OpenPreviewWindow(SelectedWallpaper);
-        }
+        //    OpenPreviewWindow(SelectedWallpaper);
+        //}
 
         //// 带参数的重载版本，支持双击预览
-        //[RelayCommand]
-        //private void PreviewWallpaper(object parameter)
-        //{
-        //    if (parameter is WallpaperItem wallpaper)
-        //    {
-        //        SelectedWallpaper = wallpaper; // 更新选中项
-        //        OpenPreviewWindow(wallpaper);
-        //    }
-        //    else if (parameter is string wallpaperId)
-        //    {
-        //        // 通过ID查找壁纸
-        //        var wallpaper = Wallpapers.FirstOrDefault(w => w.Id == wallpaperId);
-        //        if (wallpaper != null)
-        //        {
-        //            SelectedWallpaper = wallpaper;
-        //            OpenPreviewWindow(wallpaper);
-        //        }
-        //    }
-        //}
+        [RelayCommand]
+        private void PreviewWallpaper(object parameter)
+        {
+            if (parameter is WallpaperItem wallpaper) {
+                SelectedWallpaper = wallpaper; // 更新选中项
+                OpenPreviewWindow(wallpaper);
+            } else if (parameter is string wallpaperId) {
+                // 通过ID查找壁纸
+                var myWallpaper = Wallpapers.FirstOrDefault(w => w.Id == wallpaperId);
+                if (myWallpaper != null)
+                {
+                    SelectedWallpaper = myWallpaper;
+                    OpenPreviewWindow(myWallpaper);
+                }
+            }
+        }
 
         // 实际的预览窗口打开逻辑
         private void OpenPreviewWindow(WallpaperItem wallpaper)
