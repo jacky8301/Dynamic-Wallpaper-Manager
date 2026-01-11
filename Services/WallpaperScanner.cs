@@ -139,12 +139,18 @@ namespace WallpaperEngine.Services
                         }
                     }
 
-                    if (!File.Exists(previewPath)) return null;
+                    if (!File.Exists(previewPath))
+                    {
+                        // handle this
+                    }
                 }
 
                 // 验证内容文件
                 var contentPath = Path.Combine(folderPath, project.File);
-                if (!File.Exists(contentPath)) return null;
+                if (!File.Exists(contentPath))
+                {
+                    return null;
+                }
 
                 // 自动分类
                 var category = "未分类";

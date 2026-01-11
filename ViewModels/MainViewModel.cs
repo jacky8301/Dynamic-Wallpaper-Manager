@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -82,37 +83,6 @@ namespace WallpaperEngine.ViewModels
             LoadWallpapers();
             CheckLastScanTime();
         }
-
-        //[RelayCommand]
-        //private void PreviewWallpaper(object parameter)
-        //{
-        //    if (parameter is WallpaperItem wallpaper)
-        //    {
-        //        // 更新选中项
-        //        SelectedWallpaper = wallpaper;
-
-        //        // 打开预览窗口
-        //        var previewWindow = new PreviewWindow(wallpaper);
-        //        previewWindow.Owner = System.Windows.Application.Current.MainWindow;
-        //        previewWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        //        previewWindow.ShowDialog();
-        //    }
-        //}
-
-        // 原有的预览命令也可以保留，用于按钮点击
-        // 预览壁纸命令
-        //[RelayCommand]
-        //private void PreviewWallpaper()
-        //{
-        //    if (SelectedWallpaper == null)
-        //    {
-        //        System.Windows.MessageBox.Show("请先选择一个壁纸进行预览", "提示",
-        //            MessageBoxButton.OK, MessageBoxImage.Information);
-        //        return;
-        //    }
-
-        //    OpenPreviewWindow(SelectedWallpaper);
-        //}
 
         //// 带参数的重载版本，支持双击预览
         [RelayCommand]
@@ -245,15 +215,6 @@ namespace WallpaperEngine.ViewModels
             LoadWallpapers();
         }
 
-        //[RelayCommand]
-        //private void PreviewWallpaper()
-        //{
-        //    if (SelectedWallpaper != null)
-        //    {
-        //        _player.Preview(SelectedWallpaper);
-        //    }
-        //}
-
         [RelayCommand]
         private void ApplyWallpaper()
         {
@@ -298,6 +259,47 @@ namespace WallpaperEngine.ViewModels
 
                 // 刷新显示
                 WallpapersView.Refresh();
+            }
+        }
+
+        // 转到壁纸目录命令
+        [RelayCommand]
+        private void GoToWallpaperDirectory(object parameter)
+        {
+            
+            if (parameter is WallpaperItem wallpaper)
+            {
+                SelectedWallpaper = wallpaper;
+                OpenWallpaperDirectory(wallpaper);
+            }
+        }
+
+        // 打开壁纸目录的具体实现
+        private void OpenWallpaperDirectory(WallpaperItem wallpaper)
+        {
+            try
+            {
+                if (Directory.Exists(wallpaper.FolderPath))
+                {
+                    // 使用explorer打开目录
+                    Process.Start("explorer.exe", wallpaper.FolderPath);
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show(
+                        $"壁纸目录不存在：{wallpaper.FolderPath}",
+                        "错误",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"打开目录失败：{ex.Message}",
+                    "错误",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 
