@@ -6,16 +6,12 @@
         ResizeMode="CanResize">
 
 	<Window.Resources>
-		<Style x:Key="ControlButtonStyle" TargetType="Button">
-			<Setter Property="Width" Value="40"/>
-			<Setter Property="Height" Value="40"/>
-			<Setter Property="Margin" Value="2"/>
-			<Setter Property="Background" Value="#CC000000"/>
-			<Setter Property="Foreground" Value="White"/>
-			<Setter Property="BorderThickness" Value="0"/>
-			<Setter Property="FontSize" Value="14"/>
-		</Style>
-	</Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/ControlButtonStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
 
 	<Grid>
 		<Grid.RowDefinitions>

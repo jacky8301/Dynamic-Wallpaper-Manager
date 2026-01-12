@@ -88,6 +88,7 @@ namespace WallpaperEngine.Views
 
                 PreviewVideo.Source = new Uri(_wallpaper.ContentPath);
                 PreviewVideo.Volume = VolumeSlider.Value;
+                PreviewVideo.LoadedBehavior = MediaState.Manual;
                 PreviewVideo.Play();
                 PlayPauseButton.Content = "⏸";
             }
@@ -109,15 +110,17 @@ namespace WallpaperEngine.Views
         {
             if (PreviewVideo.Source == null) return;
 
-            if (PreviewVideo.CanPause)
-            {
-                PreviewVideo.Pause();
-                PlayPauseButton.Content = "▶";
-            }
-            else
+            if (PlayPauseButton.Content.ToString() == "▶")
             {
                 PreviewVideo.Play();
                 PlayPauseButton.Content = "⏸";
+                return;
+            }
+            else if (PlayPauseButton.Content.ToString() == "⏸")
+            {
+                PreviewVideo.Pause();
+                PlayPauseButton.Content = "▶";
+                return;
             }
         }
 
