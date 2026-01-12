@@ -51,11 +51,11 @@ namespace WallpaperEngine.Services
                 {
                     if (cancellationToken.IsCancellationRequested) return false;
 
-                    var projectFile = Path.Combine(folder, "project.json");
-                    if (File.Exists(projectFile))
-                    {
+                    //var projectFile = Path.Combine(folder, "project.json");
+                    //if (File.Exists(projectFile))
+                    //{
                         validFolders.Add(folder);
-                    }
+                    //}
                 }
 
                 int total = validFolders.Count;
@@ -116,40 +116,73 @@ namespace WallpaperEngine.Services
             try
             {
                 var projectFile = Path.Combine(folderPath, "project.json");
-                if (!File.Exists(projectFile)) return null;
+                if (!File.Exists(projectFile))
+                {
+                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    string defaultProjectPath = Path.Combine(baseDirectory,"project.json");
+                    File.Copy(defaultProjectPath, Path.Combine(folderPath, "project.json"));
+                }
 
                 var jsonContent = await File.ReadAllTextAsync(projectFile);
                 var project = JsonConvert.DeserializeObject<WallpaperProject>(jsonContent);
 
-                if (project == null) return null;
+                if (project == null)
+                {
+                    return new WallpaperItem
+                    {
+                        FolderPath = folderPath,
+                        Project = null,
+                        Category = "未分类",
+                        AddedDate = DateTime.Now
+                    };
+                }
 
                 // 验证预览文件
+                bool isPreviewValid = false;
                 var previewPath = Path.Combine(folderPath, project.Preview);
                 if (!File.Exists(previewPath))
                 {
-                    var commonPreviews = new[] { "preview.jpg", "preview.png", "thumbnail.jpg", "thumb.jpg" };
+                    var commonPreviews = new[] { "preview.jpg", "preview.png", "preview.gif", "preview.jpg.bak", "preview.gif.bak" };
                     foreach (var commonPreview in commonPreviews)
                     {
                         var altPreviewPath = Path.Combine(folderPath, commonPreview);
                         if (File.Exists(altPreviewPath))
                         {
+                            isPreviewValid = true;
                             project.Preview = commonPreview;
                             previewPath = altPreviewPath;
+                            if (previewPath.Contains(".bak"))
+                            {
+                                previewPath = previewPath.Replace(".bak", "");
+                                // 恢复备份文件
+                                File.Copy(altPreviewPath, previewPath, true);
+                                File.Delete(altPreviewPath);
+                                project.Preview = commonPreview.Replace(".bak", "");
+                            
+                            }
                             break;
                         }
                     }
-
-                    if (!File.Exists(previewPath))
-                    {
-                        // handle this
-                    }
+                }
+                if (!isPreviewValid && !File.Exists(previewPath))
+                {
+                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
+                    string defaultPreviewPath = Path.Combine(baseDirectory, "preview.jpg");
+                    project.Preview = "preview.jpg";
+                    File.Copy(defaultPreviewPath, Path.Combine(folderPath, "preview.jpg"));
                 }
 
                 // 验证内容文件
                 var contentPath = Path.Combine(folderPath, project.File);
                 if (!File.Exists(contentPath))
                 {
-                    return null;
+                    return new WallpaperItem
+                    {
+                        FolderPath = folderPath,
+                        Project = project,
+                        Category = "未分类",
+                        AddedDate = DateTime.Now
+                    };
                 }
 
                 // 自动分类
