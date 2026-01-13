@@ -42,7 +42,9 @@ namespace WallpaperEngine.Data
                     Category TEXT DEFAULT '未分类',
                     AddedDate TEXT,
                     ContentRating TEXT,
-                    Visibility TEXT
+                    Visibility TEXT,
+                    FavoritedDate TEXT,
+                    LastUpdated TEXT
                 )";
             command.ExecuteNonQuery();
 
@@ -61,10 +63,10 @@ namespace WallpaperEngine.Data
             command.CommandText = @"
                 INSERT OR REPLACE INTO Wallpapers 
                 (Id, FolderPath, FolderName, Title, Description, FileName, PreviewFile, 
-                 WallpaperType, Tags, IsFavorite, Category, AddedDate, ContentRating, Visibility)
+                 WallpaperType, Tags, IsFavorite, Category, AddedDate, ContentRating, Visibility, FavoritedDate, LastUpdated)
                 VALUES 
                 ($id, $folderPath, $folderName, $title, $description, $fileName, $previewFile,
-                 $wallpaperType, $tags, $isFavorite, $category, $addedDate, $contentRating, $visibility)";
+                 $wallpaperType, $tags, $isFavorite, $category, $addedDate, $contentRating, $visibility, $favoritedDate, $lastUpdated)";
 
             command.Parameters.AddWithValue("$id", wallpaper.Id);
             command.Parameters.AddWithValue("$folderPath", wallpaper.FolderPath);
@@ -80,6 +82,8 @@ namespace WallpaperEngine.Data
             command.Parameters.AddWithValue("$addedDate", wallpaper.AddedDate.ToString("O"));
             command.Parameters.AddWithValue("$contentRating", wallpaper.Project.ContentRating);
             command.Parameters.AddWithValue("$visibility", wallpaper.Project.Visibility);
+            command.Parameters.AddWithValue("$favoritedDate", wallpaper.FavoritedDate);
+            command.Parameters.AddWithValue("$lastUpdated", wallpaper.LastUpdated);
 
             command.ExecuteNonQuery();
         }
@@ -131,7 +135,9 @@ namespace WallpaperEngine.Data
                     },
                     IsFavorite = Convert.ToInt32(reader["IsFavorite"]) == 1,
                     Category = reader["Category"].ToString(),
-                    AddedDate = DateTime.Parse(reader["AddedDate"].ToString())
+                    AddedDate = DateTime.Parse(reader["AddedDate"].ToString()),
+                    FavoritedDate = reader["FavoritedDate"].ToString(),
+                    LastUpdated = reader["LastUpdated"].ToString()
                 });
             }
 
@@ -152,9 +158,23 @@ namespace WallpaperEngine.Data
             m_connection?.Dispose();
         }
 
-        internal void UpdateFavoriteStatus(string id, bool isFavorite)
+        // 新增：专门更新收藏状态的方法
+        public void UpdateFavoriteStatus(string wallpaperId, bool isFavorite)
         {
-            throw new NotImplementedException();
+            var command = m_connection.CreateCommand();
+            command.CommandText = @"
+            UPDATE Wallpapers 
+            SET IsFavorite = @isFavorite, 
+                FavoritedDate = @favoritedDate,
+                LastUpdated = @lastUpdated
+            WHERE Id = @id";
+
+            command.Parameters.AddWithValue("@id", wallpaperId);
+            command.Parameters.AddWithValue("@isFavorite", isFavorite ? 1 : 0);
+            command.Parameters.AddWithValue("@favoritedDate", isFavorite ? DateTime.Now.ToString("O") : (object)DBNull.Value);
+            command.Parameters.AddWithValue("@lastUpdated", DateTime.Now.ToString("O"));
+
+            command.ExecuteNonQuery();
         }
     }
 }

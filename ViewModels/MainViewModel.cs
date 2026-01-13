@@ -249,17 +249,42 @@ namespace WallpaperEngine.ViewModels
             }
         }
 
+        // 切换收藏状态的命令
         [RelayCommand]
-        private void ToggleFavorite()
+        private void ToggleFavorite(object parameter)
         {
-            if (SelectedWallpaper != null)
+            if (parameter is WallpaperItem wallpaper)
             {
-                SelectedWallpaper.IsFavorite = !SelectedWallpaper.IsFavorite;
-                _dbManager.UpdateFavoriteStatus(SelectedWallpaper.Id, SelectedWallpaper.IsFavorite);
+                try
+                {
+                    // 切换收藏状态
+                    wallpaper.IsFavorite = !wallpaper.IsFavorite;
+                    //wallpaper.FavoritedDate = wallpaper.IsFavorite ? DateTime.Now : DateTime.MinValue;
 
-                // 刷新显示
-                WallpapersView.Refresh();
+                    // 更新数据库
+                    _dbManager.UpdateFavoriteStatus(wallpaper.Id, wallpaper.IsFavorite);
+
+                    // 显示操作反馈
+                    var action = wallpaper.IsFavorite ? "已收藏" : "已取消收藏";
+                    ShowNotification($"{action}: {wallpaper.Project.Title}");
+
+                    // 如果正在筛选模式，且取消了收藏，可能需要从视图移除
+                    if (ShowFavoritesOnly && !wallpaper.IsFavorite)
+                    {
+                        // 可以在这里处理实时过滤，或依赖属性变更通知
+                    }
+                }
+                catch (Exception ex)
+                {
+                    //ShowErrorMessage($"操作失败: {ex.Message}");
+                }
             }
+        }
+
+        private void ShowNotification(string message)
+        {
+            // 可以使用 MaterialDesign 的 Snackbar 或其他通知机制
+            System.Diagnostics.Debug.WriteLine($"通知: {message}");
         }
 
         // 转到壁纸目录命令

@@ -12,9 +12,10 @@ namespace WallpaperEngine.Models
         public bool IsFavorite { get; set; }
         public string Category { get; set; } = "未分类";
         public DateTime AddedDate { get; set; } = DateTime.Now;
-
         public string PreviewImagePath => Path.Combine(FolderPath, Project.Preview);
         public string ContentPath => Path.Combine(FolderPath, Project.File);
         public bool IsSelected { get; set; }
+        public string FavoritedDate { get; set; } = DateTime.Now.ToString("O");
+        public string LastUpdated { get; set; } = DateTime.Now.ToString("O");
     }
 }
