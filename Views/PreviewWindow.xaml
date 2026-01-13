@@ -2,78 +2,121 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="壁纸预览" Width="800" Height="600"
-        WindowStartupLocation="CenterOwner" WindowStyle="SingleBorderWindow"
-        ResizeMode="CanResize">
-
-	<Window.Resources>
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        WindowStyle="None"
+        AllowsTransparency="True">
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="40" 
+                  ResizeBorderThickness="6"
+                  GlassFrameThickness="0"/>
+    </WindowChrome.WindowChrome>
+    <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Styles/ControlButtonStyle.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <!--标题栏-->
+        <Border Grid.Row="0" Background="{DynamicResource MaterialDesign.Brush.Primary.Light}" Height="40">
+            <Grid>
+                <TextBlock Text="Wallpaper Engine 壁纸管理工具" 
+                   VerticalAlignment="Center" 
+                   Margin="10,0"
+                   Foreground="White"
+                   FontSize="14"/>
 
-	<Grid>
-		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto"/>
-			<RowDefinition Height="*"/>
-			<RowDefinition Height="Auto"/>
-		</Grid.RowDefinitions>
+                <StackPanel Orientation="Horizontal" 
+                    HorizontalAlignment="Right"
+                    WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button x:Name="MinimizeButton" 
+                    Style="{StaticResource MaterialDesignToolButton}"
+                    Content="-"
+                    FontSize="14"
+                    Click="MinimizeButton_Click"/>
+                    <Button x:Name="MaximizeButton"
+                    Style="{StaticResource MaterialDesignToolButton}"
+                    Content="□"
+                    FontSize="14"
+                    Click="MaximizeButton_Click"/>
+                    <Button x:Name="CloseButton"
+                    Style="{StaticResource MaterialDesignToolButton}"
+                    Content="×"
+                    FontSize="14"
+                    Click="CloseButton_Click"
+                    Foreground="Red"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-		<!-- 标题栏 -->
-		<Border Grid.Row="0" Background="#2D2D30" Height="40">
-			<TextBlock Text="{Binding WallpaperTitle}"
+            <!-- 标题栏 -->
+            <Border Grid.Row="0" Background="#2D2D30" Height="40">
+                <TextBlock Text="{Binding WallpaperTitle}"
+                  Foreground="White"
+                  FontSize="16"
+                  VerticalAlignment="Center"
+                  Margin="10,0"/>
+            </Border>
+
+            <!-- 预览区域 -->
+            <Border Grid.Row="1" Background="Black" Name="PreviewContainer">
+                <Grid>
+                    <!-- 图片预览 -->
+                    <Grid x:Name="ImagePreviewGrid" Visibility="Collapsed">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                            <Image x:Name="PreviewImg" Source="{Binding PreviewImage}" Stretch="None"/>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- 视频预览 -->
+                    <Grid x:Name="VideoPreviewGrid" Visibility="Collapsed">
+                        <MediaElement x:Name="PreviewVideo" LoadedBehavior="Manual" Stretch="Uniform"/>
+
+                        <!-- 视频控制面板 -->
+                        <Border Background="#CC000000" VerticalAlignment="Bottom" Height="50">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Button x:Name="PlayPauseButton" Content="▶" Click="PlayPause_Click"
+                                Style="{StaticResource ControlButtonStyle}"/>
+                                <Button Content="⏹" Click="Stop_Click" Style="{StaticResource ControlButtonStyle}"/>
+                                <Slider x:Name="VolumeSlider" Width="80" Minimum="0" Maximum="1" Value="0.5"
+                                ValueChanged="VolumeSlider_ValueChanged" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- 不支持的类型提示 -->
+                    <TextBlock x:Name="UnsupportedText"
+                      Text="不支持预览此类型的壁纸"
                       Foreground="White"
-                      FontSize="16"
+                      FontSize="20"
+                      HorizontalAlignment="Center"
                       VerticalAlignment="Center"
-                      Margin="10,0"/>
-		</Border>
+                      Visibility="Collapsed"/>
+                </Grid>
+            </Border>
 
-		<!-- 预览区域 -->
-		<Border Grid.Row="1" Background="Black" Name="PreviewContainer">
-			<Grid>
-				<!-- 图片预览 -->
-				<Grid x:Name="ImagePreviewGrid" Visibility="Collapsed">
-					<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-						<Image x:Name="PreviewImg" Source="{Binding PreviewImage}" Stretch="None"/>
-					</ScrollViewer>
-				</Grid>
+            <!-- 底部按钮 -->
+            <Border Grid.Row="2" Background="#2D2D30" Height="60">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
+                    <Button Content="应用壁纸" Width="100" Height="30" Background="#007ACC"
+                   Foreground="White" Click="ApplyButton_Click"/>
+                    <Button Content="关闭" Width="80" Height="30" Margin="10,0,0,0"
+                   Background="#333337" Foreground="White" Click="CloseButton_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
 
-				<!-- 视频预览 -->
-				<Grid x:Name="VideoPreviewGrid" Visibility="Collapsed">
-					<MediaElement x:Name="PreviewVideo" LoadedBehavior="Manual" Stretch="Uniform"/>
-
-					<!-- 视频控制面板 -->
-					<Border Background="#CC000000" VerticalAlignment="Bottom" Height="50">
-						<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-							<Button x:Name="PlayPauseButton" Content="▶" Click="PlayPause_Click"
-                                    Style="{StaticResource ControlButtonStyle}"/>
-							<Button Content="⏹" Click="Stop_Click" Style="{StaticResource ControlButtonStyle}"/>
-							<Slider x:Name="VolumeSlider" Width="80" Minimum="0" Maximum="1" Value="0.5"
-                                    ValueChanged="VolumeSlider_ValueChanged" VerticalAlignment="Center"/>
-						</StackPanel>
-					</Border>
-				</Grid>
-
-				<!-- 不支持的类型提示 -->
-				<TextBlock x:Name="UnsupportedText"
-                          Text="不支持预览此类型的壁纸"
-                          Foreground="White"
-                          FontSize="20"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center"
-                          Visibility="Collapsed"/>
-			</Grid>
-		</Border>
-
-		<!-- 底部按钮 -->
-		<Border Grid.Row="2" Background="#2D2D30" Height="60">
-			<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="10">
-				<Button Content="应用壁纸" Width="100" Height="30" Background="#007ACC"
-                       Foreground="White" Click="ApplyButton_Click"/>
-				<Button Content="关闭" Width="80" Height="30" Margin="10,0,0,0"
-                       Background="#333337" Foreground="White" Click="CloseButton_Click"/>
-			</StackPanel>
-		</Border>
-	</Grid>
 </Window>

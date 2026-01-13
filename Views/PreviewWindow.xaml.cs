@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using WallpaperEngine.Models;
@@ -21,7 +22,38 @@ namespace WallpaperEngine.Views
             DataContext = this;
             LoadPreview();
         }
+        // 窗口按钮事件处理
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            SystemCommands.MinimizeWindow(this);
+        }
 
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+                SystemCommands.RestoreWindow(this);
+            else
+                SystemCommands.MaximizeWindow(this);
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.DialogResult = false;
+            Close();
+        }
+
+        // 允许通过拖动标题栏移动窗口
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                if (WindowState == WindowState.Maximized)
+                {
+                    WindowState = WindowState.Normal;
+                }
+                DragMove();
+            }
+        }
         private void LoadPreview()
         {
             if (_wallpaper == null)
@@ -152,12 +184,6 @@ namespace WallpaperEngine.Views
                 System.Windows.MessageBox.Show($"应用壁纸失败: {ex.Message}", "错误",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
-        {
-            this.DialogResult = false;
-            Close();
         }
 
         protected override void OnClosed(EventArgs e)

@@ -6,295 +6,284 @@
         Title="Wallpaper Engine 管理工具" Height="800" Width="1200"
         xmlns:converters="clr-namespace:WallpaperEngine.Converters"
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True">
+    <!-- 设置WindowChrome，定义可拖动区域等 -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="40" 
+                      ResizeBorderThickness="6"
+                      GlassFrameThickness="0"/>
+    </WindowChrome.WindowChrome>
     <Window.Resources>
-        <Style x:Key="WallpaperItemStyle" TargetType="ContentControl">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ContentControl">
-                        <Border x:Name="MainBorder" Background="Transparent" 
-                        BorderThickness="2" BorderBrush="Transparent"
-                        Width="200" Height="150" Margin="5"
-                        Cursor="Hand">
-
-                            <ContentPresenter/>
-
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Style.Triggers>
-                                        <!-- 鼠标悬停效果 -->
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="BorderBrush" Value="#CCCCCC"/>
-                                        </Trigger>
-
-                                        <!-- 选中状态效果 -->
-                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                            <Setter Property="BorderBrush" Value="#007ACC"/>
-                                            <Setter Property="Background" Value="#F0F8FF"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                        </Border>
-
-                        <ControlTemplate.Triggers>
-                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                <Setter TargetName="MainBorder" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect BlurRadius="10" ShadowDepth="0" 
-                                                Color="#007ACC" Opacity="0.5"/>
-                                    </Setter.Value>
-                                </Setter>
-                            </DataTrigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <!-- 壁纸项右键菜单样式 -->
-        <Style x:Key="WallpaperItemContextMenuStyle" TargetType="ContextMenu">
-            <Setter Property="Background" Value="#FFFFFF"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="#E0E0E0"/>
-        </Style>
-
-        <!-- 菜单项样式 -->
-        <Style x:Key="WallpaperMenuItemStyle" TargetType="MenuItem">
-            <Setter Property="Height" Value="30"/>
-            <Setter Property="Padding" Value="15,0,10,0"/>
-            <Setter Property="FontSize" Value="12"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/WallpaperMenuItemStyle.xaml"/>
+                <ResourceDictionary Source="/Styles/WallpaperItemContextMenuStyle.xaml"/>
+                <ResourceDictionary Source="/Styles/WallpaperItemStyle.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
     </Window.Resources>
+
     <Grid>
+        <!-- 你的主界面内容 -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <!-- 标题栏行 -->
             <RowDefinition Height="*"/>
+            <!-- 内容行 -->
         </Grid.RowDefinitions>
 
-        <!-- 工具栏 -->
-        <ToolBar Grid.Row="0" Background="#F0F0F0">
-            <StackPanel Orientation="Horizontal" Margin="5">
-                <!-- 扫描按钮组 -->
-                <Button Content="📁 扫描壁纸" 
+        <!-- 自定义标题栏 -->
+        <Border Grid.Row="0" 
+                Background="{DynamicResource MaterialDesign.Brush.Primary.Light}" 
+                Height="40">
+            <Grid>
+                <TextBlock Text="Wallpaper Engine 壁纸管理工具" 
+                           VerticalAlignment="Center" 
+                           Margin="10,0"
+                           Foreground="White"
+                           FontSize="14"/>
+
+                <StackPanel Orientation="Horizontal" 
+                            HorizontalAlignment="Right"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button x:Name="MinimizeButton" 
+                            Style="{StaticResource MaterialDesignToolButton}"
+                            Content="-"
+                            FontSize="14"
+                            Click="MinimizeButton_Click"/>
+                    <Button x:Name="MaximizeButton"
+                            Style="{StaticResource MaterialDesignToolButton}"
+                            Content="□"
+                            FontSize="14"
+                            Click="MaximizeButton_Click"/>
+                    <Button x:Name="CloseButton"
+                            Style="{StaticResource MaterialDesignToolButton}"
+                            Content="×"
+                            FontSize="14"
+                            Click="CloseButton_Click"
+                            Foreground="Red"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 主内容区域 -->
+        <Grid Grid.Row="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <!-- 工具栏 -->
+                <ToolBar Grid.Row="0" Background="#F0F0F0">
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <!-- 扫描按钮组 -->
+                        <Button Content="📁 扫描壁纸" 
                         Command="{Binding ScanWallpapersCommand}"
                         Width="100" Height="30" Margin="5,0"
                         ToolTip="扫描壁纸文件夹"
                         Background="#4CAF50" Foreground="White"/>
 
-                <Button Content="⚡ 快速扫描" 
+                        <Button Content="⚡ 快速扫描" 
                         Command="{Binding QuickScanCommand}"
                         Width="100" Height="30" Margin="5,0"
                         ToolTip="快速扫描常用壁纸文件夹"
                         Background="#2196F3" Foreground="White"/>
 
-                <Button Content="❌ 取消" 
+                        <Button Content="❌ 取消" 
                         Command="{Binding CancelScanCommand}"
                         Width="80" Height="30" Margin="5,0"
                         ToolTip="取消当前扫描"
                         Background="#F44336" Foreground="White"
                         Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                <Separator Margin="10,0"/>
+                        <Separator Margin="10,0"/>
 
-                <!-- 搜索区域 -->
-                <TextBlock Text="搜索:" VerticalAlignment="Center" Margin="5,0"/>
-                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                        <!-- 搜索区域 -->
+                        <TextBlock Text="搜索:" VerticalAlignment="Center" Margin="5,0"/>
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                          Width="200" Margin="5,0" Height="25"
                          ToolTip="输入关键词搜索壁纸"/>
 
-                <ComboBox ItemsSource="{Binding Categories}" 
+                        <ComboBox ItemsSource="{Binding Categories}" 
                           SelectedItem="{Binding SelectedCategory}" 
                           Width="100" Margin="5,0" Height="25"/>
 
-                <CheckBox Content="仅收藏" IsChecked="{Binding ShowFavoritesOnly}" 
+                        <CheckBox Content="仅收藏" IsChecked="{Binding ShowFavoritesOnly}" 
                           VerticalAlignment="Center" Margin="10,0"/>
 
-                <Button Content="搜索" Command="{Binding SearchWallpapersCommand}" 
+                        <Button Content="搜索" Command="{Binding SearchWallpapersCommand}" 
                         Width="60" Height="25" Margin="5,0"/>
 
-                <Button Content="清除" Command="{Binding ClearSearchCommand}" 
+                        <Button Content="清除" Command="{Binding ClearSearchCommand}" 
                         Width="60" Height="25" Margin="5,0"/>
-            </StackPanel>
-        </ToolBar>
-
-        <!-- 扫描状态显示 -->
-        <Border Grid.Row="0" Background="#FFF8E1" Height="30" 
+                    </StackPanel>
+                </ToolBar>
+                <!-- 扫描状态显示 -->
+                <Border Grid.Row="0" Background="#FFF8E1" Height="30" 
                 VerticalAlignment="Bottom"
                 Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <StackPanel Orientation="Horizontal" Margin="10,0">
-                <TextBlock Text="{Binding ScanStatus}" FontWeight="Bold" 
+                    <StackPanel Orientation="Horizontal" Margin="10,0">
+                        <TextBlock Text="{Binding ScanStatus}" FontWeight="Bold" 
                            Foreground="{Binding IsScanning}"/>
-                <ProgressBar Value="{Binding ScanProgress}" Width="200" Height="10" 
+                        <ProgressBar Value="{Binding ScanProgress}" Width="200" Height="10" 
                            IsIndeterminate="{Binding IsIndeterminate}" Margin="20,0"/>
-                <TextBlock Text="{Binding ScannedCount, StringFormat=已扫描: {0} 个}" 
+                        <TextBlock Text="{Binding ScannedCount, StringFormat=已扫描: {0} 个}" 
                            Margin="10,0" Foreground="Gray"/>
-            </StackPanel>
-        </Border>
-
-        <!-- 内容区域 -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="3*"/>
-                <ColumnDefinition Width="1*"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- 壁纸网格 -->
-            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding Wallpapers}">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border BorderBrush="#E0E0E0" BorderThickness="1" Margin="5" 
+                    </StackPanel>
+                </Border>
+                <!-- 内容区域 -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <!-- 壁纸网格 -->
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Wallpapers}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="#E0E0E0" BorderThickness="1" Margin="5" 
                                     Width="200" Height="150" Cursor="Hand">
-                                <!-- 右键菜单定义 -->
-                                <Border.ContextMenu>
-                                    <ContextMenu Style="{StaticResource WallpaperItemContextMenuStyle}"
-                                 DataContext="{Binding PlacementTarget.DataContext, 
-                                     RelativeSource={RelativeSource Self}}">
-
-                                        <!-- 预览菜单项 -->
-                                        <MenuItem Header="👁️ 预览壁纸" 
+                                        <!-- 右键菜单定义 -->
+                                        <Border.ContextMenu>
+                                            <ContextMenu Style="{StaticResource WallpaperItemContextMenuStyle}">
+                                                <!-- 预览菜单项 -->
+                                                <MenuItem Header="👁️ 预览壁纸" 
                                   Style="{StaticResource WallpaperMenuItemStyle}"
                                   Command="{Binding DataContext.PreviewWallpaperCommand,Source={x:Reference mainWindow}}"
                                   CommandParameter="{Binding}"/>
-
-                                        <!-- 应用菜单项 -->
-                                        <MenuItem Header="🚀 应用壁纸" 
+                                                <!-- 应用菜单项 -->
+                                                <MenuItem Header="🚀 应用壁纸" 
                                   Style="{StaticResource WallpaperMenuItemStyle}"
                                   Command="{Binding ApplyWallpaperCommand}"
                                   CommandParameter="{Binding}"/>
-
-                                        <!-- 分隔线 -->
-                                        <Separator/>
-
-                                        <!-- 转到目录菜单项 -->
-                                        <MenuItem Header="📁 转到壁纸目录" 
+                                                <!-- 分隔线 -->
+                                                <Separator/>
+                                                <!-- 转到目录菜单项 -->
+                                                <MenuItem Header="📁 转到壁纸目录" 
                                   Style="{StaticResource WallpaperMenuItemStyle}"
                                   Command="{Binding DataContext.GoToWallpaperDirectoryCommand,Source={x:Reference mainWindow}}"
                                   CommandParameter="{Binding}"/>
-
-                                        <!-- 分隔线 -->
-                                        <Separator/>
-
-                                        <!-- 删除菜单项 -->
-                                        <MenuItem Header="🗑️ 删除壁纸" 
+                                                <!-- 分隔线 -->
+                                                <Separator/>
+                                                <!-- 删除菜单项 -->
+                                                <MenuItem Header="🗑️ 删除壁纸" 
                                   Style="{StaticResource WallpaperMenuItemStyle}"
                                   Command="{Binding DeleteWallpaperCommand}"
                                   CommandParameter="{Binding}"
                                   Foreground="Red"/>
-                                    </ContextMenu>
-                                </Border.ContextMenu>
-                                <Border.InputBindings>
-                                    <!-- 关键配置：将左键双击手势绑定到命令 -->
-                                    <MouseBinding Gesture="LeftDoubleClick"
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
+                                        <Border.InputBindings>
+                                            <!-- 关键配置：将左键双击手势绑定到命令 -->
+                                            <MouseBinding Gesture="LeftDoubleClick"
                                         Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}" />
-                                </Border.InputBindings>
-                                <!--<i:Interaction.Triggers>
-                                    <i:EventTrigger EventName="LeftDoubleClick">
-                                        <i:InvokeCommandAction Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                               CommandParameter="{Binding}"/>
-                                    </i:EventTrigger>
-                                </i:Interaction.Triggers>-->
-                                <Grid>
-                                    <Image Source="{Binding PreviewImagePath}" Stretch="UniformToFill"/>
-                                    <Border Background="#80000000" VerticalAlignment="Bottom">
-                                        <TextBlock Text="{Binding Project.Title}" 
+                                        </Border.InputBindings>
+                                        <Grid>
+                                            <Image Source="{Binding PreviewImagePath}" Stretch="UniformToFill"/>
+                                            <Border Background="#80000000" VerticalAlignment="Bottom">
+                                                <TextBlock Text="{Binding Project.Title}" 
                                                    Foreground="White" Margin="5" 
                                                    TextWrapping="Wrap" FontWeight="Bold"/>
-                                    </Border>
-                                    <!-- 收藏标识 -->
-                                    <Ellipse Width="20" Height="20" Fill="Gold" Stroke="DarkOrange" 
+                                            </Border>
+                                            <!-- 收藏标识 -->
+                                            <Ellipse Width="20" Height="20" Fill="Gold" Stroke="DarkOrange" 
                                              StrokeThickness="1" HorizontalAlignment="Right" 
                                              VerticalAlignment="Top" Margin="5"
                                              Visibility="{Binding IsFavorite, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <Ellipse.Effect>
-                                            <DropShadowEffect BlurRadius="10" ShadowDepth="0" Color="Gold"/>
-                                        </Ellipse.Effect>
-                                    </Ellipse>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-
-            <!-- 详情面板 -->
-            <Border Grid.Column="1" BorderBrush="#E0E0E0" BorderThickness="1,0,0,0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Text="壁纸详情" FontSize="16" FontWeight="Bold" Margin="10" 
-                               Background="#F5F5F5" Padding="10"/>
-
-                    <!-- 预览区域 -->
-                    <Border Grid.Row="1" Margin="10" Background="Black" Height="200">
-                        <Image Source="{Binding SelectedWallpaper.PreviewImagePath}" 
-                               Stretch="Uniform"/>
-                    </Border>
-
-                    <!-- 详细信息 -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="10,220,10,10">
-                        <StackPanel>
-                            <TextBlock Text="{Binding SelectedWallpaper.Project.Title}" 
-                                       FontWeight="Bold" FontSize="14" Margin="0,5"/>
-
-                            <TextBlock Text="{Binding SelectedWallpaper.Project.Description}" 
-                                       TextWrapping="Wrap" Margin="0,10" FontSize="12"/>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,5">
-                                <TextBlock Text="类型:" FontWeight="Bold" Margin="0,0,5,0"/>
-                                <TextBlock Text="{Binding SelectedWallpaper.Project.Type}"/>
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,5">
-                                <TextBlock Text="分类:" FontWeight="Bold" Margin="0,0,5,0"/>
-                                <TextBlock Text="{Binding SelectedWallpaper.Category}"/>
-                            </StackPanel>
-
-                            <TextBlock Text="标签:" FontWeight="Bold" Margin="0,5,0,0"/>
-                            <WrapPanel Margin="0,2">
-                                <ItemsControl ItemsSource="{Binding SelectedWallpaper.Project.Tags}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <WrapPanel/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="#E3F2FD" CornerRadius="10" 
-                                                    Margin="2,1" Padding="5,2">
-                                                <TextBlock Text="{Binding}" FontSize="10"/>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </WrapPanel>
-                        </StackPanel>
+                                                <Ellipse.Effect>
+                                                    <DropShadowEffect BlurRadius="10" ShadowDepth="0" Color="Gold"/>
+                                                </Ellipse.Effect>
+                                            </Ellipse>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </ScrollViewer>
 
-                    <!-- 操作按钮 -->
-                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
-                        <Button Content="⭐ 收藏" Command="{Binding ToggleFavoriteCommand}" 
+                    <!-- 详情面板 -->
+                    <Border Grid.Column="1" BorderBrush="#E0E0E0" BorderThickness="1,0,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Text="壁纸详情" FontSize="16" FontWeight="Bold" Margin="10" 
+                               Background="#F5F5F5" Padding="10"/>
+
+                            <!-- 预览区域 -->
+                            <Border Grid.Row="1" Margin="10" Background="Black" Height="200">
+                                <Image Source="{Binding SelectedWallpaper.PreviewImagePath}" 
+                               Stretch="Uniform"/>
+                            </Border>
+
+                            <!-- 详细信息 -->
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="10,220,10,10">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding SelectedWallpaper.Project.Title}" 
+                                       FontWeight="Bold" FontSize="14" Margin="0,5"/>
+
+                                    <TextBlock Text="{Binding SelectedWallpaper.Project.Description}" 
+                                       TextWrapping="Wrap" Margin="0,10" FontSize="12"/>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,5">
+                                        <TextBlock Text="类型:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                        <TextBlock Text="{Binding SelectedWallpaper.Project.Type}"/>
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,5">
+                                        <TextBlock Text="分类:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                        <TextBlock Text="{Binding SelectedWallpaper.Category}"/>
+                                    </StackPanel>
+
+                                    <TextBlock Text="标签:" FontWeight="Bold" Margin="0,5,0,0"/>
+                                    <WrapPanel Margin="0,2">
+                                        <ItemsControl ItemsSource="{Binding SelectedWallpaper.Project.Tags}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <WrapPanel/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="#E3F2FD" CornerRadius="10" 
+                                                    Margin="2,1" Padding="5,2">
+                                                        <TextBlock Text="{Binding}" FontSize="10"/>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <!-- 操作按钮 -->
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+                                <Button Content="⭐ 收藏" Command="{Binding ToggleFavoriteCommand}" 
                                 Width="80" Height="30" Margin="5" 
                                 Foreground="White"/>
-                        <Button Content="👁️ 预览" Command="{Binding PreviewWallpaperCommand}" 
+                                <Button Content="👁️ 预览" Command="{Binding PreviewWallpaperCommand}" 
                                 Width="80" Height="30" Margin="5"/>
-                        <Button Content="🚀 应用" Command="{Binding ApplyWallpaperCommand}" 
+                                <Button Content="🚀 应用" Command="{Binding ApplyWallpaperCommand}" 
                                 Width="80" Height="30" Margin="5" Background="#4CAF50" Foreground="White"/>
-                        <Button Content="🗑️ 删除" Command="{Binding DeleteWallpaperCommand}" 
+                                <Button Content="🗑️ 删除" Command="{Binding DeleteWallpaperCommand}" 
                                 Width="80" Height="30" Margin="5" Background="#F44336" Foreground="White"/>
-                    </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </Grid>
-            </Border>
+            </Grid>
         </Grid>
     </Grid>
 </Window>
