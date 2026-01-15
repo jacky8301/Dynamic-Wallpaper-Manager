@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Windows;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.ViewModels;
@@ -215,13 +216,67 @@ namespace WallpaperEngine.Services
                     }
                 }
 
-                return new WallpaperItem
+                // 1. 首先，尝试从数据库中查找现有记录，以文件夹路径作为关键标识[1](@ref)
+                var existingWallpaper = _dbManager.GetWallpaperByFolderPath(folderPath);
+
+                WallpaperItem wallpaperItem;
+                //Id TEXT PRIMARY KEY,
+                //    FolderPath TEXT UNIQUE,
+                //    FolderName TEXT,
+                //    Title TEXT,
+                //    Description TEXT,
+                //    FileName TEXT,
+                //    PreviewFile TEXT,
+                //    WallpaperType TEXT,
+                //    Tags TEXT,
+                //    IsFavorite INTEGER DEFAULT 0,
+                //    Category TEXT DEFAULT '未分类',
+                //    AddedDate TEXT,
+                //    ContentRating TEXT,
+                //    Visibility TEXT,
+                //    FavoritedDate TEXT,
+                //    LastUpdated TEXT
+
+                if (existingWallpaper != null)
                 {
-                    FolderPath = folderPath,
-                    Project = project,
-                    Category = category,
-                    AddedDate = DateTime.Now
-                };
+                    // 2. 如果数据库中存在：将数据库中的记录作为基础
+                    wallpaperItem = existingWallpaper;
+                    // 标记这不是新添加的，因为我们只是重新扫描到了它
+                    wallpaperItem.IsNewlyAdded = false;
+
+                    // 重要：用最新扫描到的项目信息（如标题、描述）更新现有对象，
+                    // 但保留之前已设置的收藏状态！
+                    wallpaperItem.Project.Title = project.Title;
+                    wallpaperItem.Project.Description = project.Description;
+                    // ... 更新其他可能变化的属性，但 IsFavorite 和 FavoritedDate 保持不变！
+                }
+                else
+                {
+                    // 3. 如果数据库中不存在：创建新项
+                    wallpaperItem = new WallpaperItem
+                    {
+                        FolderPath = folderPath,
+                        Project = project,
+                        Category = category, // 你的自动分类逻辑
+                        AddedDate = DateTime.Now,
+                        IsNewlyAdded = true // 标记为新添加
+                                            // IsFavorite 和 FavoritedDate 使用默认值（false, MinValue）
+                    };
+                }
+
+                // 4. 无论是新还是旧，都更新或插入到数据库，确保数据库记录是最新的。
+                // SaveWallpaper 方法应实现 INSERT OR REPLACE 逻辑。
+                _dbManager.SaveWallpaper(wallpaperItem);
+
+                return wallpaperItem;
+
+                //return new WallpaperItem
+                //{
+                //    FolderPath = folderPath,
+                //    Project = project,
+                //    Category = category,
+                //    AddedDate = DateTime.Now
+                //};
             }
             catch (Exception ex)
             {
