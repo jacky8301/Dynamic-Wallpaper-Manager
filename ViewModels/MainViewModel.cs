@@ -107,6 +107,9 @@ namespace WallpaperEngine.ViewModels
             WallpapersView = CollectionViewSource.GetDefaultView(Wallpapers);
             WallpapersView.Filter = FilterWallpapers;
 
+            SelectedCategory = "所有分类";
+            ShowFavoritesOnly = false;
+            SearchText = string.Empty;
             LoadWallpapers();
             CheckLastScanTime();
             LoadScanHistory();
@@ -661,6 +664,9 @@ namespace WallpaperEngine.ViewModels
             finally
             {
                 IsScanning = false;
+                SelectedCategory = "所有分类";
+                ShowFavoritesOnly = false;
+                SearchText = string.Empty;
                 LoadWallpapers();
                 LoadScanHistory();
             }
