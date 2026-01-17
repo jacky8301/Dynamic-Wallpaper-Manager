@@ -9,7 +9,8 @@
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
-        AllowsTransparency="True">
+        AllowsTransparency="True"
+        >
     <!-- 设置WindowChrome，定义可拖动区域等 -->
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="40" 
@@ -36,16 +37,11 @@
             <RowDefinition Height="*"/>
             <!-- 内容行 -->
         </Grid.RowDefinitions>
-
         <!-- 自定义标题栏 -->
         <Border Grid.Row="0" 
                 Background="{DynamicResource MaterialDesign.Brush.Primary.Light}" 
                 Height="40">
             <Grid>
-                <Image x:Name="TitleBarIcon" Source="/Assets/app.ico"
-                       Width="24" Height="24" 
-                       VerticalAlignment="Center" 
-                       Margin="10,0"/>
                 <TextBlock Text="Wallpaper Engine 壁纸管理工具" 
                            VerticalAlignment="Center" 
                            Margin="10,0"
@@ -74,7 +70,6 @@
                 </StackPanel>
             </Grid>
         </Border>
-
         <!-- 主内容区域 -->
         <Grid Grid.Row="1">
             <Grid>
@@ -85,8 +80,10 @@
                 <!-- 工具栏 -->
                 <ToolBar Grid.Row="0" Background="#F0F0F0">
                     <StackPanel Orientation="Horizontal" Margin="5">
-                        <TextBlock Text="搜索:" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Width="200" Margin="5,0"/>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="搜索:" VerticalAlignment="Center"/>
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Width="200" Margin="5,0"/>
+                        </StackPanel>
                         <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" Width="100" Margin="5,0"/>
                         <CheckBox x:Name="FavoriteFilterCheckBox" Content="仅显示收藏" IsChecked="{Binding ShowFavoritesOnly}" ToolTip="只显示已收藏的壁纸"/>
                         <Separator/>
@@ -112,12 +109,11 @@
                             </StackPanel>
                         </StackPanel>
                         <!-- 新增的设置按钮 -->
-                        <Button Content="⚙️ 设置" Command="{Binding OpenSettingsCommand}" Width="80" Height="35" ToolTip="应用设置" Style="{StaticResource MaterialDesignOutlinedButton}">
+                        <Button Content="⚙️ 设置" Command="{Binding OpenSettingsCommand}" Width="80" Height="35" ToolTip="设置" Style="{StaticResource MaterialDesignOutlinedButton}">
                             <Button.ContentTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <!--<<materialDesign:PackIcon Kind="Cog" Width="16" Height="16"/>-->
-                                            <TextBlock Text="设置" Margin="5,0,0,0"/>
+                                        <TextBlock Text="设置" Margin="5,0,0,0"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </Button.ContentTemplate>
@@ -141,7 +137,7 @@
                     </Grid.ColumnDefinitions>
                     <!-- 壁纸网格 -->
                     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding Wallpapers}" ScrollViewer.IsDeferredScrollingEnabled="True" VirtualizingPanel.IsVirtualizing="True"
+                        <ItemsControl ItemsSource="{Binding Wallpapers}" ScrollViewer.IsDeferredScrollingEnabled="True" VirtualizingPanel.IsVirtualizing="True" 
                                       VirtualizingPanel.VirtualizationMode="Recycling">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -175,18 +171,13 @@
                                             </ContextMenu>
                                         </Border.ContextMenu>
                                         <Border.InputBindings>
-                                            <!-- 关键配置：将左键双击手势绑定到命令 -->
+                                            <!-- 将左键双击手势绑定到命令 -->
                                             <MouseBinding Gesture="LeftDoubleClick" Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
-                                            <!--不起作用，不知道为啥-->
+                                            <!--处理单击事件-->
                                             <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
                                         </Border.InputBindings>
-                                        <!--<i:Interaction.Triggers>
-                                            <i:EventTrigger EventName="MouseLeftButtonDown">
-                                                <i:InvokeCommandAction Command="{Binding DataContext.SelectWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
-                                            </i:EventTrigger>
-                                        </i:Interaction.Triggers>-->
                                         <Grid>
-                                            <Image Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}" Stretch="UniformToFill"/>
+                                            <Image Source="{Binding PreviewImagePath}" Stretch="UniformToFill"/>
                                             <Border Background="#80000000" VerticalAlignment="Bottom">
                                                 <TextBlock Text="{Binding Project.Title}" Foreground="White" Margin="5" TextWrapping="Wrap" FontWeight="Bold"/>
                                             </Border>
@@ -224,22 +215,17 @@
                                 <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" >
                                     <StackPanel>
                                         <TextBlock Text="壁纸详情" FontSize="16" FontWeight="Bold" Background="#F5F5F5" Padding="10"/>
-                                        <TextBlock Text="{Binding SelectedWallpaper.Project.Title}" 
-                                       FontWeight="Bold" FontSize="14" />
-
+                                        <TextBlock Text="{Binding SelectedWallpaper.Project.Title}" FontWeight="Bold" FontSize="14" />
                                         <TextBlock Text="{Binding SelectedWallpaper.Project.Description}" 
                                        TextWrapping="Wrap" Margin="0,10" FontSize="12"/>
-
                                         <StackPanel Orientation="Horizontal" Margin="0,5">
                                             <TextBlock Text="类型:" FontWeight="Bold" Margin="0,0,5,0"/>
                                             <TextBlock Text="{Binding SelectedWallpaper.Project.Type}"/>
                                         </StackPanel>
-
                                         <StackPanel Orientation="Horizontal" Margin="0,5">
                                             <TextBlock Text="分类:" FontWeight="Bold" Margin="0,0,5,0"/>
                                             <TextBlock Text="{Binding SelectedWallpaper.Category}"/>
                                         </StackPanel>
-
                                         <TextBlock Text="标签:" FontWeight="Bold" Margin="0,5,0,0"/>
                                         <WrapPanel Margin="0,2">
                                             <ItemsControl ItemsSource="{Binding SelectedWallpaper.Project.Tags}">
@@ -266,7 +252,8 @@
                                 <!-- 操作按钮 -->
                                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
                                     <Button Content="⭐ 收藏" Command="{Binding ToggleFavoriteCommand}"  Height="30" Margin="5" Foreground="White"/>
-                                    <Button Content="👁️ 预览" Command="{Binding PreviewWallpaperCommand}" Height="30" Margin="5"/>
+                                    <Button Content="👁️ 预览"  CommandParameter="{Binding}" Command="{Binding PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"                                       
+                                             Height="30" Margin="5"/>
                                     <Button Content="🚀 应用" Command="{Binding ApplyWallpaperCommand}"  Height="30" Margin="5" Background="#4CAF50" Foreground="White"/>
                                     <Button Content="🗑️ 删除" Command="{Binding DeleteWallpaperCommand}" Height="30" Margin="5" Background="#F44336" Foreground="White"/>
                                 </StackPanel>

@@ -45,19 +45,18 @@ namespace WallpaperEngine.Services
             {
                 progress?.Report(new ScanProgress { Status = "正在搜索壁纸文件夹..." });
 
-                var wallpaperFolders = Directory.GetDirectories(rootFolderPath);
                 var validFolders = new List<string>();
 
+                var wallpaperFolders = Directory.GetDirectories(rootFolderPath);
                 foreach (var folder in wallpaperFolders)
                 {
-                    if (cancellationToken.IsCancellationRequested) return false;
-
-                    //var projectFile = Path.Combine(folder, "project.json");
-                    //if (File.Exists(projectFile))
-                    //{
-                        validFolders.Add(folder);
-                    //}
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        return false;
+                    }
+                    validFolders.Add(folder);
                 }
+
 
                 int total = validFolders.Count;
                 int processed = 0;
@@ -120,7 +119,7 @@ namespace WallpaperEngine.Services
                 if (!File.Exists(projectFile))
                 {
                     string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                    string defaultProjectPath = Path.Combine(baseDirectory,"project.json");
+                    string defaultProjectPath = Path.Combine(baseDirectory, "project.json");
                     File.Copy(defaultProjectPath, Path.Combine(folderPath, "project.json"));
                 }
 
@@ -159,7 +158,7 @@ namespace WallpaperEngine.Services
                                 File.Copy(altPreviewPath, previewPath, true);
                                 File.Delete(altPreviewPath);
                                 project.Preview = commonPreview.Replace(".bak", "");
-                            
+
                             }
                             break;
                         }
@@ -220,22 +219,6 @@ namespace WallpaperEngine.Services
                 var existingWallpaper = _dbManager.GetWallpaperByFolderPath(folderPath);
 
                 WallpaperItem wallpaperItem;
-                //Id TEXT PRIMARY KEY,
-                //    FolderPath TEXT UNIQUE,
-                //    FolderName TEXT,
-                //    Title TEXT,
-                //    Description TEXT,
-                //    FileName TEXT,
-                //    PreviewFile TEXT,
-                //    WallpaperType TEXT,
-                //    Tags TEXT,
-                //    IsFavorite INTEGER DEFAULT 0,
-                //    Category TEXT DEFAULT '未分类',
-                //    AddedDate TEXT,
-                //    ContentRating TEXT,
-                //    Visibility TEXT,
-                //    FavoritedDate TEXT,
-                //    LastUpdated TEXT
 
                 if (existingWallpaper != null)
                 {
@@ -264,19 +247,8 @@ namespace WallpaperEngine.Services
                     };
                 }
 
-                // 4. 无论是新还是旧，都更新或插入到数据库，确保数据库记录是最新的。
-                // SaveWallpaper 方法应实现 INSERT OR REPLACE 逻辑。
                 _dbManager.SaveWallpaper(wallpaperItem);
-
                 return wallpaperItem;
-
-                //return new WallpaperItem
-                //{
-                //    FolderPath = folderPath,
-                //    Project = project,
-                //    Category = category,
-                //    AddedDate = DateTime.Now
-                //};
             }
             catch (Exception ex)
             {

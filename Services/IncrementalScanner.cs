@@ -47,7 +47,7 @@ namespace WallpaperEngine.Services
             var stopwatch = Stopwatch.StartNew();
             var stats = new ScanStatistics();
             _isCancelled = false;
-
+            _cancellationTokenSource = new CancellationTokenSource();
             try
             {
                 if (!Directory.Exists(rootFolderPath))

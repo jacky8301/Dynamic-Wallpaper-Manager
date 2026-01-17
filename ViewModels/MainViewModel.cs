@@ -26,7 +26,6 @@ namespace WallpaperEngine.ViewModels
     {
         private readonly DatabaseManager _dbManager;
         private readonly WallpaperScanner _scanner;
-        //private readonly WallpaperPlayer _player;
         private readonly IncrementalScanner _incrementalScanner;
         private readonly PreviewService _previewService;
         private string _currentSearchTerm = string.Empty;
@@ -103,7 +102,6 @@ namespace WallpaperEngine.ViewModels
         {
             _dbManager = new DatabaseManager();
             _scanner = new WallpaperScanner(_dbManager);
-            //_player = new WallpaperPlayer();
             _incrementalScanner = new IncrementalScanner(_dbManager);
             
             WallpapersView = CollectionViewSource.GetDefaultView(Wallpapers);
@@ -275,25 +273,28 @@ namespace WallpaperEngine.ViewModels
         }
 
         [RelayCommand]
-        private void QuickScan()
+        private async Task QuickScan()
         {
-            var defaultWallpaperPaths = new[]
+            await Task.Run(() =>
+            {
+                var defaultWallpaperPaths = new[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Wallpapers"),
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Wallpaper Engine"),
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonPictures), "Wallpapers")
             };
 
-            foreach (var path in defaultWallpaperPaths)
-            {
-                if (Directory.Exists(path))
+                foreach (var path in defaultWallpaperPaths)
                 {
-                    _ = StartScanningAsync(path);
-                    return;
+                    if (Directory.Exists(path))
+                    {
+                        _ = StartScanningAsync(path);
+                        return;
+                    }
                 }
-            }
 
-            _ = ScanWallpapersAsync();
+                _ = ScanWallpapersAsync();
+            });
         }
 
         [RelayCommand]
@@ -686,42 +687,10 @@ namespace WallpaperEngine.ViewModels
         private async Task PerformFullScanAsync(string folderPath)
         {
             ScanStatus = "正在执行全量扫描...";
-
             var progress = new Progress<ScanProgress>(UpdateProgress);
             var result = await _scanner.ScanWallpapersAsync(folderPath, progress);
-
             ScanStatus = result ? "全量扫描完成！" : "扫描被取消";
         }
-
-        private async Task<int> CountWallpaperFoldersAsync(string rootPath)
-        {
-            return await Task.Run(() =>
-            {
-                try
-                {
-                    if (!Directory.Exists(rootPath)) return 0;
-
-                    var folders = Directory.GetDirectories(rootPath);
-                    int count = 0;
-
-                    foreach (var folder in folders)
-                    {
-                        var projectFile = Path.Combine(folder, "project.json");
-                        if (File.Exists(projectFile))
-                        {
-                            count++;
-                        }
-                    }
-
-                    return count;
-                }
-                catch (Exception)
-                {
-                    return 0;
-                }
-            });
-        }
-
         private void UpdateProgress(ScanProgress progress)
         {
             ScanProgress = progress.Percentage;
@@ -849,7 +818,6 @@ namespace WallpaperEngine.ViewModels
         partial void OnSearchTextChanged(string value) => WallpapersView.Refresh();
         partial void OnSelectedCategoryChanged(string value) => WallpapersView.Refresh();
         partial void OnShowFavoritesOnlyChanged(bool value) => WallpapersView.Refresh();
-
         // 选择命令
         [RelayCommand]
         private void SelectWallpaper(object parameter)
@@ -860,7 +828,7 @@ namespace WallpaperEngine.ViewModels
                 UpdateSelection(wallpaper);
             }
         }
-
+        // 增量扫描命令
         [RelayCommand]
         private async Task QuickIncrementalScanAsync()
         {
@@ -880,7 +848,6 @@ namespace WallpaperEngine.ViewModels
             // 如果没有历史记录，让用户选择
             await ScanWallpapersAsync();
         }
-
         private void UpdateSelection(WallpaperItem selectedWallpaper)
         {
             // 清除之前的选择
@@ -912,7 +879,7 @@ namespace WallpaperEngine.ViewModels
         public int Percentage { get; set; }
         public int ProcessedCount { get; set; }
         public int TotalCount { get; set; }
-        public string CurrentFolder { get; set; }
-        public string Status { get; set; }
+        public string? CurrentFolder { get; set; }
+        public string? Status { get; set; }
     }
 }
