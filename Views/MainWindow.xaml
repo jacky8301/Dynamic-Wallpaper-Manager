@@ -42,6 +42,10 @@
                 Background="{DynamicResource MaterialDesign.Brush.Primary.Light}" 
                 Height="40">
             <Grid>
+                <Image x:Name="TitleBarIcon" Source="/Assets/app.ico"
+                       Width="24" Height="24" 
+                       VerticalAlignment="Center" 
+                       Margin="10,0"/>
                 <TextBlock Text="Wallpaper Engine 壁纸管理工具" 
                            VerticalAlignment="Center" 
                            Margin="10,0"
@@ -137,7 +141,8 @@
                     </Grid.ColumnDefinitions>
                     <!-- 壁纸网格 -->
                     <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding Wallpapers}" ScrollViewer.IsDeferredScrollingEnabled="True" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling">
+                        <ItemsControl ItemsSource="{Binding Wallpapers}" ScrollViewer.IsDeferredScrollingEnabled="True" VirtualizingPanel.IsVirtualizing="True"
+                                      VirtualizingPanel.VirtualizationMode="Recycling">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel Orientation="Horizontal"/>
@@ -162,7 +167,7 @@
                                                 <!-- 分隔线 -->
                                                 <Separator/>
                                                 <!-- 收藏菜单项 -->
-                                                <MenuItem Header="收藏壁纸" Style="{StaticResource WallpaperMenuItemStyle}" Command="{Binding DataContext.FavoriteWallpaperCommand, Source={x:Reference mainWindow}}" CommandParameter="{Binding}"/>
+                                                <MenuItem Header="⭐️ 收藏壁纸" Style="{StaticResource WallpaperMenuItemStyle}" Command="{Binding DataContext.FavoriteWallpaperCommand, Source={x:Reference mainWindow}}" CommandParameter="{Binding}"/>
                                                 <!-- 分隔线 -->
                                                 <Separator/>
                                                 <!-- 删除菜单项 -->
@@ -172,6 +177,7 @@
                                         <Border.InputBindings>
                                             <!-- 关键配置：将左键双击手势绑定到命令 -->
                                             <MouseBinding Gesture="LeftDoubleClick" Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                            <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectWallpaper, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
                                         </Border.InputBindings>
                                         <Grid>
                                             <Image Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}" Stretch="UniformToFill"/>
@@ -204,104 +210,61 @@
                         <Grid>
                             <Grid>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="*"/>
-                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="400"/>
+                                    <RowDefinition Height="200"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <!-- 扫描历史标题 -->
-                                <StackPanel Grid.Row="0" Orientation="Horizontal" 
-                    Background="#F5F5F5" Margin="10">
-                                    <TextBlock Text="扫描历史" FontWeight="Bold"/>
-                                    <Button Content="🗑️ 清除" 
-                    Command="{Binding ClearScanHistoryCommand}"
-                    Margin="10,0,0,0" Padding="5,2"
-                    ToolTip="清除扫描历史记录"/>
-                                </StackPanel>
+                                <!-- 详细信息 -->
+                                <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" >
+                                    <StackPanel>
+                                        <TextBlock Text="壁纸详情" FontSize="16" FontWeight="Bold" Background="#F5F5F5" Padding="10"/>
+                                        <TextBlock Text="{Binding SelectedWallpaper.Project.Title}" 
+                                       FontWeight="Bold" FontSize="14" />
 
-                                <!-- 扫描历史列表 -->
-                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                    <ItemsControl ItemsSource="{Binding ScanHistory}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Border BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="10,5" Background="White">
-                                                    <Grid>
-                                                        <Grid.RowDefinitions>
-                                                            <RowDefinition Height="Auto"/>
-                                                            <RowDefinition Height="Auto"/>
-                                                            <RowDefinition Height="Auto"/>
-                                                        </Grid.RowDefinitions>
-                                                        <TextBlock Grid.Row="0"  Text="{Binding ScanPath}" FontSize="11" Foreground="#666" TextTrimming="CharacterEllipsis"/>
-                                                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,5,0,0">
-                                                            <TextBlock Text="{Binding LastScanTime, StringFormat='yyyy-MM-dd HH:mm'}" FontSize="10" Foreground="#999"/>
-                                                            <TextBlock Text=" | " Foreground="#999" Margin="5,0"/>
-                                                            <TextBlock Text="新增:" FontSize="10" Foreground="Green"/>
-                                                            <TextBlock Text="{Binding NewFound}" FontSize="10" Margin="2,0,10,0"/>
-                                                            <TextBlock Text="总数:" FontSize="10" Foreground="#666"/>
-                                                            <TextBlock Text="{Binding TotalScanned}" FontSize="10" Margin="2,0"/>
-                                                        </StackPanel>
-                                                    </Grid>
-                                                </Border>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
-                            </Grid>
-
-                            <TextBlock Text="壁纸详情" FontSize="16" FontWeight="Bold" Margin="10" Background="#F5F5F5" Padding="10"/>
-
-                            <!-- 预览区域 -->
-                            <Border Grid.Row="1" Margin="10" Background="Black" Height="200">
-                                <Image Source="{Binding SelectedWallpaper.PreviewImagePath}" Stretch="Uniform"/>
-                            </Border>
-
-                            <!-- 详细信息 -->
-                            <!--<ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" >
-                                <StackPanel>
-                                    <TextBlock Text="{Binding SelectedWallpaper.Project.Title}" 
-                                       FontWeight="Bold" FontSize="14" Margin="0,5"/>
-
-                                    <TextBlock Text="{Binding SelectedWallpaper.Project.Description}" 
+                                        <TextBlock Text="{Binding SelectedWallpaper.Project.Description}" 
                                        TextWrapping="Wrap" Margin="0,10" FontSize="12"/>
 
-                                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                                        <TextBlock Text="类型:" FontWeight="Bold" Margin="0,0,5,0"/>
-                                        <TextBlock Text="{Binding SelectedWallpaper.Project.Type}"/>
-                                    </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <TextBlock Text="类型:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding SelectedWallpaper.Project.Type}"/>
+                                        </StackPanel>
 
-                                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                                        <TextBlock Text="分类:" FontWeight="Bold" Margin="0,0,5,0"/>
-                                        <TextBlock Text="{Binding SelectedWallpaper.Category}"/>
-                                    </StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="0,5">
+                                            <TextBlock Text="分类:" FontWeight="Bold" Margin="0,0,5,0"/>
+                                            <TextBlock Text="{Binding SelectedWallpaper.Category}"/>
+                                        </StackPanel>
 
-                                    <TextBlock Text="标签:" FontWeight="Bold" Margin="0,5,0,0"/>
-                                    <WrapPanel Margin="0,2">
-                                        <ItemsControl ItemsSource="{Binding SelectedWallpaper.Project.Tags}">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <WrapPanel/>
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border Background="#E3F2FD" CornerRadius="10" 
-                                                    Margin="2,1" Padding="5,2">
-                                                        <TextBlock Text="{Binding}" FontSize="10"/>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </WrapPanel>
+                                        <TextBlock Text="标签:" FontWeight="Bold" Margin="0,5,0,0"/>
+                                        <WrapPanel Margin="0,2">
+                                            <ItemsControl ItemsSource="{Binding SelectedWallpaper.Project.Tags}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel/>
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Background="#E3F2FD" CornerRadius="10" Margin="2,1" Padding="5,2">
+                                                            <TextBlock Text="{Binding}" FontSize="10"/>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </ScrollViewer>
+                                <!-- 预览区域 -->
+                                <Border Grid.Row="1" Margin="10" Background="Black" Height="200">
+                                    <Image Source="{Binding SelectedWallpaper.PreviewImagePath}" Stretch="Uniform"/>
+                                </Border>
+                                <!-- 操作按钮 -->
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+                                    <Button Content="⭐ 收藏" Command="{Binding ToggleFavoriteCommand}"  Height="30" Margin="5" Foreground="White"/>
+                                    <Button Content="👁️ 预览" Command="{Binding PreviewWallpaperCommand}" Height="30" Margin="5"/>
+                                    <Button Content="🚀 应用" Command="{Binding ApplyWallpaperCommand}"  Height="30" Margin="5" Background="#4CAF50" Foreground="White"/>
+                                    <Button Content="🗑️ 删除" Command="{Binding DeleteWallpaperCommand}" Height="30" Margin="5" Background="#F44336" Foreground="White"/>
                                 </StackPanel>
-
-                            </ScrollViewer>-->
-
-                            <!-- 操作按钮 -->
-                            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
-                                <Button Content="⭐ 收藏" Command="{Binding ToggleFavoriteCommand}" Width="80" Height="30" Margin="5" Foreground="White"/>
-                                <Button Content="👁️ 预览" Command="{Binding PreviewWallpaperCommand}" Width="80" Height="30" Margin="5"/>
-                                <Button Content="🚀 应用" Command="{Binding ApplyWallpaperCommand}" Width="80" Height="30" Margin="5" Background="#4CAF50" Foreground="White"/>
-                                <Button Content="🗑️ 删除" Command="{Binding DeleteWallpaperCommand}" Width="80" Height="30" Margin="5" Background="#F44336" Foreground="White"/>
-                            </StackPanel>
+                            </Grid>
                         </Grid>
                     </Border>
                 </Grid>

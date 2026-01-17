@@ -1,14 +1,36 @@
 ﻿using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace WallpaperEngine.Views
 {
     public partial class MainWindow : Window
     {
+        /// <summary>
+        /// 更新标题栏显示的图标
+        /// </summary>
+        private void UpdateTitleBarIcon()
+        {
+            try
+            {
+                string iconPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets/app.ico");
+                if (System.IO.File.Exists(iconPath))
+                {
+                    // 使用Image控件加载图片文件
+                    TitleBarIcon.Source = new BitmapImage(new Uri(iconPath));
+                }
+            }
+            catch (Exception ex)
+            {
+                // 图标加载失败不影响主要功能，但可记录日志
+                System.Diagnostics.Debug.WriteLine("标题栏图标加载失败: " + ex.Message);
+            }
+        }
         public MainWindow()
         {
             InitializeComponent();
             this.DataContext = new ViewModels.MainViewModel();
+            UpdateTitleBarIcon();
         }
         // 窗口按钮事件处理
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
