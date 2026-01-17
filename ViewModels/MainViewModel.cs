@@ -858,9 +858,6 @@ namespace WallpaperEngine.ViewModels
             {
                 // 更新选择状态
                 UpdateSelection(wallpaper);
-
-                // 可以在这里触发预览或其他操作
-                PreviewWallpaperCommand.Execute(wallpaper);
             }
         }
 

@@ -177,8 +177,14 @@
                                         <Border.InputBindings>
                                             <!-- 关键配置：将左键双击手势绑定到命令 -->
                                             <MouseBinding Gesture="LeftDoubleClick" Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
-                                            <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectWallpaper, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
+                                            <!--不起作用，不知道为啥-->
+                                            <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
                                         </Border.InputBindings>
+                                        <!--<i:Interaction.Triggers>
+                                            <i:EventTrigger EventName="MouseLeftButtonDown">
+                                                <i:InvokeCommandAction Command="{Binding DataContext.SelectWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"/>
+                                            </i:EventTrigger>
+                                        </i:Interaction.Triggers>-->
                                         <Grid>
                                             <Image Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}" Stretch="UniformToFill"/>
                                             <Border Background="#80000000" VerticalAlignment="Bottom">
