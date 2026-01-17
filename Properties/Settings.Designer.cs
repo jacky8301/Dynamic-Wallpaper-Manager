@@ -45,5 +45,29 @@ namespace WallpaperEngine.Properties {
                 this["LastScanTime"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string WallpaperEnginePath {
+            get {
+                return ((string)(this["WallpaperEnginePath"]));
+            }
+            set {
+                this["WallpaperEnginePath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string CommandTemplate {
+            get {
+                return ((string)(this["CommandTemplate"]));
+            }
+            set {
+                this["CommandTemplate"] = value;
+            }
+        }
     }
 }

@@ -71,6 +71,7 @@ namespace WallpaperEngine.Views
                         break;
                     case "scene":
                     case "web":
+                        break;
                     case "application":
                         ShowUnsupportedPreview();
                         break;
@@ -109,6 +110,10 @@ namespace WallpaperEngine.Views
                 ShowUnsupportedPreview();
             }
         }
+
+        
+
+
 
         private void ShowVideoPreview()
         {

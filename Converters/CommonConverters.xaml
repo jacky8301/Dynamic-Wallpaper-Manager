@@ -3,4 +3,5 @@
                     xmlns:local="clr-namespace:WallpaperEngine.Converters">
     <local:BooleanToColorConverter x:Key="BooleanToColorConverter" />
     <local:FavoriteIconConverter x:Key="FavoriteIconConverter" />
+    <local:ImagePathToSourceConverter x:Key="ImageToSourceConverter" />
 </ResourceDictionary>

@@ -4,15 +4,19 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Data.Common;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Forms;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
+using WallpaperEngine.Properties;
 using WallpaperEngine.Services;
 using WallpaperEngine.Views;
 
@@ -22,9 +26,17 @@ namespace WallpaperEngine.ViewModels
     {
         private readonly DatabaseManager _dbManager;
         private readonly WallpaperScanner _scanner;
-        private readonly WallpaperPlayer _player;
+        //private readonly WallpaperPlayer _player;
         private readonly IncrementalScanner _incrementalScanner;
+        private readonly PreviewService _previewService;
         private string _currentSearchTerm = string.Empty;
+        private readonly ISettingsService _settingsService;
+
+        [ObservableProperty]
+        private WallpaperItem _itemPendingDeletion;
+
+        [ObservableProperty]
+        private ApplicationSettings _settings;
 
         [ObservableProperty]
         private ObservableCollection<WallpaperItem> _wallpapers = new();
@@ -91,32 +103,72 @@ namespace WallpaperEngine.ViewModels
         {
             _dbManager = new DatabaseManager();
             _scanner = new WallpaperScanner(_dbManager);
-            _player = new WallpaperPlayer();
+            //_player = new WallpaperPlayer();
             _incrementalScanner = new IncrementalScanner(_dbManager);
-
+            
             WallpapersView = CollectionViewSource.GetDefaultView(Wallpapers);
             WallpapersView.Filter = FilterWallpapers;
 
             LoadWallpapers();
             CheckLastScanTime();
             LoadScanHistory();
+
+            _settingsService = new SettingsService();
+            _settings = _settingsService.LoadSettings();
+            _previewService = new PreviewService(_settingsService);
+        }
+
+        [RelayCommand]
+        private void OpenSettings()
+        {
+            var settingsWindow = new SettingsWindow
+            {
+                Owner = System.Windows.Application.Current.MainWindow,
+                DataContext = new SettingsViewModel(_settingsService),
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+
+            var result = settingsWindow.ShowDialog();
+            if (result == true)
+            {
+                // 重新加载设置
+                Settings = _settingsService.LoadSettings();
+                OnPropertyChanged(nameof(Settings));
+            }
         }
 
         //// 带参数的重载版本，支持双击预览
         [RelayCommand]
         private void PreviewWallpaper(object parameter)
         {
-            if (parameter is WallpaperItem wallpaper) {
+            if (parameter is WallpaperItem wallpaper)
+            {
                 SelectedWallpaper = wallpaper; // 更新选中项
-                OpenPreviewWindow(wallpaper);
-            } else if (parameter is string wallpaperId) {
+                OpenPreviewWindowNew(wallpaper);
+
+            }
+            else if (parameter is string wallpaperId)
+            {
                 // 通过ID查找壁纸
                 var myWallpaper = Wallpapers.FirstOrDefault(w => w.Id == wallpaperId);
                 if (myWallpaper != null)
                 {
                     SelectedWallpaper = myWallpaper;
-                    OpenPreviewWindow(myWallpaper);
+                    OpenPreviewWindowNew(myWallpaper);
                 }
+            }
+        }
+
+        private void OpenPreviewWindowNew(WallpaperItem wallpaper)
+        {
+            if (wallpaper.Project.Type == "web" || wallpaper.Project.Type == "scene")
+            {
+                _previewService.PreviewWallpaper(wallpaper);
+            }
+            else
+            {
+
+                OpenPreviewWindow(wallpaper);
             }
         }
 
@@ -260,37 +312,243 @@ namespace WallpaperEngine.ViewModels
         }
 
         [RelayCommand]
-        private void ApplyWallpaper()
+        private void ApplyWallpaper(object parameter)
         {
-            if (SelectedWallpaper != null)
+            if (parameter is WallpaperItem wallpaper)
             {
-                _player.Apply(SelectedWallpaper);
+                string toolPath = Settings.WallpaperEnginePath; // 从设置中获取
+                string projectJsonPath = Path.Combine(wallpaper.FolderPath, "project.json");
+
+                if (File.Exists(toolPath) && File.Exists(projectJsonPath))
+                {
+                    string arguments = $"-control openWallpaper -file \"{projectJsonPath}\"";
+                    ProcessStartInfo startInfo = new ProcessStartInfo
+                    {
+                        FileName = toolPath,
+                        Arguments = arguments,
+                        UseShellExecute = false
+                    };
+                    Process.Start(startInfo);
+                }
+                else
+                {
+                    // 处理错误
+                }
             }
         }
 
         [RelayCommand]
-        private void DeleteWallpaper()
+        private void DeleteWallpaper(object parameter)
         {
-            if (SelectedWallpaper != null)
+            if (parameter is WallpaperItem wallpaper)
             {
-                try
-                {
-                    if (Directory.Exists(SelectedWallpaper.FolderPath))
-                    {
-                        Directory.Delete(SelectedWallpaper.FolderPath, true);
-                    }
-                    _dbManager.DeleteWallpaper(SelectedWallpaper.Id);
-                    Wallpapers.Remove(SelectedWallpaper);
+                ShowDeletionConfirmation(wallpaper);
+            }
+        }
 
-                    System.Windows.MessageBox.Show("壁纸删除成功", "成功",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
+        private async Task ShowDeletionConfirmation(WallpaperItem wallpaper)
+        {
+            // 设置待删除项
+            ItemPendingDeletion = wallpaper;
+            wallpaper.IsMarkedForDeletion = true;
+
+            // 构建确认消息详情
+            var confirmationMessage = BuildDeletionConfirmationMessage(wallpaper);
+
+            // 显示确认对话框[6,8](@ref)
+            var result = System.Windows.MessageBox.Show(
+                confirmationMessage,
+                "确认删除壁纸",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning,
+                MessageBoxResult.No
+            );
+
+            if (result == MessageBoxResult.Yes)
+            {
+                await ExecuteDeletion(wallpaper);
+            }
+            else
+            {
+                // 用户取消删除
+                wallpaper.IsMarkedForDeletion = false;
+                wallpaper.DeletionStatus = "删除已取消";
+            }
+
+            ItemPendingDeletion = null;
+        }
+
+        private string BuildDeletionConfirmationMessage(WallpaperItem wallpaper)
+        {
+            var message = new StringBuilder();
+            message.AppendLine($"确定要删除壁纸 '{wallpaper.Project.Title}' 吗？");
+            message.AppendLine();
+
+            // 添加文件信息
+            if (wallpaper.FilesExist)
+            {
+                var files = wallpaper.GetContainedFiles();
+                var totalSize = wallpaper.GetFolderSize();
+
+                message.AppendLine($"• 位置: {wallpaper.FolderPath}");
+                message.AppendLine($"• 文件数量: {files.Count} 个");
+                message.AppendLine($"• 总大小: {FormatFileSize(totalSize)}");
+                message.AppendLine();
+
+                if (files.Count > 0)
                 {
-                    System.Windows.MessageBox.Show($"删除失败: {ex.Message}", "错误",
-                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    message.AppendLine("包含文件:");
+                    foreach (var file in files.Take(5)) // 只显示前5个文件
+                    {
+                        message.AppendLine($"  - {Path.GetFileName(file)}");
+                    }
+                    if (files.Count > 5)
+                    {
+                        message.AppendLine($"  - ... 以及 {files.Count - 5} 个其他文件");
+                    }
                 }
             }
+            else
+            {
+                message.AppendLine("⚠️  警告: 对应的文件夹不存在或已被删除");
+            }
+
+            message.AppendLine();
+            message.AppendLine("此操作无法撤销，所有文件将被永久删除！");
+
+            return message.ToString();
+        }
+
+        private async Task ExecuteDeletion(WallpaperItem wallpaper)
+        {
+            try
+            {
+                wallpaper.DeletionStatus = "正在删除...";
+                // 执行删除操作
+                var success = await Task.Run(() => DeleteWallpaperFiles(wallpaper));
+                if (success)
+                {
+                    // 从集合中移除
+                    Wallpapers.Remove(wallpaper);
+                    // 如果删除的是当前选中的壁纸，清空选中状态
+                    if (SelectedWallpaper == wallpaper)
+                    {
+                        SelectedWallpaper = null;
+                    }
+                    // 显示成功消息
+                    ShowDeletionSuccess(wallpaper);
+                }
+                else
+                {
+                    // 删除失败，重新添加回集合
+                    wallpaper.DeletionStatus = "删除失败";
+                    ShowErrorMessage($"删除壁纸 '{wallpaper.Project.Title}' 失败");
+                }
+            }
+            catch (Exception ex)
+            {
+                wallpaper.DeletionStatus = "删除错误";
+                ShowErrorMessage($"删除过程中发生错误: {ex.Message}");
+            }
+        }
+
+        private void ShowErrorMessage(string message)
+        {
+            System.Windows.MessageBox.Show(
+                message,
+                "删除错误",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+        private void ShowDeletionSuccess(WallpaperItem wallpaper)
+        {
+            ShowNotification($"壁纸 '{wallpaper.Project.Title}' 已成功删除");
+        }
+
+        private bool DeleteWallpaperFiles(WallpaperItem wallpaper)
+        {
+            if (string.IsNullOrEmpty(wallpaper.FolderPath) || !Directory.Exists(wallpaper.FolderPath))
+            {
+                // 文件夹不存在，认为删除成功（或者可能是数据库记录残留）
+                return true;
+            }
+
+            try
+            {
+                // 安全删除：先移动到回收站，再永久删除
+                if (false)
+                {
+                    // 移动到回收站
+                    Microsoft.VisualBasic.FileIO.FileSystem.DeleteDirectory(
+                        wallpaper.FolderPath,
+                        Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,
+                        Microsoft.VisualBasic.FileIO.RecycleOption.SendToRecycleBin
+                    );
+                }
+                else
+                {
+                    // 直接永久删除
+                    Directory.Delete(wallpaper.FolderPath, true);
+                }
+
+                // 从数据库中移除记录
+                _dbManager.DeleteWallpaper(wallpaper.Id);
+
+                return true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // 权限不足，尝试获取权限或跳过只读文件
+                return ForceDeleteWallpaperFiles(wallpaper.FolderPath);
+            }
+            catch (Exception ex)
+            {
+                // 记录错误日志
+                System.Diagnostics.Debug.WriteLine($"删除失败 {wallpaper.FolderPath}: {ex.Message}");
+                return false;
+            }
+        }
+
+        private bool ForceDeleteWallpaperFiles(string folderPath)
+        {
+            try
+            {
+                // 递归删除，处理只读文件
+                var directory = new DirectoryInfo(folderPath);
+
+                foreach (var file in directory.GetFiles("*", SearchOption.AllDirectories))
+                {
+                    file.Attributes = FileAttributes.Normal;
+                    file.Delete();
+                }
+
+                foreach (var subDir in directory.GetDirectories())
+                {
+                    ForceDeleteWallpaperFiles(subDir.FullName);
+                }
+
+                directory.Delete();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private string FormatFileSize(long bytes)
+        {
+            string[] suffixes = { "B", "KB", "MB", "GB" };
+            int counter = 0;
+            decimal number = bytes;
+
+            while (Math.Round(number / 1024) >= 1)
+            {
+                number /= 1024;
+                counter++;
+            }
+
+            return $"{number:n1} {suffixes[counter]}";
         }
 
         // 切换收藏状态的命令
@@ -435,62 +693,6 @@ namespace WallpaperEngine.ViewModels
             ScanStatus = result ? "全量扫描完成！" : "扫描被取消";
         }
 
-
-
-
-        //private async Task StartScanningAsync(string folderPath)
-        //{
-        //    IsScanning = true;
-        //    IsIndeterminate = true;
-        //    ScanStatus = "正在准备扫描...";
-        //    CurrentScanFolder = folderPath;
-        //    ScannedCount = 0;
-        //    TotalCount = 0;
-        //    NewFoundCount = 0;
-        //    UpdatedCount = 0;
-        //    SkippedCount = 0;
-
-        //    try
-        //    {
-        //        SaveLastUsedFolder(folderPath);
-
-        //        TotalCount = await CountWallpaperFoldersAsync(folderPath);
-
-        //        if (TotalCount == 0)
-        //        {
-        //            ScanStatus = "未找到壁纸文件夹";
-        //            System.Windows.MessageBox.Show("在选择的文件夹中未找到有效的壁纸文件夹。\n请确保文件夹包含project.json文件。",
-        //                "扫描结果", MessageBoxButton.OK, MessageBoxImage.Information);
-        //            return;
-        //        }
-
-        //        IsIndeterminate = false;
-        //        ScanStatus = $"正在扫描 {TotalCount} 个壁纸文件夹...";
-
-        //        var progress = new Progress<ScanProgress>(UpdateProgress);
-        //        var result = await _scanner.ScanWallpapersAsync(folderPath, progress);
-
-        //        ScanStatus = result ? $"扫描完成！共处理 {ScannedCount} 个壁纸" : "扫描被取消";
-        //        LastScanTime = $"最后扫描: {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
-
-        //        LoadWallpapers();
-
-        //        if (result)
-        //        {
-        //            ShowScanSummary();
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        HandleScanError(ex);
-        //    }
-        //    finally
-        //    {
-        //        IsScanning = false;
-        //        IsIndeterminate = false;
-        //    }
-        //}
-
         private async Task<int> CountWallpaperFoldersAsync(string rootPath)
         {
             return await Task.Run(() =>
@@ -629,7 +831,6 @@ namespace WallpaperEngine.ViewModels
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
         private bool FilterWallpapers(object obj)
         {
             if (obj is not WallpaperItem wallpaper) return false;
@@ -644,9 +845,7 @@ namespace WallpaperEngine.ViewModels
 
             return matchesSearch && matchesCategory && matchesFavorites;
         }
-
         private int _previousWallpaperCount = 0;
-
         partial void OnSearchTextChanged(string value) => WallpapersView.Refresh();
         partial void OnSelectedCategoryChanged(string value) => WallpapersView.Refresh();
         partial void OnShowFavoritesOnlyChanged(bool value) => WallpapersView.Refresh();

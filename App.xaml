@@ -7,6 +7,11 @@
              StartupUri="Views/MainWindow.xaml">
     <Application.Resources>
         <ResourceDictionary>
+            <Style x:Key="DeletionMessageBoxStyle" TargetType="TextBlock">
+                <Setter Property="TextWrapping" Value="Wrap" />
+                <Setter Property="FontFamily" Value="Consolas, Courier New" />
+                <Setter Property="FontSize" Value="12" />
+            </Style>
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <ResourceDictionary.MergedDictionaries>
                 <!-- 引入Material Design核心样式 -->

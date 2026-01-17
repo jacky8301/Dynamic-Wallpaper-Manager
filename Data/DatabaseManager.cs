@@ -273,11 +273,25 @@ namespace WallpaperEngine.Data
             return wallpapers;
         }
 
-        public void DeleteWallpaper(string id)
+        public void DeleteWallpaper(string wallpaperId)
         {
             var command = m_connection.CreateCommand();
             command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
-            command.Parameters.AddWithValue("$id", id);
+            command.Parameters.AddWithValue("$id", wallpaperId);
+            command.ExecuteNonQuery();
+
+            // 同时删除相关的收藏记录
+            var favoriteCommand = m_connection.CreateCommand();
+            favoriteCommand.CommandText = "DELETE FROM Favorites WHERE WallpaperId = @id";
+            favoriteCommand.Parameters.AddWithValue("@id", wallpaperId);
+            favoriteCommand.ExecuteNonQuery();
+        }
+
+        public void DeleteWallpaperByPath(string folderPath)
+        {
+            var command = m_connection.CreateCommand();
+            command.CommandText = "DELETE FROM Wallpapers WHERE FolderPath = @path";
+            command.Parameters.AddWithValue("@path", folderPath);
             command.ExecuteNonQuery();
         }
 

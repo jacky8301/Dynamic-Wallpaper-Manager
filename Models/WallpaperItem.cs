@@ -30,5 +30,46 @@ namespace WallpaperEngine.Models
 
         [ObservableProperty]
         private DateTime _folderLastModified;
+
+        [ObservableProperty]
+        private bool _isMarkedForDeletion;
+
+        [ObservableProperty]
+        private string _deletionStatus;
+
+        // 检查壁纸文件是否存在
+        public bool FilesExist
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(FolderPath)) return false;
+                return Directory.Exists(FolderPath);
+            }
+        }
+
+        // 获取壁纸文件夹中的文件列表
+        public List<string> GetContainedFiles()
+        {
+            if (!Directory.Exists(FolderPath))
+                return new List<string>();
+
+            return Directory.GetFiles(FolderPath, "*.*", SearchOption.AllDirectories).ToList();
+        }
+
+        // 计算文件夹大小
+        public long GetFolderSize()
+        {
+            if (!Directory.Exists(FolderPath)) return 0;
+
+            try
+            {
+                return Directory.GetFiles(FolderPath, "*.*", SearchOption.AllDirectories)
+                    .Sum(file => new FileInfo(file).Length);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
     }
 }

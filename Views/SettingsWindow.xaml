@@ -1,0 +1,95 @@
+﻿<!-- SettingsWindow.xaml -->
+<Window x:Class="WallpaperEngine.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="设置" 
+        Height="450" 
+        Width="600"
+        WindowStartupLocation="CenterOwner"
+        Background="White">
+
+    <Window.Resources>
+        <Style x:Key="SettingGroupStyle" TargetType="GroupBox">
+            <Setter Property="Margin" Value="10"/>
+            <Setter Property="Padding" Value="15"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 标题 -->
+        <TextBlock Grid.Row="0" 
+                   Text="设置" 
+                   FontSize="20" 
+                   FontWeight="Bold" 
+                   Margin="0,0,0,20"
+                   Foreground="{DynamicResource MaterialDesignBody}"/>
+
+        <!-- 设置内容区域 -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Wallpaper Engine路径设置 -->
+                <GroupBox Header="Wallpaper Engine设置" Style="{StaticResource SettingGroupStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Wallpaper Engine工具路径" 
+                                   FontWeight="SemiBold"
+                                   Margin="0,0,0,10"/>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                            <TextBox Text="{Binding WallpaperEnginePath, UpdateSourceTrigger=PropertyChanged}"
+                                   Width="300" 
+                                  
+                                   materialDesign:HintAssist.Hint="例如：C:\Program Files\Wallpaper Engine\wallpaper32.exe"
+                                   Style="{StaticResource MaterialDesignOutlinedTextBox}"/>
+
+                            <Button Content="浏览..." 
+                                    Command="{Binding BrowsePathCommand}"
+                                    Margin="10,0,0,0" 
+                                    Width="80"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}"/>
+
+                            <Button Content="自动检测" 
+                                    Margin="10,0,0,0"                              
+                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                    ToolTip="尝试自动检测Wallpaper Engine安装路径"/>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding PathStatus}" 
+                                   Foreground="Gray" 
+                                   Margin="0,5,0,0" 
+                                   FontSize="11"/>
+
+                        <TextBlock Text="提示：设置正确的Wallpaper Engine工具路径后，才能使用应用壁纸功能" 
+                                   Foreground="{DynamicResource MaterialDesignSecondaryForeground}"
+                                   FontSize="10" 
+                                   Margin="0,10,0,0"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+        <!-- 按钮区域 -->
+        <Border Grid.Row="2" Padding="10" Margin="-20,0,-20,-20">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="确定" 
+                        Click="OK_Button_Click"
+                        Width="100" 
+                        Margin="0,0,10,0"
+                        Style="{StaticResource MaterialDesignRaisedButton}"/>
+
+                <Button Content="取消" 
+                        Click="Cancel_Button_Click"
+                        Width="100" 
+                        Style="{StaticResource MaterialDesignOutlinedButton}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
