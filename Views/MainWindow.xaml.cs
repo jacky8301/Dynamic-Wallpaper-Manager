@@ -1,7 +1,9 @@
 ﻿using NLog;
+using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using WallpaperEngine.Models;
 using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views
@@ -62,20 +64,7 @@ namespace WallpaperEngine.Views
         {
             logger.Info("MainWindow loaded.");
             MainViewModel vm = DataContext as MainViewModel;
-            vm.LoadWallpapersWithCallback((wallpapers)=>
-            {
-                // 在UI线程上更新UI元素
-                Dispatcher.Invoke(() =>
-                {
-                    vm.Wallpapers.Clear();
-                    foreach (var wallpaper in wallpapers)
-                    {
-                        vm.Wallpapers.Add(wallpaper);
-                        logger.Info($"Loaded wallpaper: {wallpaper.FolderName}");
-                    }
-                });
-            });
-            logger.Info("Wallpaper loading initiated.");
+            await vm.LoadWallpapersAsync();
         }
     }
 }

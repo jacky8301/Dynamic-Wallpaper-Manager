@@ -779,16 +779,6 @@ namespace WallpaperEngine.ViewModels
             Properties.Settings.Default.LastScanTime = DateTime.Now;
             Properties.Settings.Default.Save();
         }
-
-        public void LoadWallpapersWithCallback(Action<List<WallpaperItem>> callback)
-        {
-            Task.Run(() =>
-            {
-                var wallpapers = LoadWallpapers();
-                callback(wallpapers);
-                
-            });
-        }
         public async Task LoadWallpapersAsync()
         {
             try
@@ -813,6 +803,7 @@ namespace WallpaperEngine.ViewModels
         }
         private List<WallpaperItem> LoadWallpapers()
         {
+            List<WallpaperItem> wallpapers = new();
             try
             {
                 var results = _dbManager.SearchWallpapers(SearchText,
