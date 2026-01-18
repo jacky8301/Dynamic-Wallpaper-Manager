@@ -1,22 +1,14 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Data.Common;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Reflection.Metadata;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
-using System.Windows.Forms;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
-using WallpaperEngine.Properties;
 using WallpaperEngine.Services;
 using WallpaperEngine.Views;
 
@@ -110,7 +102,7 @@ namespace WallpaperEngine.ViewModels
             SelectedCategory = "所有分类";
             ShowFavoritesOnly = false;
             SearchText = string.Empty;
-            LoadWallpapers();
+            Task.Run(() => LoadWallpapers());
             CheckLastScanTime();
             LoadScanHistory();
 
@@ -301,18 +293,20 @@ namespace WallpaperEngine.ViewModels
         }
 
         [RelayCommand]
-        private void SearchWallpapers()
+        private async void SearchWallpapers()
         {
-            LoadWallpapers();
+            await LoadWallpapersAsync();
+            //LoadWallpapers(Wallpapers);
         }
 
         [RelayCommand]
-        private void ClearSearch()
+        private async void ClearSearch()
         {
             SearchText = string.Empty;
             SelectedCategory = "所有分类";
             ShowFavoritesOnly = false;
-            LoadWallpapers();
+            
+             await LoadWallpapersAsync();
         }
 
         [RelayCommand]
@@ -667,7 +661,7 @@ namespace WallpaperEngine.ViewModels
                 SelectedCategory = "所有分类";
                 ShowFavoritesOnly = false;
                 SearchText = string.Empty;
-                LoadWallpapers();
+                //await Task.Run(() => LoadWallpapers(Wallpapers));
                 LoadScanHistory();
             }
         }
@@ -786,24 +780,51 @@ namespace WallpaperEngine.ViewModels
             Properties.Settings.Default.Save();
         }
 
-        private void LoadWallpapers()
+        public void LoadWallpapersWithCallback(Action<List<WallpaperItem>> callback)
+        {
+            Task.Run(() =>
+            {
+                var wallpapers = LoadWallpapers();
+                callback(wallpapers);
+                
+            });
+        }
+        public async Task LoadWallpapersAsync()
+        {
+            try
+            {
+                // 在后台线程获取数据
+                var wallpapers = await Task.Run(() => LoadWallpapers());
+
+                // 在UI线程更新集合
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Wallpapers.Clear();
+                    foreach (var wallpaper in wallpapers)
+                    {
+                        Wallpapers.Add(wallpaper);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                // 处理异常
+            }
+        }
+        private List<WallpaperItem> LoadWallpapers()
         {
             try
             {
                 var results = _dbManager.SearchWallpapers(SearchText,
                     SelectedCategory == "所有分类" ? "" : SelectedCategory,
                     ShowFavoritesOnly);
-
-                Wallpapers.Clear();
-                foreach (var item in results)
-                {
-                    Wallpapers.Add(item);
-                }
+                return results;
             }
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"加载壁纸列表失败: {ex.Message}", "错误",
                     MessageBoxButton.OK, MessageBoxImage.Error);
+                return null;
             }
         }
         private bool FilterWallpapers(object obj)

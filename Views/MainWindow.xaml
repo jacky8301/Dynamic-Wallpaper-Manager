@@ -10,6 +10,7 @@
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
+        Loaded="mainWindow_Loaded"
         >
     <!-- 设置WindowChrome，定义可拖动区域等 -->
     <WindowChrome.WindowChrome>

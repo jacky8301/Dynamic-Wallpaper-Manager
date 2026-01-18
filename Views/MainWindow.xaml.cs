@@ -1,11 +1,14 @@
-﻿using System.Windows;
+﻿using NLog;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views
 {
     public partial class MainWindow : Window
     {
+        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         public MainWindow()
         {
             InitializeComponent();
@@ -53,6 +56,26 @@ namespace WallpaperEngine.Views
             {
                 BorderThickness = new Thickness(0);
             }
+        }
+
+        private async void mainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            logger.Info("MainWindow loaded.");
+            MainViewModel vm = DataContext as MainViewModel;
+            vm.LoadWallpapersWithCallback((wallpapers)=>
+            {
+                // 在UI线程上更新UI元素
+                Dispatcher.Invoke(() =>
+                {
+                    vm.Wallpapers.Clear();
+                    foreach (var wallpaper in wallpapers)
+                    {
+                        vm.Wallpapers.Add(wallpaper);
+                        logger.Info($"Loaded wallpaper: {wallpaper.FolderName}");
+                    }
+                });
+            });
+            logger.Info("Wallpaper loading initiated.");
         }
     }
 }
