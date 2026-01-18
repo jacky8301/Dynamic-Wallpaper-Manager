@@ -1,9 +1,7 @@
-﻿using System.Windows;
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using WallpaperEngine.Properties;
 
 namespace WallpaperEngine.ViewModels
 {
@@ -85,38 +83,12 @@ namespace WallpaperEngine.ViewModels
         {
             _settingsService.SaveSettings(_settings);
             // 关闭窗口或返回成功信号
-            
+
         }
 
         private void Cancel()
         {
             // 关闭窗口
-        }
-
-        // 在SettingsViewModel中添加自动检测功能
-        private void AutoDetectPath()
-        {
-            var possiblePaths = new[]
-            {
-        @"C:\Program Files (x86)\Steam\steamapps\common\wallpaper_engine\wallpaper32.exe",
-        @"C:\Program Files\Steam\steamapps\common\wallpaper_engine\wallpaper32.exe",
-        @"D:\Steam\steamapps\common\wallpaper_engine\wallpaper32.exe",
-        // 添加其他可能的安装路径
-    };
-
-            foreach (var path in possiblePaths)
-            {
-                if (File.Exists(path))
-                {
-                    WallpaperEnginePath = path;
-                    System.Windows.MessageBox.Show("已自动检测到Wallpaper Engine路径", "成功",
-                        MessageBoxButton.OK, MessageBoxImage.Information);
-                    return;
-                }
-            }
-
-            System.Windows.MessageBox.Show("无法自动检测到Wallpaper Engine路径，请手动选择", "提示",
-                MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }

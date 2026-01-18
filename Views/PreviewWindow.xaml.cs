@@ -110,11 +110,6 @@ namespace WallpaperEngine.Views
                 ShowUnsupportedPreview();
             }
         }
-
-        
-
-
-
         private void ShowVideoPreview()
         {
             try
