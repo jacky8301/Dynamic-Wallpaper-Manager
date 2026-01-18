@@ -26,8 +26,6 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.1" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="NLog" Version="6.0.7" />
-    <PackageReference Include="NLog.Config" Version="4.7.15" />
   </ItemGroup>
 
   <ItemGroup>

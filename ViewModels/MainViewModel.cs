@@ -268,35 +268,9 @@ namespace WallpaperEngine.ViewModels
         }
 
         [RelayCommand]
-        private async Task QuickScan()
-        {
-            await Task.Run(() =>
-            {
-                var defaultWallpaperPaths = new[]
-            {
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Wallpapers"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Wallpaper Engine"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonPictures), "Wallpapers")
-            };
-
-                foreach (var path in defaultWallpaperPaths)
-                {
-                    if (Directory.Exists(path))
-                    {
-                        _ = StartScanningAsync(path);
-                        return;
-                    }
-                }
-
-                _ = ScanWallpapersAsync();
-            });
-        }
-
-        [RelayCommand]
         private async void SearchWallpapers()
         {
             await LoadWallpapersAsync();
-            //LoadWallpapers(Wallpapers);
         }
 
         [RelayCommand]
@@ -661,7 +635,6 @@ namespace WallpaperEngine.ViewModels
                 SelectedCategory = "所有分类";
                 ShowFavoritesOnly = false;
                 SearchText = string.Empty;
-                //await Task.Run(() => LoadWallpapers(Wallpapers));
                 LoadScanHistory();
             }
         }
@@ -741,23 +714,6 @@ namespace WallpaperEngine.ViewModels
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
-        private void ShowScanSummary()
-        {
-            var newWallpapers = Wallpapers.Count - _previousWallpaperCount;
-            _previousWallpaperCount = Wallpapers.Count;
-
-            var message = $"壁纸扫描完成！\n" +
-                         $"扫描文件夹: {Path.GetFileName(CurrentScanFolder)}\n" +
-                         $"发现壁纸数量: {ScannedCount}\n" +
-                         $"新增壁纸: {newWallpapers}";
-
-            if (newWallpapers > 0)
-            {
-                System.Windows.MessageBox.Show(message, "扫描完成",
-                    MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-
         private void CheckLastScanTime()
         {
             // 简化实现
@@ -773,12 +729,6 @@ namespace WallpaperEngine.ViewModels
                    Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
         }
 
-        private void SaveLastUsedFolder(string folderPath)
-        {
-            Properties.Settings.Default.LastScanFolder = folderPath;
-            Properties.Settings.Default.LastScanTime = DateTime.Now;
-            Properties.Settings.Default.Save();
-        }
         public async Task LoadWallpapersAsync()
         {
             try
@@ -832,7 +782,6 @@ namespace WallpaperEngine.ViewModels
 
             return matchesSearch && matchesCategory && matchesFavorites;
         }
-        private int _previousWallpaperCount = 0;
         partial void OnSearchTextChanged(string value) => WallpapersView.Refresh();
         partial void OnSelectedCategoryChanged(string value) => WallpapersView.Refresh();
         partial void OnShowFavoritesOnlyChanged(bool value) => WallpapersView.Refresh();

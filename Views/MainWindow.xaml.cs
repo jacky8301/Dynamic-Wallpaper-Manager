@@ -1,16 +1,11 @@
-﻿using NLog;
-using System.Collections.ObjectModel;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using WallpaperEngine.Models;
 using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views
 {
     public partial class MainWindow : Window
     {
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
         public MainWindow()
         {
             InitializeComponent();
@@ -62,7 +57,6 @@ namespace WallpaperEngine.Views
 
         private async void mainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            logger.Info("MainWindow loaded.");
             MainViewModel vm = DataContext as MainViewModel;
             await vm.LoadWallpapersAsync();
         }
