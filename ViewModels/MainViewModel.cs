@@ -154,13 +154,12 @@ namespace WallpaperEngine.ViewModels
 
         private void OpenPreviewWindowNew(WallpaperItem wallpaper)
         {
-            if (wallpaper.Project.Type == "web" || wallpaper.Project.Type == "scene")
+            if (wallpaper.Project.Type.ToLower() == "web" || wallpaper.Project.Type.ToLower() == "scene")
             {
                 _previewService.PreviewWallpaper(wallpaper);
             }
             else
             {
-
                 OpenPreviewWindow(wallpaper);
             }
         }
