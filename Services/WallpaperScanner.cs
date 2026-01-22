@@ -108,8 +108,11 @@ namespace WallpaperEngine.Services
 
         private async Task<WallpaperItem> ProcessWallpaperFolderAsync(string folderPath)
         {
+            
             try
             {
+                
+                WallpaperItem wallpaperItem = null;
                 var projectFile = Path.Combine(folderPath, "project.json");
                 if (!File.Exists(projectFile))
                 {
@@ -123,68 +126,54 @@ namespace WallpaperEngine.Services
 
                 if (project == null)
                 {
-                    return new WallpaperItem
-                    {
-                        FolderPath = folderPath,
-                        Project = null,
-                        Category = "未分类",
-                        AddedDate = DateTime.Now
-                    };
-                }
-
-                // 验证预览文件
-                bool isPreviewValid = false;
-                var previewPath = Path.Combine(folderPath, project.Preview);
-                if (!File.Exists(previewPath))
-                {
-                    var commonPreviews = new[] { "preview.jpg", "preview.png", "preview.gif", "preview.jpg.bak", "preview.gif.bak" };
-                    foreach (var commonPreview in commonPreviews)
-                    {
-                        var altPreviewPath = Path.Combine(folderPath, commonPreview);
-                        if (File.Exists(altPreviewPath))
-                        {
-                            isPreviewValid = true;
-                            project.Preview = commonPreview;
-                            previewPath = altPreviewPath;
-                            if (previewPath.Contains(".bak"))
-                            {
-                                previewPath = previewPath.Replace(".bak", "");
-                                // 恢复备份文件
-                                File.Copy(altPreviewPath, previewPath, true);
-                                File.Delete(altPreviewPath);
-                                project.Preview = commonPreview.Replace(".bak", "");
-
-                            }
-                            break;
-                        }
-                    }
-                }
-                if (!isPreviewValid && !File.Exists(previewPath))
-                {
-                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                    string defaultPreviewPath = Path.Combine(baseDirectory, "preview.jpg");
-                    project.Preview = "preview.jpg";
-                    File.Copy(defaultPreviewPath, Path.Combine(folderPath, "preview.jpg"));
-                }
-
-                // 验证内容文件
-                var contentPath = Path.Combine(folderPath, project.File);
-                if (!File.Exists(contentPath))
-                {
-                    return new WallpaperItem
-                    {
-                        FolderPath = folderPath,
-                        Project = project,
-                        Category = "未分类",
-                        AddedDate = DateTime.Now
-                    };
+                    return wallpaperItem;
                 }
 
                 // 自动分类
-                var category = "未分类";
-                if (project.Tags != null && project.Tags.Count > 0)
+                string category = GetCategory(project);
+                var existingWallpaper = _dbManager.GetWallpaperByFolderPath(folderPath);
+                if (existingWallpaper != null)
                 {
-                    var tagCategories = new Dictionary<string, string[]>
+                    wallpaperItem = existingWallpaper;
+                    wallpaperItem.IsNewlyAdded = false;
+                    wallpaperItem.Project.Title = project.Title;
+                    wallpaperItem.Project.Description = project.Description;
+                    wallpaperItem.Project.Tags = project.Tags;
+                    wallpaperItem.Project.Type = project.Type;
+                    wallpaperItem.Project.File = projectFile;
+                    wallpaperItem.Category = category;
+                    // ... 更新其他可能变化的属性，但 IsFavorite 和 FavoritedDate 保持不变！
+                }
+                else
+                {
+                    // 如果数据库中不存在：创建新项
+                    wallpaperItem = new WallpaperItem
+                    {
+                        FolderPath = folderPath,
+                        Project = project,
+                        Category = category, // 你的自动分类逻辑
+                        AddedDate = DateTime.Now,
+                        IsNewlyAdded = true // 标记为新添加
+                       // IsFavorite 和 FavoritedDate 使用默认值（false, MinValue）
+                    };
+                }
+                
+                
+                return wallpaperItem;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"处理壁纸文件夹错误 {folderPath}: {ex.Message}");
+                return null;
+            }
+        }
+
+        private static string GetCategory(WallpaperProject project)
+        {
+            var category = "未分类";
+            if (project.Tags != null && project.Tags.Count > 0)
+            {
+                var tagCategories = new Dictionary<string, string[]>
                     {
                         { "自然", new[] { "nature", "自然", "风景", "landscape" } },
                         { "抽象", new[] { "abstract", "抽象", "艺术", "art" } },
@@ -196,60 +185,20 @@ namespace WallpaperEngine.Services
                         { "动物", new[] { "animal", "动物", "pet" } }
                     };
 
-                    foreach (var tag in project.Tags)
+                foreach (var tag in project.Tags)
+                {
+                    foreach (var cat in tagCategories)
                     {
-                        foreach (var cat in tagCategories)
+                        if (cat.Value.Any(t => tag.ToLower().Contains(t.ToLower())))
                         {
-                            if (cat.Value.Any(t => tag.ToLower().Contains(t.ToLower())))
-                            {
-                                category = cat.Key;
-                                break;
-                            }
+                            category = cat.Key;
+                            break;
                         }
-                        if (category != "未分类") break;
                     }
+                    if (category != "未分类") break;
                 }
-
-                // 1. 首先，尝试从数据库中查找现有记录，以文件夹路径作为关键标识[1](@ref)
-                var existingWallpaper = _dbManager.GetWallpaperByFolderPath(folderPath);
-
-                WallpaperItem wallpaperItem;
-
-                if (existingWallpaper != null)
-                {
-                    // 2. 如果数据库中存在：将数据库中的记录作为基础
-                    wallpaperItem = existingWallpaper;
-                    // 标记这不是新添加的，因为我们只是重新扫描到了它
-                    wallpaperItem.IsNewlyAdded = false;
-
-                    // 重要：用最新扫描到的项目信息（如标题、描述）更新现有对象，
-                    // 但保留之前已设置的收藏状态！
-                    wallpaperItem.Project.Title = project.Title;
-                    wallpaperItem.Project.Description = project.Description;
-                    // ... 更新其他可能变化的属性，但 IsFavorite 和 FavoritedDate 保持不变！
-                }
-                else
-                {
-                    // 3. 如果数据库中不存在：创建新项
-                    wallpaperItem = new WallpaperItem
-                    {
-                        FolderPath = folderPath,
-                        Project = project,
-                        Category = category, // 你的自动分类逻辑
-                        AddedDate = DateTime.Now,
-                        IsNewlyAdded = true // 标记为新添加
-                                            // IsFavorite 和 FavoritedDate 使用默认值（false, MinValue）
-                    };
-                }
-
-                _dbManager.SaveWallpaper(wallpaperItem);
-                return wallpaperItem;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"处理壁纸文件夹错误 {folderPath}: {ex.Message}");
-                return null;
-            }
+            return category;
         }
     }
 }

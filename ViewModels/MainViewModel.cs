@@ -267,13 +267,13 @@ namespace WallpaperEngine.ViewModels
         }
 
         [RelayCommand]
-        private async void SearchWallpapers()
+        private async Task SearchWallpapers()
         {
             await LoadWallpapersAsync();
         }
 
         [RelayCommand]
-        private async void ClearSearch()
+        private async Task ClearSearch()
         {
             SearchText = string.Empty;
             SelectedCategory = "所有分类";
@@ -635,6 +635,7 @@ namespace WallpaperEngine.ViewModels
                 ShowFavoritesOnly = false;
                 SearchText = string.Empty;
                 LoadScanHistory();
+                await LoadWallpapersAsync();
             }
         }
 
