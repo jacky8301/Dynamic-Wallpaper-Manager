@@ -5,12 +5,14 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using WallpaperEngine.Models;
+using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views
 {
     public partial class PreviewWindow : Window
     {
         private readonly WallpaperItem _wallpaper;
+        private readonly Window _parentWindow;
 
         public string WallpaperTitle => _wallpaper?.Project.Title ?? "壁纸预览";
         public ImageSource PreviewImage { get; private set; }
@@ -19,7 +21,7 @@ namespace WallpaperEngine.Views
         {
             _wallpaper = wallpaper;
             InitializeComponent();
-            DataContext = this;
+            _parentWindow = System.Windows.Application.Current.MainWindow;
             LoadPreview();
         }
         // 窗口按钮事件处理
@@ -172,18 +174,8 @@ namespace WallpaperEngine.Views
 
         private void ApplyButton_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                System.Windows.MessageBox.Show($"已应用壁纸: {_wallpaper.Project.Title}",
-                    "应用成功", MessageBoxButton.OK, MessageBoxImage.Information);
-                this.DialogResult = true;
-                Close();
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"应用壁纸失败: {ex.Message}", "错误",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            var vm = _parentWindow.DataContext as MainViewModel;
+            vm.ApplyWallpaperCommand.Execute(_wallpaper);
         }
 
         protected override void OnClosed(EventArgs e)
