@@ -162,6 +162,7 @@ namespace WallpaperEngine.Data {
                     var fileInfo = new FileInfo(mainFile);
                     lastModified = fileInfo.LastWriteTime;
                     fileSize = fileInfo.Length;
+                    // 太慢，不计算哈希了
                     //fileHash = CalculateFileHash(mainFile);
                 }
             } catch {

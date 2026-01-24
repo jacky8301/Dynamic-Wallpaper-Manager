@@ -6,6 +6,13 @@ root = true
 
 #### Core EditorConfig 选项 ####
 
+dotnet_diagnostic.IDE0059.severity = none  # 禁止不必要的赋值警告
+dotnet_diagnostic.CS0168.severity = none   # 变量声明了但未使用警告
+dotnet_diagnostic.CS8601.severity = none   # 可能为 null 的引用分配给不可为 null 的引用警告
+dotnet_diagnostic.CS8602.severity = none   # 可能为 null 的引用的成员访问警告
+dotnet_diagnostic.CS8603.severity = none   # 可能为 null 的引用返回警告
+dotnet_diagnostic.CS8618.severity = none   # 未初始化的非 nullable 字段警告
+
 # 缩进和间距
 indent_size = 4
 indent_style = space
