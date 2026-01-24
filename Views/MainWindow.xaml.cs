@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Input;
+using Serilog;
 using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views {
@@ -51,7 +52,9 @@ namespace WallpaperEngine.Views {
         private async void mainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             MainViewModel vm = DataContext as MainViewModel;
+            Log.Debug("LoadWallpapersAsync started");
             await vm.LoadWallpapersAsync();
+            Log.Debug("LoadWallpapersAsync finish");
         }
     }
 }

@@ -11,6 +11,7 @@ using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
 using WallpaperEngine.Views;
+using Serilog;
 
 namespace WallpaperEngine.ViewModels {
     public partial class MainViewModel : ObservableObject {
@@ -18,7 +19,6 @@ namespace WallpaperEngine.ViewModels {
         private readonly WallpaperScanner _scanner;
         private readonly IncrementalScanner _incrementalScanner;
         private readonly PreviewService _previewService;
-        private string _currentSearchTerm = string.Empty;
         private readonly ISettingsService _settingsService;
 
         [ObservableProperty]
@@ -100,7 +100,6 @@ namespace WallpaperEngine.ViewModels {
             SelectedCategory = "所有分类";
             ShowFavoritesOnly = false;
             SearchText = string.Empty;
-            Task.Run(() => LoadWallpapers());
             CheckLastScanTime();
             LoadScanHistory();
 
@@ -651,10 +650,12 @@ namespace WallpaperEngine.ViewModels {
 
                 // 在UI线程更新集合
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    Log.Debug("Updating Wallpapers collection");
                     Wallpapers.Clear();
                     foreach (var wallpaper in wallpapers) {
                         Wallpapers.Add(wallpaper);
                     }
+                    Log.Debug("Wallpapers collection updated");
                 });
             } catch (Exception ex) {
                 // 处理异常
@@ -664,9 +665,11 @@ namespace WallpaperEngine.ViewModels {
         {
             List<WallpaperItem> wallpapers = new();
             try {
+                Log.Debug("LoadWallpapers from db start");
                 var results = _dbManager.SearchWallpapers(SearchText,
                     SelectedCategory == "所有分类" ? "" : SelectedCategory,
                     ShowFavoritesOnly);
+                Log.Debug("LoadWallpapers from db finish");
                 return results;
             } catch (Exception ex) {
                 System.Windows.MessageBox.Show($"加载壁纸列表失败: {ex.Message}", "错误",

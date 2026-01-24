@@ -63,7 +63,6 @@ namespace WallpaperEngine.Services {
                         });
                         break;
                     }
-
                     processed++;
                     stats.ScannedFolders = processed;
 
@@ -145,11 +144,9 @@ namespace WallpaperEngine.Services {
         private List<string> GetWallpaperFolders(string rootPath)
         {
             var folders = new List<string>();
-
             try {
                 // 获取所有子文件夹
                 var allFolders = Directory.GetDirectories(rootPath, "*", SearchOption.AllDirectories);
-
                 foreach (var folder in allFolders) {
                     var projectFile = Path.Combine(folder, "project.json");
                     if (File.Exists(projectFile)) {
@@ -159,7 +156,6 @@ namespace WallpaperEngine.Services {
             } catch (Exception ex) {
                 Debug.WriteLine($"获取文件夹列表失败: {ex.Message}");
             }
-
             return folders;
         }
 
@@ -204,24 +200,6 @@ namespace WallpaperEngine.Services {
                 var project = Newtonsoft.Json.JsonConvert.DeserializeObject<WallpaperProject>(jsonContent);
 
                 if (project == null) return null;
-
-                // 验证必要文件
-                var previewPath = Path.Combine(folderPath, project.Preview);
-                if (!File.Exists(previewPath)) {
-                    // 尝试查找常见的预览图名称
-                    var commonPreviews = new[] { "preview.jpg", "preview.png", "thumbnail.jpg", "thumb.jpg" };
-                    foreach (var commonPreview in commonPreviews) {
-                        var altPreviewPath = Path.Combine(folderPath, commonPreview);
-                        if (File.Exists(altPreviewPath)) {
-                            project.Preview = commonPreview;
-                            previewPath = altPreviewPath;
-                            break;
-                        }
-                    }
-
-                    if (!File.Exists(previewPath))
-                        return null;
-                }
 
                 var contentPath = Path.Combine(folderPath, project.File);
                 if (!File.Exists(contentPath))
