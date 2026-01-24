@@ -97,6 +97,8 @@ namespace WallpaperEngine.ViewModels {
             WallpapersView = CollectionViewSource.GetDefaultView(Wallpapers);
             WallpapersView.Filter = FilterWallpapers;
 
+            Wallpapers.CollectionChanged += OnWallpapersCollectionChanged;
+
             SelectedCategory = "所有分类";
             ShowFavoritesOnly = false;
             SearchText = string.Empty;
@@ -106,6 +108,11 @@ namespace WallpaperEngine.ViewModels {
             _settingsService = new SettingsService();
             _settings = _settingsService.LoadSettings();
             _previewService = new PreviewService(_settingsService);
+        }
+
+        private void OnWallpapersCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            Log.Debug("OnWallpapersCollectionChanged," + e.ToString());
         }
 
         [RelayCommand]
