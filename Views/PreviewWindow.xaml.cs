@@ -1,5 +1,4 @@
-﻿using System;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -7,10 +6,8 @@ using System.Windows.Media.Imaging;
 using WallpaperEngine.Models;
 using WallpaperEngine.ViewModels;
 
-namespace WallpaperEngine.Views
-{
-    public partial class PreviewWindow : Window
-    {
+namespace WallpaperEngine.Views {
+    public partial class PreviewWindow : Window {
         private readonly WallpaperItem _wallpaper;
         private readonly Window _parentWindow;
 
@@ -47,10 +44,8 @@ namespace WallpaperEngine.Views
         // 允许通过拖动标题栏移动窗口
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
-            {
-                if (WindowState == WindowState.Maximized)
-                {
+            if (e.ChangedButton == MouseButton.Left) {
+                if (WindowState == WindowState.Maximized) {
                     WindowState = WindowState.Normal;
                 }
                 DragMove();
@@ -58,16 +53,13 @@ namespace WallpaperEngine.Views
         }
         private void LoadPreview()
         {
-            if (_wallpaper == null)
-            {
+            if (_wallpaper == null) {
                 ShowUnsupportedPreview();
                 return;
             }
 
-            try
-            {
-                switch (_wallpaper.Project.Type?.ToLower())
-                {
+            try {
+                switch (_wallpaper.Project.Type?.ToLower()) {
                     case "video":
                         ShowVideoPreview();
                         break;
@@ -81,9 +73,7 @@ namespace WallpaperEngine.Views
                         ShowImagePreview();
                         break;
                 }
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 System.Windows.MessageBox.Show($"加载预览失败: {ex.Message}", "错误",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 ShowUnsupportedPreview();
@@ -92,8 +82,7 @@ namespace WallpaperEngine.Views
 
         private void ShowImagePreview()
         {
-            try
-            {
+            try {
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(_wallpaper.PreviewImagePath);
@@ -105,17 +94,14 @@ namespace WallpaperEngine.Views
                 ImagePreviewGrid.Visibility = Visibility.Visible;
                 VideoPreviewGrid.Visibility = Visibility.Collapsed;
                 UnsupportedText.Visibility = Visibility.Collapsed;
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 System.Diagnostics.Debug.WriteLine($"图片预览错误: {ex.Message}");
                 ShowUnsupportedPreview();
             }
         }
         private void ShowVideoPreview()
         {
-            try
-            {
+            try {
                 VideoPreviewGrid.Visibility = Visibility.Visible;
                 ImagePreviewGrid.Visibility = Visibility.Collapsed;
                 UnsupportedText.Visibility = Visibility.Collapsed;
@@ -125,9 +111,7 @@ namespace WallpaperEngine.Views
                 PreviewVideo.LoadedBehavior = MediaState.Manual;
                 PreviewVideo.Play();
                 PlayPauseButton.Content = "⏸";
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 System.Diagnostics.Debug.WriteLine($"视频预览错误: {ex.Message}");
                 ShowUnsupportedPreview();
             }
@@ -144,14 +128,11 @@ namespace WallpaperEngine.Views
         {
             if (PreviewVideo.Source == null) return;
 
-            if (PlayPauseButton.Content.ToString() == "▶")
-            {
+            if (PlayPauseButton.Content.ToString() == "▶") {
                 PreviewVideo.Play();
                 PlayPauseButton.Content = "⏸";
                 return;
-            }
-            else if (PlayPauseButton.Content.ToString() == "⏸")
-            {
+            } else if (PlayPauseButton.Content.ToString() == "⏸") {
                 PreviewVideo.Pause();
                 PlayPauseButton.Content = "▶";
                 return;
@@ -166,8 +147,7 @@ namespace WallpaperEngine.Views
 
         private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (PreviewVideo != null)
-            {
+            if (PreviewVideo != null) {
                 PreviewVideo.Volume = VolumeSlider.Value;
             }
         }
@@ -180,15 +160,13 @@ namespace WallpaperEngine.Views
 
         protected override void OnClosed(EventArgs e)
         {
-            if (PreviewVideo != null)
-            {
+            if (PreviewVideo != null) {
                 PreviewVideo.Stop();
                 PreviewVideo.Source = null;
                 PreviewVideo.Close();
             }
 
-            if (PreviewImage is BitmapImage bitmapImage)
-            {
+            if (PreviewImage is BitmapImage bitmapImage) {
                 bitmapImage.StreamSource?.Dispose();
             }
 

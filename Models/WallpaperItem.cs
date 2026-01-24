@@ -1,12 +1,8 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System.IO;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 
-namespace WallpaperEngine.Models
-{
-    public partial class WallpaperItem : ObservableObject
-    {
+namespace WallpaperEngine.Models {
+    public partial class WallpaperItem : ObservableObject {
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string FolderPath { get; set; } = string.Empty;
         public string FolderName => Path.GetFileName(FolderPath);
@@ -38,10 +34,8 @@ namespace WallpaperEngine.Models
         private string _deletionStatus;
 
         // 检查壁纸文件是否存在
-        public bool FilesExist
-        {
-            get
-            {
+        public bool FilesExist {
+            get {
                 if (string.IsNullOrEmpty(FolderPath)) return false;
                 return Directory.Exists(FolderPath);
             }
@@ -61,13 +55,10 @@ namespace WallpaperEngine.Models
         {
             if (!Directory.Exists(FolderPath)) return 0;
 
-            try
-            {
+            try {
                 return Directory.GetFiles(FolderPath, "*.*", SearchOption.AllDirectories)
                     .Sum(file => new FileInfo(file).Length);
-            }
-            catch
-            {
+            } catch {
                 return 0;
             }
         }

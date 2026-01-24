@@ -1,15 +1,9 @@
-﻿// DatabaseManager.cs
-using Microsoft.Data.Sqlite;
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
+﻿using Microsoft.Data.Sqlite;
 using System.IO;
 using WallpaperEngine.Models;
 
-namespace WallpaperEngine.Data
-{
-    public class DatabaseManager : IDisposable
-    {
+namespace WallpaperEngine.Data {
+    public class DatabaseManager : IDisposable {
         private SqliteConnection m_connection;
         private readonly string m_dbPath;
 
@@ -19,8 +13,7 @@ namespace WallpaperEngine.Data
             InitializeDatabase();
         }
 
-        public class ScanInfo
-        {
+        public class ScanInfo {
             public string ScanPath { get; set; } = string.Empty;
             public DateTime LastScanTime { get; set; } = DateTime.MinValue;
             public int TotalScanned { get; set; }
@@ -34,17 +27,13 @@ namespace WallpaperEngine.Data
             command.CommandText = "SELECT * FROM Wallpapers WHERE FolderPath = @folderPath";
             command.Parameters.AddWithValue("@folderPath", folderPath);
 
-            using (var reader = command.ExecuteReader())
-            {
-                if (reader.Read())
-                {
+            using (var reader = command.ExecuteReader()) {
+                if (reader.Read()) {
                     // 将数据库记录转换为 WallpaperItem 对象
-                    return new WallpaperItem
-                    {
+                    return new WallpaperItem {
                         Id = reader["Id"].ToString(),
                         FolderPath = reader["FolderPath"].ToString(),
-                        Project = new WallpaperProject
-                        {
+                        Project = new WallpaperProject {
                             Title = reader["Title"].ToString(),
                             Description = reader["Description"].ToString(),
                             File = reader["FileName"].ToString(),
@@ -167,19 +156,15 @@ namespace WallpaperEngine.Data
             var lastModified = DateTime.MinValue;
             var fileSize = 0L;
 
-            try
-            {
+            try {
                 var mainFile = Path.Combine(wallpaper.FolderPath, wallpaper.Project.File);
-                if (File.Exists(mainFile))
-                {
+                if (File.Exists(mainFile)) {
                     var fileInfo = new FileInfo(mainFile);
                     lastModified = fileInfo.LastWriteTime;
                     fileSize = fileInfo.Length;
                     //fileHash = CalculateFileHash(mainFile);
                 }
-            }
-            catch
-            {
+            } catch {
                 // 如果无法获取文件信息，使用当前时间
                 lastModified = DateTime.Now;
             }
@@ -215,18 +200,15 @@ namespace WallpaperEngine.Data
             var command = m_connection.CreateCommand();
 
             string whereClause = "WHERE 1=1";
-            if (!string.IsNullOrEmpty(searchTerm))
-            {
+            if (!string.IsNullOrEmpty(searchTerm)) {
                 whereClause += " AND (Title LIKE @search OR Description LIKE @search OR Tags LIKE @search)";
                 command.Parameters.AddWithValue("@search", $"%{searchTerm}%");
             }
-            if (!string.IsNullOrEmpty(category))
-            {
+            if (!string.IsNullOrEmpty(category)) {
                 whereClause += " AND Category = @category";
                 command.Parameters.AddWithValue("@category", category);
             }
-            if (favoritesOnly)
-            {
+            if (favoritesOnly) {
                 whereClause += " AND IsFavorite = 1";
             }
 
@@ -237,14 +219,11 @@ namespace WallpaperEngine.Data
                 LIMIT 1000";
 
             using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                wallpapers.Add(new WallpaperItem
-                {
+            while (reader.Read()) {
+                wallpapers.Add(new WallpaperItem {
                     Id = reader["Id"].ToString(),
                     FolderPath = reader["FolderPath"].ToString(),
-                    Project = new WallpaperProject
-                    {
+                    Project = new WallpaperProject {
                         Title = reader["Title"].ToString(),
                         Description = reader["Description"].ToString(),
                         File = reader["FileName"].ToString(),
@@ -369,8 +348,7 @@ namespace WallpaperEngine.Data
             command.Parameters.AddWithValue("@folderPath", folderPath);
 
             using var reader = command.ExecuteReader();
-            if (reader.Read())
-            {
+            if (reader.Read()) {
                 return DateTime.Parse(reader["FolderLastModified"].ToString());
             }
             return null;
@@ -379,15 +357,12 @@ namespace WallpaperEngine.Data
         // 计算文件哈希（用于检测内容变化）
         private string CalculateFileHash(string filePath)
         {
-            try
-            {
+            try {
                 using var md5 = System.Security.Cryptography.MD5.Create();
                 using var stream = File.OpenRead(filePath);
                 var hash = md5.ComputeHash(stream);
                 return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-            }
-            catch
-            {
+            } catch {
                 return string.Empty;
             }
         }
@@ -398,16 +373,13 @@ namespace WallpaperEngine.Data
             var history = new List<ScanInfo>();
             var command = m_connection.CreateCommand();
 
-            if (string.IsNullOrEmpty(scanPath))
-            {
+            if (string.IsNullOrEmpty(scanPath)) {
                 command.CommandText = @"
                 SELECT ScanPath, LastScanTime, TotalFolders, NewFound 
                 FROM ScanHistory 
                 ORDER BY LastScanTime DESC 
                 LIMIT 50";
-            }
-            else
-            {
+            } else {
                 command.CommandText = @"
                 SELECT ScanPath, LastScanTime, TotalFolders, NewFound 
                 FROM ScanHistory 
@@ -418,10 +390,8 @@ namespace WallpaperEngine.Data
             }
 
             using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                history.Add(new ScanInfo
-                {
+            while (reader.Read()) {
+                history.Add(new ScanInfo {
                     ScanPath = reader["ScanPath"].ToString(),
                     LastScanTime = DateTime.Parse(reader["LastScanTime"].ToString()),
                     TotalScanned = Convert.ToInt32(reader["TotalFolders"]),

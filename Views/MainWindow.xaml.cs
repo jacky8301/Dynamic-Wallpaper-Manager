@@ -2,10 +2,8 @@
 using System.Windows.Input;
 using WallpaperEngine.ViewModels;
 
-namespace WallpaperEngine.Views
-{
-    public partial class MainWindow : Window
-    {
+namespace WallpaperEngine.Views {
+    public partial class MainWindow : Window {
         public MainWindow()
         {
             InitializeComponent();
@@ -33,10 +31,8 @@ namespace WallpaperEngine.Views
         // 允许通过拖动标题栏移动窗口
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
-            {
-                if (WindowState == WindowState.Maximized)
-                {
+            if (e.ChangedButton == MouseButton.Left) {
+                if (WindowState == WindowState.Maximized) {
                     WindowState = WindowState.Normal;
                 }
                 DragMove();
@@ -44,13 +40,10 @@ namespace WallpaperEngine.Views
         }
         private void Window_StateChanged(object sender, EventArgs e)
         {
-            if (WindowState == WindowState.Maximized)
-            {
+            if (WindowState == WindowState.Maximized) {
                 // 最大化时设置边距，防止内容溢出屏幕
                 BorderThickness = new Thickness(8);
-            }
-            else
-            {
+            } else {
                 BorderThickness = new Thickness(0);
             }
         }

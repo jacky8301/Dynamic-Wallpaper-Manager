@@ -3,10 +3,8 @@ using System.Diagnostics;
 using System.IO;
 
 
-namespace WallpaperEngine.Services
-{
-    public class SettingsService : ISettingsService
-    {
+namespace WallpaperEngine.Services {
+    public class SettingsService : ISettingsService {
         private readonly string _settingsFilePath;
 
         public SettingsService()
@@ -19,17 +17,13 @@ namespace WallpaperEngine.Services
 
         public ApplicationSettings LoadSettings()
         {
-            try
-            {
-                if (File.Exists(_settingsFilePath))
-                {
+            try {
+                if (File.Exists(_settingsFilePath)) {
                     var json = File.ReadAllText(_settingsFilePath);
                     var appSettings = JsonConvert.DeserializeObject<ApplicationSettings>(json) ?? new ApplicationSettings();
                     return appSettings;
                 }
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Debug.WriteLine($"加载设置失败: {ex.Message}");
             }
 
@@ -38,13 +32,10 @@ namespace WallpaperEngine.Services
 
         public void SaveSettings(ApplicationSettings settings)
         {
-            try
-            {
+            try {
                 var json = JsonConvert.SerializeObject(settings, Formatting.Indented);
                 File.WriteAllText(_settingsFilePath, json);
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Debug.WriteLine($"保存设置失败: {ex.Message}");
                 throw;
             }

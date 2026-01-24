@@ -1,12 +1,8 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Windows.Data;
-using System.Windows.Media;
 
-namespace WallpaperEngine.Converters
-{
-    public class BooleanToColorConverter : IValueConverter
-    {
+namespace WallpaperEngine.Converters {
+    public class BooleanToColorConverter : IValueConverter {
         public System.Windows.Media.Brush TrueBrush { get; set; } = System.Windows.Media.Brushes.Green;
         public System.Windows.Media.Brush FalseBrush { get; set; } = System.Windows.Media.Brushes.Gray;
 

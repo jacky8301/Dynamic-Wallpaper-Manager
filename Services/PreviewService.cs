@@ -2,10 +2,8 @@
 using System.IO;
 using WallpaperEngine.Models;
 
-namespace WallpaperEngine.Services
-{
-    public class PreviewService
-    {
+namespace WallpaperEngine.Services {
+    public class PreviewService {
         private readonly ApplicationSettings _settings;
         private readonly ISettingsService _settingsService;
         private Process _currentPreviewProcess;
@@ -16,8 +14,7 @@ namespace WallpaperEngine.Services
             _settings = _settingsService.LoadSettings();
         }
 
-        public class PreviewOptions
-        {
+        public class PreviewOptions {
             public string WindowTitle { get; set; } = "Wallpaper Preview";
             public int Width { get; set; } = 1920;
             public int Height { get; set; } = 1080;
@@ -33,20 +30,17 @@ namespace WallpaperEngine.Services
 
             // 检查Wallpaper Engine路径
             if (string.IsNullOrEmpty(_settings.WallpaperEnginePath) ||
-                !File.Exists(_settings.WallpaperEnginePath))
-            {
+                !File.Exists(_settings.WallpaperEnginePath)) {
                 throw new InvalidOperationException("Wallpaper Engine路径未设置或不存在");
             }
 
             // 检查壁纸文件
             var projectJsonPath = Path.Combine(wallpaper.FolderPath, "project.json");
-            if (!File.Exists(projectJsonPath))
-            {
+            if (!File.Exists(projectJsonPath)) {
                 throw new FileNotFoundException($"找不到project.json文件: {projectJsonPath}");
             }
 
-            try
-            {
+            try {
                 // 停止现有的预览
                 StopPreview();
 
@@ -54,8 +48,7 @@ namespace WallpaperEngine.Services
                 var arguments = BuildPreviewArguments(projectJsonPath, options);
 
                 // 启动预览进程
-                var processStartInfo = new ProcessStartInfo
-                {
+                var processStartInfo = new ProcessStartInfo {
                     FileName = _settings.WallpaperEnginePath,
                     Arguments = arguments,
                     UseShellExecute = false,
@@ -67,9 +60,7 @@ namespace WallpaperEngine.Services
 
 
                 return _currentPreviewProcess != null && !_currentPreviewProcess.HasExited;
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 throw new Exception($"启动预览失败: {ex.Message}", ex);
             }
         }
@@ -91,25 +82,18 @@ namespace WallpaperEngine.Services
 
         public void StopPreview()
         {
-            try
-            {
-                if (_currentPreviewProcess != null && !_currentPreviewProcess.HasExited)
-                {
+            try {
+                if (_currentPreviewProcess != null && !_currentPreviewProcess.HasExited) {
                     // 尝试优雅关闭
                     _currentPreviewProcess.CloseMainWindow();
 
-                    if (!_currentPreviewProcess.WaitForExit(2000))
-                    {
+                    if (!_currentPreviewProcess.WaitForExit(2000)) {
                         _currentPreviewProcess.Kill();
                     }
                 }
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Debug.WriteLine($"停止预览进程时出错: {ex.Message}");
-            }
-            finally
-            {
+            } finally {
                 _currentPreviewProcess?.Dispose();
                 _currentPreviewProcess = null;
             }

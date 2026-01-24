@@ -1,10 +1,7 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 
-namespace WallpaperEngine.Models
-{
-    public class WallpaperProject
-    {
+namespace WallpaperEngine.Models {
+    public class WallpaperProject {
         [JsonProperty("title")]
         public string Title { get; set; } = string.Empty;
 

@@ -4,10 +4,8 @@ using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.ViewModels;
 
-namespace WallpaperEngine.Services
-{
-    public class WallpaperScanner
-    {
+namespace WallpaperEngine.Services {
+    public class WallpaperScanner {
         private readonly DatabaseManager _dbManager;
         private CancellationTokenSource _cancellationTokenSource;
 
@@ -24,29 +22,24 @@ namespace WallpaperEngine.Services
 
         public async Task<bool> ScanWallpapersAsync(string rootFolderPath, IProgress<ScanProgress> progress = null)
         {
-            if (!Directory.Exists(rootFolderPath))
-            {
+            if (!Directory.Exists(rootFolderPath)) {
                 throw new DirectoryNotFoundException($"目录不存在: {rootFolderPath}");
             }
 
-            if (_cancellationTokenSource.IsCancellationRequested)
-            {
+            if (_cancellationTokenSource.IsCancellationRequested) {
                 _cancellationTokenSource = new CancellationTokenSource();
             }
 
             var cancellationToken = _cancellationTokenSource.Token;
 
-            try
-            {
+            try {
                 progress?.Report(new ScanProgress { Status = "正在搜索壁纸文件夹..." });
 
                 var validFolders = new List<string>();
 
                 var wallpaperFolders = Directory.GetDirectories(rootFolderPath);
-                foreach (var folder in wallpaperFolders)
-                {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
+                foreach (var folder in wallpaperFolders) {
+                    if (cancellationToken.IsCancellationRequested) {
                         return false;
                     }
                     validFolders.Add(folder);
@@ -59,23 +52,19 @@ namespace WallpaperEngine.Services
 
                 progress?.Report(new ScanProgress { Status = $"找到 {total} 个壁纸文件夹，开始处理..." });
 
-                foreach (var folder in validFolders)
-                {
+                foreach (var folder in validFolders) {
                     if (cancellationToken.IsCancellationRequested) return false;
 
-                    try
-                    {
+                    try {
                         var wallpaper = await ProcessWallpaperFolderAsync(folder);
-                        if (wallpaper != null)
-                        {
+                        if (wallpaper != null) {
                             _dbManager.SaveWallpaper(wallpaper);
                             validCount++;
                         }
 
                         processed++;
 
-                        progress?.Report(new ScanProgress
-                        {
+                        progress?.Report(new ScanProgress {
                             Percentage = processed * 100 / Math.Max(1, total),
                             ProcessedCount = processed,
                             TotalCount = total,
@@ -84,23 +73,17 @@ namespace WallpaperEngine.Services
                         });
 
                         await Task.Delay(50, cancellationToken);
-                    }
-                    catch (Exception ex)
-                    {
+                    } catch (Exception ex) {
                         System.Diagnostics.Debug.WriteLine($"处理壁纸文件夹失败 {folder}: {ex.Message}");
                     }
                 }
 
                 progress?.Report(new ScanProgress { Status = $"扫描完成，成功处理 {validCount} 个壁纸" });
                 return true;
-            }
-            catch (OperationCanceledException)
-            {
+            } catch (OperationCanceledException) {
                 progress?.Report(new ScanProgress { Status = "扫描已被取消" });
                 return false;
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 progress?.Report(new ScanProgress { Status = $"扫描失败: {ex.Message}" });
                 throw;
             }
@@ -108,14 +91,12 @@ namespace WallpaperEngine.Services
 
         private async Task<WallpaperItem> ProcessWallpaperFolderAsync(string folderPath)
         {
-            
-            try
-            {
-                
+
+            try {
+
                 WallpaperItem wallpaperItem = null;
                 var projectFile = Path.Combine(folderPath, "project.json");
-                if (!File.Exists(projectFile))
-                {
+                if (!File.Exists(projectFile)) {
                     string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
                     string defaultProjectPath = Path.Combine(baseDirectory, "project.json");
                     File.Copy(defaultProjectPath, Path.Combine(folderPath, "project.json"));
@@ -124,16 +105,14 @@ namespace WallpaperEngine.Services
                 var jsonContent = await File.ReadAllTextAsync(projectFile);
                 var project = JsonConvert.DeserializeObject<WallpaperProject>(jsonContent);
 
-                if (project == null)
-                {
+                if (project == null) {
                     return wallpaperItem;
                 }
 
                 // 自动分类
                 string category = GetCategory(project);
                 var existingWallpaper = _dbManager.GetWallpaperByFolderPath(folderPath);
-                if (existingWallpaper != null)
-                {
+                if (existingWallpaper != null) {
                     wallpaperItem = existingWallpaper;
                     wallpaperItem.IsNewlyAdded = false;
                     wallpaperItem.Project.Title = project.Title;
@@ -143,26 +122,21 @@ namespace WallpaperEngine.Services
                     wallpaperItem.Project.File = project.File;
                     wallpaperItem.Category = category;
                     // ... 更新其他可能变化的属性，但 IsFavorite 和 FavoritedDate 保持不变！
-                }
-                else
-                {
+                } else {
                     // 如果数据库中不存在：创建新项
-                    wallpaperItem = new WallpaperItem
-                    {
+                    wallpaperItem = new WallpaperItem {
                         FolderPath = folderPath,
                         Project = project,
                         Category = category, // 你的自动分类逻辑
                         AddedDate = DateTime.Now,
                         IsNewlyAdded = true // 标记为新添加
-                       // IsFavorite 和 FavoritedDate 使用默认值（false, MinValue）
+                                            // IsFavorite 和 FavoritedDate 使用默认值（false, MinValue）
                     };
                 }
-                
-                
+
+
                 return wallpaperItem;
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 System.Diagnostics.Debug.WriteLine($"处理壁纸文件夹错误 {folderPath}: {ex.Message}");
                 return null;
             }
@@ -171,8 +145,7 @@ namespace WallpaperEngine.Services
         private static string GetCategory(WallpaperProject project)
         {
             var category = "未分类";
-            if (project.Tags != null && project.Tags.Count > 0)
-            {
+            if (project.Tags != null && project.Tags.Count > 0) {
                 var tagCategories = new Dictionary<string, string[]>
                     {
                         { "自然", new[] { "nature", "自然", "风景", "landscape" } },
@@ -185,12 +158,9 @@ namespace WallpaperEngine.Services
                         { "动物", new[] { "animal", "动物", "pet" } }
                     };
 
-                foreach (var tag in project.Tags)
-                {
-                    foreach (var cat in tagCategories)
-                    {
-                        if (cat.Value.Any(t => tag.ToLower().Contains(t.ToLower())))
-                        {
+                foreach (var tag in project.Tags) {
+                    foreach (var cat in tagCategories) {
+                        if (cat.Value.Any(t => tag.ToLower().Contains(t.ToLower()))) {
                             category = cat.Key;
                             break;
                         }

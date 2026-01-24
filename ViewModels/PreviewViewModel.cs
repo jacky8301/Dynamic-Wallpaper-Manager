@@ -1,9 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace WallpaperEngine.ViewModels
-{
-    internal class PreviewViewModel : ObservableObject
-    {
+namespace WallpaperEngine.ViewModels {
+    internal class PreviewViewModel : ObservableObject {
         private readonly ApplicationSettings _settings;
         private readonly ISettingsService _settingsService;
 
@@ -11,8 +9,6 @@ namespace WallpaperEngine.ViewModels
         {
             _settingsService = settingsService;
             _settings = _settingsService.LoadSettings();
-            // 初始化命令
         }
-
     }
 }

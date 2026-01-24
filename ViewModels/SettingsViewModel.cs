@@ -1,12 +1,10 @@
-﻿using System.Windows.Input;
-using System.IO;
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.IO;
+using System.Windows.Input;
 
-namespace WallpaperEngine.ViewModels
-{
-    public class SettingsViewModel : ObservableObject
-    {
+namespace WallpaperEngine.ViewModels {
+    public class SettingsViewModel : ObservableObject {
         private readonly ApplicationSettings _settings;
         private readonly ISettingsService _settingsService;
 
@@ -21,19 +19,16 @@ namespace WallpaperEngine.ViewModels
             CancelCommand = new RelayCommand(Cancel);
         }
 
-        public string WallpaperEnginePath
-        {
+        public string WallpaperEnginePath {
             get => _settings.WallpaperEnginePath;
-            set
-            {
+            set {
                 _settings.WallpaperEnginePath = value;
                 OnPropertyChanged();
                 ValidatePath();
             }
         }
         private string _pathStatus = "未设置";
-        public string PathStatus
-        {
+        public string PathStatus {
             get => _pathStatus;
             set => SetProperty(ref _pathStatus, value);
         }
@@ -44,51 +39,40 @@ namespace WallpaperEngine.ViewModels
 
         private void BrowsePath()
         {
-            var openFileDialog = new OpenFileDialog
-            {
+            var openFileDialog = new OpenFileDialog {
                 Filter = "可执行文件 (*.exe)|*.exe",
                 Title = "选择Wallpaper Engine工具"
             };
 
-            if (openFileDialog.ShowDialog() == DialogResult.OK)
-            {
+            if (openFileDialog.ShowDialog() == DialogResult.OK) {
                 WallpaperEnginePath = openFileDialog.FileName;
             }
         }
 
         private void ValidatePath()
         {
-            if (string.IsNullOrEmpty(WallpaperEnginePath))
-            {
+            if (string.IsNullOrEmpty(WallpaperEnginePath)) {
                 PathStatus = "路径未设置";
                 return;
             }
-
-            if (!File.Exists(WallpaperEnginePath))
-            {
+            if (!File.Exists(WallpaperEnginePath)) {
                 PathStatus = "路径不存在";
                 return;
             }
-
-            if (!WallpaperEnginePath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-            {
+            if (!WallpaperEnginePath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) {
                 PathStatus = "请选择.exe文件";
                 return;
             }
-
             PathStatus = "路径有效";
         }
 
         public void SaveSettings()
         {
             _settingsService.SaveSettings(_settings);
-            // 关闭窗口或返回成功信号
-
         }
 
         private void Cancel()
         {
-            // 关闭窗口
         }
     }
 }
