@@ -178,7 +178,7 @@
                                             <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" />
                                         </Border.InputBindings>
                                         <Grid>
-                                            <Image Source="{Binding PreviewImagePath}" Stretch="UniformToFill"/>
+                                            <Image Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}" Stretch="UniformToFill"/>
                                             <Border Background="#80000000" VerticalAlignment="Bottom">
                                                 <TextBlock Text="{Binding Project.Title}" Foreground="White" Margin="5" TextWrapping="Wrap" FontWeight="Bold"/>
                                             </Border>
@@ -248,7 +248,7 @@
                                 </ScrollViewer>
                                 <!-- 预览区域 -->
                                 <Border Grid.Row="1" Margin="10" Background="Black" Height="200">
-                                    <Image Source="{Binding SelectedWallpaper.PreviewImagePath}" Stretch="Uniform"/>
+                                    <Image Source="{Binding SelectedWallpaper.PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}" Stretch="Uniform"/>
                                 </Border>
                                 <!-- 操作按钮 -->
                                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
