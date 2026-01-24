@@ -19,8 +19,9 @@ namespace WallpaperEngine.Converters
         {
             string imagePath = value as string;
             if (string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath))
+            {
                 return null;
-
+            }
             return ImageLoader.LoadImage(imagePath);
         }
 
