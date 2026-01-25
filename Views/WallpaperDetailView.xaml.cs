@@ -1,19 +1,36 @@
-﻿using WallpaperEngine.ViewModels;
-using WallpaperEngine.Data;
-using WallpaperEngine.Models;
+﻿using CommunityToolkit.Mvvm.DependencyInjection;
+using WallpaperEngine.ViewModels;
+
 namespace WallpaperEngine.Views {
     public partial class WallpaperDetailView : System.Windows.Controls.UserControl {
-        
-        public WallpaperDetailView(DatabaseManager dbManager, WallpaperItem wallpaper)
-        {
-            InitializeComponent();
-            this.DataContext = new WallpaperDetailViewModel(dbManager);
-            var vm = DataContext as WallpaperDetailViewModel;
-            vm.Initialize(wallpaper);
-        }
+
         public WallpaperDetailView()
         {
             InitializeComponent();
+            var vm = Ioc.Default.GetService<WallpaperDetailViewModel>();
+            this.DataContext = vm;
+            vm.Initialize(null);
+
+        }
+
+        private void OnClickFavoriteButton(object sender, System.Windows.RoutedEventArgs e)
+        {
+
+        }
+
+        private void OnClickPreviewButton(object sender, System.Windows.RoutedEventArgs e)
+        {
+
+        }
+
+        private void OnClickApplyWallpaperButton(object sender, System.Windows.RoutedEventArgs e)
+        {
+
+        }
+
+        private void OnClickDeleteWallpaperButton(object sender, System.Windows.RoutedEventArgs e)
+        {
+
         }
     }
 }

@@ -13,6 +13,7 @@ using WallpaperEngine.Services;
 using WallpaperEngine.Views;
 using Serilog;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.DependencyInjection;
 
 namespace WallpaperEngine.ViewModels {
     public partial class MainViewModel : ObservableObject {
@@ -21,6 +22,7 @@ namespace WallpaperEngine.ViewModels {
         private readonly IncrementalScanner _incrementalScanner;
         private readonly PreviewService _previewService;
         private readonly ISettingsService _settingsService;
+        private readonly IDataContextService _dataContextService;
 
         [ObservableProperty]
         private WallpaperItem _itemPendingDeletion;
@@ -89,7 +91,7 @@ namespace WallpaperEngine.ViewModels {
             "所有分类", "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
         };
 
-        public MainViewModel()
+        public MainViewModel(IDataContextService dataContextService)
         {
             _dbManager = new DatabaseManager();
             _scanner = new WallpaperScanner(_dbManager);
@@ -109,6 +111,7 @@ namespace WallpaperEngine.ViewModels {
             _settingsService = new SettingsService();
             _settings = _settingsService.LoadSettings();
             _previewService = new PreviewService(_settingsService);
+            _dataContextService = dataContextService;
         }
 
         private void OnWallpapersCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -139,6 +142,7 @@ namespace WallpaperEngine.ViewModels {
         {
             if (parameter is WallpaperItem wallpaper) {
                 SelectedWallpaper = wallpaper; // 更新选中项
+                _dataContextService.CurrentWallpaper = wallpaper;
                 OpenPreviewWindowNew(wallpaper);
 
             } else if (parameter is string wallpaperId) {
@@ -146,6 +150,7 @@ namespace WallpaperEngine.ViewModels {
                 var myWallpaper = Wallpapers.FirstOrDefault(w => w.Id == wallpaperId);
                 if (myWallpaper != null) {
                     SelectedWallpaper = myWallpaper;
+                    _dataContextService.CurrentWallpaper = myWallpaper;
                     OpenPreviewWindowNew(myWallpaper);
                 }
             }
@@ -369,6 +374,7 @@ namespace WallpaperEngine.ViewModels {
                     // 如果删除的是当前选中的壁纸，清空选中状态
                     if (SelectedWallpaper == wallpaper) {
                         SelectedWallpaper = null;
+                        _dataContextService.CurrentWallpaper = null;
                     }
                     // 显示成功消息
                     ShowDeletionSuccess(wallpaper);
@@ -739,6 +745,7 @@ namespace WallpaperEngine.ViewModels {
             // 设置新的选择
             selectedWallpaper.IsSelected = true;
             SelectedWallpaper = selectedWallpaper;
+            _dataContextService.CurrentWallpaper = selectedWallpaper;
         }
 
         // 监听集合变化，确保选择状态同步

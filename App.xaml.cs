@@ -1,10 +1,11 @@
-﻿using Serilog;
-using System.Windows;
-using Application = System.Windows.Application;
-using CommunityToolkit.Mvvm.DependencyInjection;
+﻿using CommunityToolkit.Mvvm.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;    // 为什么要引入两个dependencyInjection命名空间？因为CommunityToolkit.Mvvm.DependencyInjection是对Microsoft.Extensions.DependencyInjection的封装，提供了更简化的API来注册和解析依赖项。
-using WallpaperEngine.ViewModels;
+using Serilog;
+using System.Windows;
+using WallpaperEngine.Data;
 using WallpaperEngine.Services;
+using WallpaperEngine.ViewModels;
+using Application = System.Windows.Application;
 
 namespace WallpaperEngine {
     /// Interaction logic for App.xaml
@@ -15,9 +16,10 @@ namespace WallpaperEngine {
                 new ServiceCollection()
                     // 在这里注册你的服务
                     .AddSingleton<ISettingsService, SettingsService>()
-                    .AddSingleton<MainViewModel>()
+                    .AddSingleton<IDataContextService, DataContextService>()
                     .AddSingleton<SettingsViewModel>()
                     .AddSingleton<WallpaperDetailViewModel>()
+                    .AddSingleton<MainViewModel>()
                     .BuildServiceProvider()
             );
         }

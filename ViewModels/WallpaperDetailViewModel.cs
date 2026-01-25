@@ -7,10 +7,12 @@ using System.Windows;
 using System.Windows.Input;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
+using WallpaperEngine.Services;
 
 namespace WallpaperEngine.ViewModels {
     public partial class WallpaperDetailViewModel : ObservableObject {
         private readonly DatabaseManager _dbManager;
+        private readonly IDataContextService _dataContextService;
         private WallpaperItem _originalItem;
         [ObservableProperty]
         private WallpaperItem _currentWallpaper;
@@ -19,14 +21,23 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private string _editStatus = "就绪";
 
-        public WallpaperDetailViewModel(DatabaseManager dbManager)
+        public WallpaperDetailViewModel(IDataContextService dataContextService)
         {
-            _dbManager = dbManager;
+            _dbManager = new DatabaseManager();
+            _dataContextService = dataContextService;
+            // 订阅状态变化事件
+            _dataContextService.CurrentWallpaperChanged += OnCurrentWallpaperChanged;
 
             // 初始化命令
             StartEditCommand = new RelayCommand(StartEdit);
             SaveEditCommand = new AsyncRelayCommand(SaveEdit, CanSaveEdit);
             CancelEditCommand = new RelayCommand(CancelEdit);
+        }
+
+        private void OnCurrentWallpaperChanged(object sender, WallpaperItem newWallpaper)
+        {
+            // 当服务中的状态改变时，更新自己的数据
+            CurrentWallpaper = newWallpaper;
         }
 
         public ICommand StartEditCommand { get; }
@@ -36,16 +47,9 @@ namespace WallpaperEngine.ViewModels {
 
         public void Initialize(WallpaperItem wallpaper)
         {
+            if (wallpaper == null) return;
             CurrentWallpaper = wallpaper;
             _originalItem = CreateBackup(wallpaper);
-            _ = LoadFileDetailsAsync();
-        }
-
-        private async Task LoadFileDetailsAsync()
-        {
-            if (CurrentWallpaper != null) {
-               
-            }
         }
 
         private void StartEdit()
