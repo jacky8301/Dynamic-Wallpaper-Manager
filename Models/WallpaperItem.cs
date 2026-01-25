@@ -1,5 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.ObjectModel;
 using System.IO;
+using Serilog;
 
 namespace WallpaperEngine.Models {
     public partial class WallpaperItem : ObservableObject {
@@ -55,6 +57,100 @@ namespace WallpaperEngine.Models {
                     .Sum(file => new FileInfo(file).Length);
             } catch {
                 return 0;
+            }
+        }
+
+        // 壁纸详情编辑
+        [ObservableProperty]
+        private ObservableCollection<WallpaperFileInfo> _fileList = new();
+
+        [ObservableProperty]
+        private string _contentFileName = string.Empty;
+
+        [ObservableProperty]
+        private long _totalSize;
+
+        [ObservableProperty]
+        private int _fileCount;
+
+        [ObservableProperty]
+        private bool _isEditing;
+
+        [ObservableProperty]
+        private WallpaperItem _editBackup;
+
+        // 文件信息类
+        public class WallpaperFileInfo : ObservableObject {
+            public string FileName { get; set; } = string.Empty;
+            public string FullPath { get; set; } = string.Empty;
+            public long FileSize { get; set; }
+            public DateTime LastModified { get; set; }
+            public string FileType { get; set; } = string.Empty;
+            public bool IsImageFile => FileType.ToLower() switch {
+                ".jpg" or ".jpeg" or ".png" or ".bmp" or ".webp" => true,
+                _ => false
+            };
+        }
+
+        // 加载文件列表的方法
+        public async Task LoadFileListAsync()
+        {
+            if (string.IsNullOrEmpty(FolderPath) || !Directory.Exists(FolderPath))
+                return;
+
+            await Task.Run(() => {
+                try {
+                    var files = Directory.GetFiles(FolderPath, "*.*", SearchOption.AllDirectories);
+                    var fileList = new List<WallpaperFileInfo>();
+
+                    foreach (var file in files) {
+                        var fileInfo = new FileInfo(file);
+                        fileList.Add(new WallpaperFileInfo {
+                            FileName = Path.GetFileName(file),
+                            FullPath = file,
+                            FileSize = fileInfo.Length,
+                            LastModified = fileInfo.LastWriteTime,
+                            FileType = Path.GetExtension(file).ToLower()
+                        });
+                    }
+
+                    // 更新到UI线程
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => {
+                        FileList?.Clear();
+                        foreach (var item in fileList.OrderBy(f => f.FileName)) {
+                            FileList.Add(item);
+                        }
+
+                        FileCount = FileList.Count;
+                        TotalSize = FileList.Sum(f => f.FileSize);
+
+                        // 自动识别主要内容文件
+                        IdentifyContentFile();
+                    });
+                } catch (Exception ex) {
+                    Log.Error($"加载文件列表失败: {ex.Message}");
+                }
+            });
+        }
+
+        // 识别主要内容文件
+        private void IdentifyContentFile()
+        {
+            if (FileList.Count == 0) return;
+
+            // 优先使用project.json中指定的文件
+            if (!string.IsNullOrEmpty(Project?.File) &&
+                FileList.Any(f => f.FileName.Equals(Project.File, StringComparison.OrdinalIgnoreCase))) {
+                ContentFileName = Project.File;
+                return;
+            }
+
+            // 查找常见的壁纸文件
+            var imageFiles = FileList.Where(f => f.IsImageFile).ToList();
+            if (imageFiles.Count > 0) {
+                // 优先选择较大的图像文件作为主要内容
+                var mainFile = imageFiles.OrderByDescending(f => f.FileSize).First();
+                ContentFileName = mainFile.FileName;
             }
         }
     }

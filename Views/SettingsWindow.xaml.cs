@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using CommunityToolkit.Mvvm.DependencyInjection;
+using System.Windows;
 using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views
@@ -11,7 +12,7 @@ namespace WallpaperEngine.Views
         public SettingsWindow()
         {
             InitializeComponent();
-            this.DataContext = new ViewModels.SettingsViewModel(new Services.SettingsService());
+            this.DataContext = Ioc.Default.GetRequiredService<ViewModels.SettingsViewModel>();
         }
 
         private void OK_Button_Click(object sender, RoutedEventArgs e)

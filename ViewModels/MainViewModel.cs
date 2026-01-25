@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace WallpaperEngine.ViewModels {
     public partial class MainViewModel : ObservableObject {
-        private readonly DatabaseManager _dbManager;
+        public readonly DatabaseManager _dbManager;
         private readonly WallpaperScanner _scanner;
         private readonly IncrementalScanner _incrementalScanner;
         private readonly PreviewService _previewService;

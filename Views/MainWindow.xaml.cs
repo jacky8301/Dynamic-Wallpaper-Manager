@@ -1,6 +1,9 @@
-﻿using System.Windows;
-using System.Windows.Input;
+﻿using CommunityToolkit.Mvvm.DependencyInjection;
 using Serilog;
+using System.Windows;
+using System.Windows.Input;
+using WallpaperEngine.Data;
+using WallpaperEngine.Models;
 using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views {
@@ -8,7 +11,7 @@ namespace WallpaperEngine.Views {
         public MainWindow()
         {
             InitializeComponent();
-            this.DataContext = new ViewModels.MainViewModel();
+            this.DataContext = Ioc.Default.GetService<MainViewModel>();
         }
         // 窗口按钮事件处理
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)

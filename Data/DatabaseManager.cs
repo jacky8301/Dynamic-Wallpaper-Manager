@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using System.Data.Common;
 using System.IO;
 using WallpaperEngine.Models;
 
@@ -395,6 +396,51 @@ namespace WallpaperEngine.Data {
             }
 
             return history;
+        }
+
+        // 更新壁纸信息
+        public void UpdateWallpaper(WallpaperItem wallpaper)
+        {
+            var command = m_connection.CreateCommand();
+            command.CommandText = @"
+            UPDATE Wallpapers 
+            SET Title = @title,
+                Description = @description,
+                FileName = @fileName,
+                PreviewFile = @previewFile,
+                WallpaperType = @type,
+                Tags = @tags,
+                ContentRating = @contentRating,
+                Visibility = @visibility,
+                LastUpdated = @lastUpdated
+            WHERE Id = @id";
+
+            command.Parameters.AddWithValue("@id", wallpaper.Id);
+            command.Parameters.AddWithValue("@title", wallpaper.Project.Title);
+            command.Parameters.AddWithValue("@description", wallpaper.Project.Description);
+            command.Parameters.AddWithValue("@fileName", wallpaper.Project.File);
+            command.Parameters.AddWithValue("@previewFile", wallpaper.Project.Preview);
+            command.Parameters.AddWithValue("@type", wallpaper.Project.Type);
+            command.Parameters.AddWithValue("@tags", string.Join(",", wallpaper.Project.Tags ?? new List<string>()));
+            command.Parameters.AddWithValue("@contentRating", wallpaper.Project.ContentRating);
+            command.Parameters.AddWithValue("@visibility", wallpaper.Project.Visibility);
+            command.Parameters.AddWithValue("@lastUpdated", DateTime.Now.ToString("O"));
+
+            command.ExecuteNonQuery();
+        }
+
+        // 获取壁纸文件统计信息
+        public (int FileCount, long TotalSize) GetWallpaperFileStats(string wallpaperId)
+        {
+            var command = m_connection.CreateCommand();
+            command.CommandText = "SELECT FileCount, TotalSize FROM WallpaperStats WHERE WallpaperId = @id";
+            command.Parameters.AddWithValue("@id", wallpaperId);
+
+            using var reader = command.ExecuteReader();
+            if (reader.Read()) {
+                return (reader.GetInt32(0), reader.GetInt64(1));
+            }
+            return (0, 0);
         }
     }
 }
