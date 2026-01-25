@@ -62,7 +62,7 @@ namespace WallpaperEngine.Views {
             if (e.Handled) {
                 return;
             }
-            switch(e.Key) {
+            switch (e.Key) {
                 case Key.Enter: {
                         if (DataContext is MainViewModel vm) {
                             vm.SearchText = (sender as System.Windows.Controls.TextBox).Text;
@@ -73,6 +73,34 @@ namespace WallpaperEngine.Views {
                     break;
                 default:
                     break;
+            }
+        }
+
+        private void OnClickPreviewButton(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm) {
+                vm.PreviewWallpaperCommand.Execute(vm.SelectedWallpaper);
+            }
+        }
+
+        private void OnClickDeleteWallpaperButton(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm) {
+                vm.DeleteWallpaperCommand.Execute(vm.SelectedWallpaper);
+            }
+        }
+
+        private void OnClickApplyWallpaperButton(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm) {
+                vm.ApplyWallpaperCommand.Execute(vm.SelectedWallpaper);
+            }
+        }
+
+        private void OnClickFavoriteButton(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm) {
+                vm.ToggleFavoriteCommand.Execute(vm.SelectedWallpaper);
             }
         }
     }

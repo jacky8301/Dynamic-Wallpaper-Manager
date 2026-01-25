@@ -252,11 +252,10 @@
                                 </Border>
                                 <!-- 操作按钮 -->
                                 <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
-                                    <Button Content="⭐ 收藏" Command="{Binding ToggleFavoriteCommand}"  Height="30" Margin="5" Foreground="White"/>
-                                    <Button Content="👁️ 预览"  CommandParameter="{Binding}" Command="{Binding PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"                                       
-                                             Height="30" Margin="5"/>
-                                    <Button Content="🚀 应用" Command="{Binding ApplyWallpaperCommand}"  Height="30" Margin="5" Background="#4CAF50" Foreground="White"/>
-                                    <Button Content="🗑️ 删除" Command="{Binding DeleteWallpaperCommand}" Height="30" Margin="5" Background="#F44336" Foreground="White"/>
+                                    <Button Content="⭐ 收藏" Click="OnClickFavoriteButton"  Height="30" Margin="5" Foreground="White"/>
+                                    <Button x:Name="btnPreview" Content="👁️ 预览" Click="OnClickPreviewButton" Height="30" Margin="5"/>
+                                    <Button Content="🚀 应用" Click="OnClickApplyWallpaperButton"  Height="30" Margin="5" Background="#4CAF50" Foreground="White"/>
+                                    <Button Content="🗑️ 删除" Click="OnClickDeleteWallpaperButton" Height="30" Margin="5" Background="#F44336" Foreground="White"/>
                                 </StackPanel>
                             </Grid>
                         </Grid>
