@@ -56,5 +56,24 @@ namespace WallpaperEngine.Views {
             await vm.LoadWallpapersAsync();
             Log.Debug("LoadWallpapersAsync finish");
         }
+
+        private void TextBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Handled) {
+                return;
+            }
+            switch(e.Key) {
+                case Key.Enter: {
+                        if (DataContext is MainViewModel vm) {
+                            vm.SearchText = (sender as System.Windows.Controls.TextBox).Text;
+                            vm.SearchWallpapersCommand.Execute(null);
+                        }
+                    }
+                    e.Handled = true;
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }

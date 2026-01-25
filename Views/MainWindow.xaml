@@ -83,7 +83,7 @@
                     <StackPanel Orientation="Horizontal" Margin="5">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="搜索:" VerticalAlignment="Center"/>
-                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" VerticalAlignment="Center" Width="200" Margin="5,0"/>
+                            <TextBox Text="" KeyDown="TextBox_KeyDown" VerticalAlignment="Center" Width="200" Margin="5,0"/>
                         </StackPanel>
                         <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" Width="100" Margin="5,0"/>
                         <CheckBox x:Name="FavoriteFilterCheckBox" Content="仅显示收藏" IsChecked="{Binding ShowFavoritesOnly}" ToolTip="只显示已收藏的壁纸"/>
