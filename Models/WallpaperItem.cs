@@ -23,13 +23,10 @@ namespace WallpaperEngine.Models {
         public bool IsNewlyAdded { get; set; } = false;
         [ObservableProperty]
         private DateTime _lastScanned;
-
         [ObservableProperty]
         private DateTime _folderLastModified;
-
         [ObservableProperty]
         private bool _isMarkedForDeletion;
-
         [ObservableProperty]
         private string _deletionStatus;
 

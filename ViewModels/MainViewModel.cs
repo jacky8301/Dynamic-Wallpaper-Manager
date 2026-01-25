@@ -12,6 +12,7 @@ using WallpaperEngine.Models;
 using WallpaperEngine.Services;
 using WallpaperEngine.Views;
 using Serilog;
+using System.Threading.Tasks;
 
 namespace WallpaperEngine.ViewModels {
     public partial class MainViewModel : ObservableObject {
@@ -284,10 +285,10 @@ namespace WallpaperEngine.ViewModels {
         }
 
         [RelayCommand]
-        private void DeleteWallpaper(object parameter)
+        private async Task DeleteWallpaper(object parameter)
         {
             if (parameter is WallpaperItem wallpaper) {
-                ShowDeletionConfirmation(wallpaper);
+                await ShowDeletionConfirmation(wallpaper);
             }
         }
 
