@@ -19,6 +19,7 @@ namespace WallpaperEngine {
                     .AddSingleton<IDataContextService, DataContextService>()
                     .AddSingleton<SettingsViewModel>()
                     .AddSingleton<WallpaperDetailViewModel>()
+                    .AddSingleton<PreviewViewModel>()
                     .AddSingleton<MainViewModel>()
                     .BuildServiceProvider()
             );

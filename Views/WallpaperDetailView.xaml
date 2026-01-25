@@ -11,12 +11,13 @@
 
     <UserControl.Resources>
         <converters:ImagePathToSourceConverter x:Key="ImageToSourceConverter"/>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="400"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="200"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -24,8 +25,11 @@
                 <StackPanel>
                     <TextBlock Text="壁纸详情" FontSize="16" FontWeight="Bold" Background="#F5F5F5" Padding="10"/>
                     <TextBlock Text="{Binding CurrentWallpaper.Project.Title}" FontWeight="Bold" FontSize="14" />
-                    <TextBlock Text="{Binding CurrentWallpaper.Project.Description}" 
-                                  TextWrapping="Wrap" Margin="0,10" FontSize="12"/>
+                    <TextBox Text="{Binding CurrentWallpaper.Project.Description,UpdateSourceTrigger=PropertyChanged}" 
+                                  TextWrapping="Wrap" Margin="0,10" FontSize="12"
+                                  Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                  AcceptsReturn="True" Height="60"
+                                  IsReadOnly="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"/>
                     <StackPanel Orientation="Horizontal" Margin="0,5">
                         <TextBlock Text="类型:" FontWeight="Bold" Margin="0,0,5,0"/>
                         <TextBlock Text="{Binding CurrentWallpaper.Project.Type}"/>
@@ -35,7 +39,7 @@
                         <TextBlock Text="{Binding CurrentWallpaper.Category}"/>
                     </StackPanel>
                     <TextBlock Text="标签:" FontWeight="Bold" Margin="0,5,0,0"/>
-                    <WrapPanel Margin="0,2">
+                    <WrapPanel Margin="0,2" Cursor="">
                         <ItemsControl ItemsSource="{Binding CurrentWallpaper.Project.Tags}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -51,17 +55,30 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </WrapPanel>
+                    <!-- 操作按钮 -->
+                    <StackPanel Orientation="Horizontal" MinHeight="40">
+                        <Button x:Name="EditButton" Command="{Binding StartEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Content="✏️ 编辑"
+                            Visibility="Visible" Cursor="">
+                        </Button>
+
+                        <Button x:Name="SaveButton" Command="{Binding SaveEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"                         
+                            Content="💾 保存"
+                            Visibility="Visible" Cursor=""
+                              IsEnabled="{Binding IsEditMode}"  />
+                        <Button x:Name="CancelButton" 
+                            Command="{Binding CancelEditCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Content="❌ 取消"
+                            Visibility="Visible"/>
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
-
             <!-- 预览区域 -->
-
             <Border Grid.Row="1" Margin="10" Background="Black" Height="200">
                 <Image Source="{Binding CurrentWallpaper.PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}" Stretch="Uniform"/>
             </Border>
-
             <!-- 操作按钮 -->
-
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
                 <Button Content="⭐ 收藏" Click="OnClickFavoriteButton"  Height="30" Margin="5" Foreground="White"/>
                 <Button x:Name="btnPreview" Content="👁️ 预览" Click="OnClickPreviewButton" Height="30" Margin="5"/>

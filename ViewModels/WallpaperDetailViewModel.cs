@@ -43,7 +43,6 @@ namespace WallpaperEngine.ViewModels {
         public ICommand StartEditCommand { get; }
         public ICommand SaveEditCommand { get; }
         public ICommand CancelEditCommand { get; }
-        public ICommand OpenFileLocationCommand { get; }
 
         public void Initialize(WallpaperItem wallpaper)
         {
@@ -92,6 +91,7 @@ namespace WallpaperEngine.ViewModels {
 
         private bool CanSaveEdit()
         {
+            return true;
             return CurrentWallpaper != null &&
                    IsEditMode &&
                    !string.IsNullOrWhiteSpace(CurrentWallpaper.Project.Title);

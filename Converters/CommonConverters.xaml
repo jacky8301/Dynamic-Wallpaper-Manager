@@ -4,4 +4,5 @@
     <local:BooleanToColorConverter x:Key="BooleanToColorConverter" />
     <local:FavoriteIconConverter x:Key="FavoriteIconConverter" />
     <local:ImagePathToSourceConverter x:Key="ImageToSourceConverter" />
+    <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
 </ResourceDictionary>
