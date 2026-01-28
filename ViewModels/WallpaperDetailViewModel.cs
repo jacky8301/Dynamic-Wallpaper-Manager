@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Newtonsoft.Json;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using WallpaperEngine.Data;
@@ -32,23 +33,42 @@ namespace WallpaperEngine.ViewModels {
             StartEditCommand = new RelayCommand(StartEdit);
             SaveEditCommand = new AsyncRelayCommand(SaveEdit, CanSaveEdit);
             CancelEditCommand = new RelayCommand(CancelEdit);
+            SetContentFileCommand = new RelayCommand<string>(SetContentFileName);
         }
 
-        private void OnCurrentWallpaperChanged(object sender, WallpaperItem newWallpaper)
+        private void OnCurrentWallpaperChanged(object? sender, WallpaperItem? newWallpaper)
         {
             // 当服务中的状态改变时，更新自己的数据
             CurrentWallpaper = newWallpaper;
+            CurrentWallpaper.LoadFileListAsync().ConfigureAwait(false);
         }
 
         public ICommand StartEditCommand { get; }
         public ICommand SaveEditCommand { get; }
         public ICommand CancelEditCommand { get; }
+        public ICommand SetContentFileCommand { get; }
 
-        public void Initialize(WallpaperItem wallpaper)
+        public void Initialize(WallpaperItem? wallpaper = null)
         {
             if (wallpaper == null) return;
             CurrentWallpaper = wallpaper;
             _originalItem = CreateBackup(wallpaper);
+        }
+
+        private async void SetContentFileName(string? fileName)
+        {
+            if (CurrentWallpaper != null) {
+                CurrentWallpaper.Project.File = fileName;
+                try {
+                    // 保存到project.json
+                    await SaveToProjectJsonAsync();
+                    // 更新数据库
+                    await UpdateDatabaseAsync();
+                    // 重新加载壁纸信息
+                } catch (Exception ex) {
+                    ShowErrorMessage($"保存失败: {ex.Message}");
+                }
+            }
         }
 
         private void StartEdit()
@@ -70,17 +90,16 @@ namespace WallpaperEngine.ViewModels {
             try {
                 EditStatus = "正在保存...";
 
-                // 1. 保存到project.json
+                // 保存到project.json
                 await SaveToProjectJsonAsync();
 
-                // 2. 更新数据库
+                // 更新数据库
                 await UpdateDatabaseAsync();
 
-                // 3. 退出编辑模式
+                // 退出编辑模式
                 IsEditMode = false;
                 CurrentWallpaper.IsEditing = false;
                 EditStatus = "保存成功";
-
                 // 显示成功消息
                 ShowSaveSuccessMessage();
             } catch (Exception ex) {

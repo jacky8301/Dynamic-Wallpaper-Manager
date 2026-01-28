@@ -6,7 +6,9 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:converters="clr-namespace:WallpaperEngine.Converters"
              xmlns:viewmodels="clr-namespace:WallpaperEngine.ViewModels"
+             xmlns:local="clr-namespace:WallpaperEngine.Views"
              d:DataContext="{d:DesignInstance Type=viewmodels:WallpaperDetailViewModel}"
+             xmlns:diag="clr-namespace:System.Diagnostics;assembly=WindowsBase"
              mc:Ignorable="d">
 
     <UserControl.Resources>
@@ -55,13 +57,39 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </WrapPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="内容文件名:" FontWeight="Bold" />
+                        <TextBox x:Name="ContentFileNameTextBox"
+                                 Text="{Binding CurrentWallpaper.Project.File, UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" 
+                                 FontSize="12"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 IsReadOnly="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,5">
+                        <TextBlock Text="壁纸目录文件列表:" FontWeight="Bold" Margin="0,0,5,0" />
+                        <ListBox ItemsSource="{Binding CurrentWallpaper.FileNameList}" Height="100" Width="300"
+                                 Style="{StaticResource MaterialDesignFilterChipOutlineListBox}"
+                                 IsEnabled="{Binding IsEditMode}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBox Text="{Binding .}"  IsEnabled="True"  IsReadOnly="False" Background="Transparent" BorderThickness="0" FontSize="12"/>
+                                        <Button Content="Select" Command="{Binding DataContext.SetContentFileNameCommand, diag:PresentationTraceSources.TraceLevel=High, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                CommandParameter="{Binding .}" 
+                                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                Margin="5,0,0,0" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+
                     <!-- 操作按钮 -->
                     <StackPanel Orientation="Horizontal" MinHeight="40">
                         <Button x:Name="EditButton" Command="{Binding StartEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
                             Content="✏️ 编辑"
                             Visibility="Visible" Cursor="">
                         </Button>
-
                         <Button x:Name="SaveButton" Command="{Binding SaveEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"                         
                             Content="💾 保存"
                             Visibility="Visible" Cursor=""
@@ -80,10 +108,10 @@
             </Border>
             <!-- 操作按钮 -->
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
-                <Button Content="⭐ 收藏" Click="OnClickFavoriteButton"  Height="30" Margin="5" Foreground="White"/>
-                <Button x:Name="btnPreview" Content="👁️ 预览" Click="OnClickPreviewButton" Height="30" Margin="5"/>
-                <Button Content="🚀 应用" Click="OnClickApplyWallpaperButton"  Height="30" Margin="5" Background="#4CAF50" Foreground="White"/>
-                <Button Content="🗑️ 删除" Click="OnClickDeleteWallpaperButton" Height="30" Margin="5" Background="#F44336" Foreground="White"/>
+                <Button Content="⭐ 收藏"   Height="30" Margin="5" Foreground="White"/>
+                <Button x:Name="btnPreview" Content="👁️ 预览"  Height="30" Margin="5"/>
+                <Button Content="🚀 应用"  Height="30" Margin="5" Background="#4CAF50" Foreground="White"/>
+                <Button Content="🗑️ 删除"  Height="30" Margin="5" Background="#F44336" Foreground="White"/>
             </StackPanel>
         </Grid>
     </ScrollViewer>

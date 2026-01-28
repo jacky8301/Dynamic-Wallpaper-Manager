@@ -62,16 +62,13 @@ namespace WallpaperEngine.Models {
 
         // 壁纸详情编辑
         [ObservableProperty]
-        private ObservableCollection<WallpaperFileInfo> _fileList = new();
+        private ObservableCollection<WallpaperFileInfo> _fileInfoList = new();
+
+        [ObservableProperty]
+        private ObservableCollection<string> _fileNameList = new();
 
         [ObservableProperty]
         private string _contentFileName = string.Empty;
-
-        [ObservableProperty]
-        private long _totalSize;
-
-        [ObservableProperty]
-        private int _fileCount;
 
         [ObservableProperty]
         private bool _isEditing;
@@ -100,7 +97,7 @@ namespace WallpaperEngine.Models {
 
             await Task.Run(() => {
                 try {
-                    var files = Directory.GetFiles(FolderPath, "*.*", SearchOption.AllDirectories);
+                    var files = Directory.GetFiles(FolderPath, "*.*", SearchOption.TopDirectoryOnly);
                     var fileList = new List<WallpaperFileInfo>();
 
                     foreach (var file in files) {
@@ -116,13 +113,11 @@ namespace WallpaperEngine.Models {
 
                     // 更新到UI线程
                     System.Windows.Application.Current.Dispatcher.Invoke(() => {
-                        FileList?.Clear();
+                        FileInfoList?.Clear();
                         foreach (var item in fileList.OrderBy(f => f.FileName)) {
-                            FileList.Add(item);
+                            FileInfoList.Add(item);
+                            FileNameList.Add(item.FileName);
                         }
-
-                        FileCount = FileList.Count;
-                        TotalSize = FileList.Sum(f => f.FileSize);
 
                         // 自动识别主要内容文件
                         IdentifyContentFile();
@@ -136,17 +131,17 @@ namespace WallpaperEngine.Models {
         // 识别主要内容文件
         private void IdentifyContentFile()
         {
-            if (FileList.Count == 0) return;
+            if (FileInfoList.Count == 0) return;
 
             // 优先使用project.json中指定的文件
             if (!string.IsNullOrEmpty(Project?.File) &&
-                FileList.Any(f => f.FileName.Equals(Project.File, StringComparison.OrdinalIgnoreCase))) {
+                FileInfoList.Any(f => f.FileName.Equals(Project.File, StringComparison.OrdinalIgnoreCase))) {
                 ContentFileName = Project.File;
                 return;
             }
 
             // 查找常见的壁纸文件
-            var imageFiles = FileList.Where(f => f.IsImageFile).ToList();
+            var imageFiles = FileInfoList.Where(f => f.IsImageFile).ToList();
             if (imageFiles.Count > 0) {
                 // 优先选择较大的图像文件作为主要内容
                 var mainFile = imageFiles.OrderByDescending(f => f.FileSize).First();
