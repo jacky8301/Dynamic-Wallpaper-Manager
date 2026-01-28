@@ -14,105 +14,278 @@
     <UserControl.Resources>
         <converters:ImagePathToSourceConverter x:Key="ImageToSourceConverter"/>
         <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        <!-- 现代化色彩定义 -->
+        <Color x:Key="PrimaryColor">#2C3E50</Color>
+        <Color x:Key="SecondaryColor">#3498DB</Color>
+        <Color x:Key="AccentColor">#E74C3C</Color>
+        <Color x:Key="SuccessColor">#4CAF50</Color>
+
+        <SolidColorBrush x:Key="PrimaryBrush" Color="{StaticResource PrimaryColor}"/>
+        <SolidColorBrush x:Key="SecondaryBrush" Color="{StaticResource SecondaryColor}"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+        <SolidColorBrush x:Key="LightBackground" Color="#F8F9FA"/>
+        <SolidColorBrush x:Key="CardBackground" Color="#20FFFFFF"/>
+
+        <!-- 卡片样式 -->
+        <Style x:Key="MaterialCard" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource CardBackground}"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16"/>
+            <Setter Property="Margin" Value="0,8"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.1"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 现代化标题样式 -->
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+
+        <!-- 字段标签样式 -->
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#666"/>
+            <Setter Property="Width" Value="100"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- 智能文本框样式：查看模式下为TextBlock，编辑模式下为TextBox -->
+        <Style x:Key="SmartTextField" TargetType="ContentControl">
+            <Setter Property="Margin" Value="0,4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContentControl">
+                        <Grid>
+                            <!-- 查看模式 -->
+                            <TextBlock x:Name="ViewText" 
+                                   Text="{TemplateBinding Content}"
+                                   TextWrapping="Wrap"
+                                   FontSize="14"
+                                   VerticalAlignment="Center"
+                                   Visibility="Collapsed"/>
+
+                            <!-- 编辑模式 -->
+                            <TextBox x:Name="EditTextBox"
+                                 Text="{TemplateBinding Content}"
+                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                 FontSize="14"
+                                 Padding="8,6"
+                                 Visibility="Collapsed"
+                                 TextWrapping="Wrap"/>
+                        </Grid>
+
+                        <ControlTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsEditMode}" Value="False">
+                                <Setter TargetName="ViewText" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                                <Setter TargetName="EditTextBox" Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="16">
-        <Grid>
+        <Grid Margin="0,10">
             <Grid.RowDefinitions>
+                <RowDefinition Height="40"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="60"/>
                 <RowDefinition Height="200"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" >
-                <StackPanel>
-                    <TextBlock Text="壁纸详情" FontSize="16" FontWeight="Bold" Background="#F5F5F5" Padding="10"/>
-                    <TextBlock Text="{Binding CurrentWallpaper.Project.Title}" FontWeight="Bold" FontSize="14" />
-                    <TextBox Text="{Binding CurrentWallpaper.Project.Description,UpdateSourceTrigger=PropertyChanged}" 
-                                  TextWrapping="Wrap" Margin="0,10" FontSize="12"
-                                  Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                  AcceptsReturn="True" Height="60"
-                                  IsReadOnly="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                        <TextBlock Text="类型:" FontWeight="Bold" Margin="0,0,5,0"/>
-                        <TextBlock Text="{Binding CurrentWallpaper.Project.Type}"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                        <TextBlock Text="分类:" FontWeight="Bold" Margin="0,0,5,0"/>
-                        <TextBlock Text="{Binding CurrentWallpaper.Category}"/>
-                    </StackPanel>
-                    <TextBlock Text="标签:" FontWeight="Bold" Margin="0,5,0,0"/>
-                    <WrapPanel Margin="0,2" Cursor="">
-                        <ItemsControl ItemsSource="{Binding CurrentWallpaper.Project.Tags}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Background="#E3F2FD" CornerRadius="10" Margin="2,1" Padding="5,2">
-                                        <TextBlock Text="{Binding}" FontSize="10"/>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </WrapPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="内容文件名:" FontWeight="Bold" />
-                        <TextBox x:Name="ContentFileNameTextBox"
-                                 Text="{Binding CurrentWallpaper.Project.File, UpdateSourceTrigger=PropertyChanged,Mode=TwoWay}" 
-                                 FontSize="12"
-                                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                                 IsReadOnly="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"/>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,5">
-                        <TextBlock Text="壁纸目录文件列表:" FontWeight="Bold" Margin="0,0,5,0" />
-                        <ListBox ItemsSource="{Binding CurrentWallpaper.FileNameList}" Height="100" Width="300"
-                                 Style="{StaticResource MaterialDesignFilterChipOutlineListBox}"
-                                 IsEnabled="{Binding IsEditMode}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBox Text="{Binding .}"  IsEnabled="True"  IsReadOnly="False" Background="Transparent" BorderThickness="0" FontSize="12"/>
-                                        <Button Content="Select" Command="{Binding DataContext.SetContentFileNameCommand, diag:PresentationTraceSources.TraceLevel=High, RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                CommandParameter="{Binding .}" 
-                                                Style="{StaticResource MaterialDesignOutlinedButton}"
-                                                Margin="5,0,0,0" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-                    </StackPanel>
+            <!-- 标题区域 -->
+            <Border Grid.Row="0" Background="{StaticResource PrimaryBrush}" CornerRadius="8,8,0,0">
+                <TextBlock Text="壁纸详情" Foreground="White" FontSize="18" FontWeight="Bold" 
+                       Padding="20,10" HorizontalAlignment="Center"/>
+            </Border>
+            <!-- 信息卡片区域 -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,10">
+                <StackPanel Margin="0,10">
+                    <!-- 基本信息卡片 -->
+                    <Border Style="{StaticResource MaterialCard}">
+                        <StackPanel>
+                            <TextBlock Text="基本信息" Style="{StaticResource SectionHeader}"/>
+                            <!-- 标题字段 -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="标题:" Style="{StaticResource FieldLabel}"/>
+                                <ContentControl Grid.Column="1" Content="{Binding CurrentWallpaper.Project.Title}"
+                                          Style="{StaticResource SmartTextField}"/>
+                            </Grid>
+                            <!-- 描述字段 -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="描述:" Style="{StaticResource FieldLabel}"/>
+                                <ContentControl Grid.Column="1" Content="{Binding CurrentWallpaper.Project.Description}"
+                                          Style="{StaticResource SmartTextField}" Height="60"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
 
-                    <!-- 操作按钮 -->
-                    <StackPanel Orientation="Horizontal" MinHeight="40">
-                        <Button x:Name="EditButton" Command="{Binding StartEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"
-                            Content="✏️ 编辑"
-                            Visibility="Visible" Cursor="">
-                        </Button>
-                        <Button x:Name="SaveButton" Command="{Binding SaveEditCommand}" Style="{StaticResource MaterialDesignOutlinedButton}"                         
-                            Content="💾 保存"
-                            Visibility="Visible" Cursor=""
-                              IsEnabled="{Binding IsEditMode}"  />
-                        <Button x:Name="CancelButton" 
-                            Command="{Binding CancelEditCommand}"
-                            Style="{StaticResource MaterialDesignOutlinedButton}"
-                            Content="❌ 取消"
-                            Visibility="Visible"/>
-                    </StackPanel>
+                    <!-- 分类信息卡片 -->
+                    <Border Style="{StaticResource MaterialCard}">
+                        <StackPanel>
+                            <TextBlock Text="分类信息" Style="{StaticResource SectionHeader}"/>
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                
+                                <TextBlock Grid.Row="0" Text="类型:" FontWeight="Bold"  VerticalAlignment="Center"/>
+                                <ComboBox  Grid.Row="0" Grid.Column="1" ItemsSource="{Binding WallpaperTypes}"
+                                        SelectedItem="{Binding CurrentWallpaper.Project.Type, Mode=TwoWay}"
+                                        FontSize="16"
+                                        Style="{StaticResource MaterialDesignOutlinedComboBox}"                                        
+                                        IsEnabled="{Binding IsEditMode}"/>
+
+                                <!-- 分类 -->
+                                <TextBlock Grid.Row="1" Text="分类:" Style="{StaticResource FieldLabel}"/>
+                                <ContentControl Grid.Row="1" Grid.Column="1" Content="{Binding CurrentWallpaper.Category}"
+                                          Style="{StaticResource SmartTextField}" Margin="0,4"/>
+
+                                <!-- 内容文件名 -->
+                                <TextBlock Grid.Row="2" Text="文件名:" Style="{StaticResource FieldLabel}"/>
+                                <ContentControl Grid.Row="2" Grid.Column="1" Content="{Binding CurrentWallpaper.Project.File}"
+                                          Style="{StaticResource SmartTextField}" Margin="0,4"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 标签卡片 -->
+                    <Border Style="{StaticResource MaterialCard}">
+                        <StackPanel>
+                            <TextBlock Text="标签" Style="{StaticResource SectionHeader}"/>
+
+                            <Border Background="{StaticResource LightBackground}" CornerRadius="4" Padding="12">
+                                <ItemsControl ItemsSource="{Binding CurrentWallpaper.Project.Tags}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel Orientation="Horizontal"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{StaticResource SecondaryBrush}" CornerRadius="12" 
+                                                Margin="2,4" Padding="8,4">
+                                                <TextBlock Text="{Binding}" FontSize="11" Foreground="White" 
+                                                       FontWeight="SemiBold"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- 文件列表卡片 -->
+                    <Border Style="{StaticResource MaterialCard}">
+                        <StackPanel>
+                            <TextBlock Text="目录文件" Style="{StaticResource SectionHeader}"/>
+
+                            <Border Background="{StaticResource LightBackground}" CornerRadius="4" Padding="12" 
+                                Height="120">
+                                <ListBox ItemsSource="{Binding CurrentWallpaper.FileNameList}" 
+                                     Style="{StaticResource MaterialDesignFilterChipOutlineListBox}"
+                                     BorderThickness="0" Background="Transparent">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock Text="{Binding}" FontSize="12" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis"/>
+
+                                                <Button Grid.Column="1" Content="选择" 
+                                                    Command="{Binding DataContext.SetContentFileNameCommand, 
+                                                             RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                    CommandParameter="{Binding}" 
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                    FontSize="10" Padding="8,2" Height="22"
+                                                    Visibility="{Binding DataContext.IsEditMode, 
+                                                                 RelativeSource={RelativeSource AncestorType=ListBox},
+                                                                 Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Border>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </ScrollViewer>
-            <!-- 预览区域 -->
-            <Border Grid.Row="1" Margin="10" Background="Black" Height="200">
-                <Image Source="{Binding CurrentWallpaper.PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}" Stretch="Uniform"/>
-            </Border>
-            <!-- 操作按钮 -->
-            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
-                <Button Content="⭐ 收藏"   Height="30" Margin="5" Foreground="White"/>
-                <Button x:Name="btnPreview" Content="👁️ 预览"  Height="30" Margin="5"/>
-                <Button Content="🚀 应用"  Height="30" Margin="5" Background="#4CAF50" Foreground="White"/>
-                <Button Content="🗑️ 删除"  Height="30" Margin="5" Background="#F44336" Foreground="White"/>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="20,0,0,20" >
+                <!-- 编辑操作按钮 -->
+                <Button x:Name="EditButton" Command="{Binding StartEditCommand}" 
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Content="✏️"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Visibility="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}, 
+                                 ConverterParameter=Visibility}"/>
+
+                <Button x:Name="SaveButton" Command="{Binding SaveEditCommand}" 
+                        Style="{StaticResource MaterialDesignRaisedButton}"
+                        Background="{StaticResource SuccessBrush}"
+                        Content="💾 保存" Margin="5" Padding="15,8"
+                        Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                <Button x:Name="CancelButton" Command="{Binding CancelEditCommand}"
+                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Content="❌ 取消" Margin="5" Padding="15,8"
+                        Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             </StackPanel>
+            <!-- 预览区域 -->
+            <Border Grid.Row="3" Margin="10,0" Background="Black" CornerRadius="4">
+                <Image Source="{Binding CurrentWallpaper.PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}" 
+                   Stretch="Uniform" VerticalAlignment="Center"/>
+            </Border>
+            <!-- v[操作按钮区域 -->
+            <Border Grid.Row="4" Background="{StaticResource LightBackground}" CornerRadius="0,0,8,8" 
+                Padding="15" Margin="0,10,0,0">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <!-- 功能操作按钮 -->
+                    <Rectangle Width="1" Height="30" Fill="#E0E0E0" Margin="15,0"/>
+                    <Button Content="⭐ 收藏" Style="{StaticResource MaterialDesignOutlinedButton}" 
+                        Height="30" Margin="5" Padding="12,0"/>
+                    <Button x:Name="btnPreview" Content="👁️ 预览" Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Height="30" Margin="5" Padding="12,0"/>
+                    <Button Content="🚀 应用" Style="{StaticResource MaterialDesignRaisedButton}" 
+                        Background="{StaticResource SecondaryBrush}"
+                        Height="30" Margin="5" Padding="12,0" Foreground="White"/>
+                    <Button Content="🗑️ 删除" Style="{StaticResource MaterialDesignOutlinedButton}"
+                        Height="30" Margin="5" Padding="12,0" Foreground="{StaticResource AccentBrush}"/>
+                </StackPanel>
+            </Border>
+
         </Grid>
     </ScrollViewer>
 </UserControl>

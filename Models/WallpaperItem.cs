@@ -114,6 +114,7 @@ namespace WallpaperEngine.Models {
                     // 更新到UI线程
                     System.Windows.Application.Current.Dispatcher.Invoke(() => {
                         FileInfoList?.Clear();
+                        FileNameList?.Clear();
                         foreach (var item in fileList.OrderBy(f => f.FileName)) {
                             FileInfoList.Add(item);
                             FileNameList.Add(item.FileName);

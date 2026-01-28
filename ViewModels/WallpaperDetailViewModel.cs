@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Newtonsoft.Json;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,6 +22,14 @@ namespace WallpaperEngine.ViewModels {
         private bool _isEditMode;
         [ObservableProperty]
         private string _editStatus = "就绪";
+        // 新增：类型列表数据源
+        public ObservableCollection<string> WallpaperTypes { get; } = new ObservableCollection<string>
+        {
+            "scene",
+            "video",
+            "web",
+            "application"
+        };
 
         public WallpaperDetailViewModel(IDataContextService dataContextService)
         {
