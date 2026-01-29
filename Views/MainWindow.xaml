@@ -3,8 +3,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:WallpaperEngine.ViewModels"
-        Title="Wallpaper Engine 管理工具" Height="1000" Width="1500"
-        MinHeight="1000" MinWidth="1500"
+        Title="Wallpaper Engine 管理工具" Height="1240" Width="1650"
+        MinHeight="1240" MinWidth="1650"
         xmlns:converters="clr-namespace:WallpaperEngine.Converters"
         xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:views="clr-namespace:WallpaperEngine.Views"
@@ -27,10 +27,11 @@
                 <ResourceDictionary Source="/Styles/WallpaperItemStyle.xaml"/>
                 <ResourceDictionary Source="/Styles/FavoriteButtonStyle.xaml"/>
                 <ResourceDictionary Source="/Converters/CommonConverters.xaml"/>
+                <ResourceDictionary Source="/Styles/ToolBarStyle.xaml"/>
+                <ResourceDictionary Source="/Styles/ModernComboBoxStyle.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
-
     <Grid>
         <!-- 你的主界面内容 -->
         <Grid.RowDefinitions>
@@ -40,38 +41,7 @@
             <!-- 内容行 -->
         </Grid.RowDefinitions>
         <!-- 自定义标题栏 -->
-        <Border Grid.Row="0" 
-                Background="{DynamicResource MaterialDesign.Brush.Primary.Light}" 
-                Height="40">
-            <Grid>
-                <TextBlock Text="Wallpaper Engine 壁纸管理工具" 
-                           VerticalAlignment="Center" 
-                           Margin="10,0"
-                           Foreground="White"
-                           FontSize="14"/>
-
-                <StackPanel Orientation="Horizontal" 
-                            HorizontalAlignment="Right"
-                            WindowChrome.IsHitTestVisibleInChrome="True">
-                    <Button x:Name="MinimizeButton" 
-                            Style="{StaticResource MaterialDesignToolButton}"
-                            Content="-"
-                            FontSize="14"
-                            Click="MinimizeButton_Click"/>
-                    <Button x:Name="MaximizeButton"
-                            Style="{StaticResource MaterialDesignToolButton}"
-                            Content="□"
-                            FontSize="14"
-                            Click="MaximizeButton_Click"/>
-                    <Button x:Name="CloseButton"
-                            Style="{StaticResource MaterialDesignToolButton}"
-                            Content="×"
-                            FontSize="14"
-                            Click="CloseButton_Click"
-                            Foreground="Red"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+        <views:CustomTitleBar Grid.Row="0" Title="Wallpaper Engine 壁纸管理工具"/>
         <!-- 主内容区域 -->
         <Grid Grid.Row="1">
             <Grid>
@@ -80,49 +50,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <!-- 工具栏 -->
-                <ToolBar Grid.Row="0" Background="#F0F0F0">
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="搜索:" VerticalAlignment="Center"/>
-                            <TextBox Text="" KeyDown="TextBox_KeyDown" VerticalAlignment="Center" Width="200" Margin="5,0"/>
-                        </StackPanel>
-                        <ComboBox ItemsSource="{Binding Categories}" SelectedItem="{Binding SelectedCategory}" Width="100" Margin="5,0"/>
-                        <CheckBox x:Name="FavoriteFilterCheckBox" Content="仅显示收藏" IsChecked="{Binding ShowFavoritesOnly}" ToolTip="只显示已收藏的壁纸"/>
-                        <Separator/>
-                        <!-- 扫描按钮组 -->
-                        <Button Content="📁 扫描壁纸" Command="{Binding ScanWallpapersCommand}" Margin="5,0" ToolTip="扫描壁纸文件夹"/>
-                        <Button Content="⚡ 快速增量扫描" Command="{Binding QuickIncrementalScanCommand}" Margin="5,0" ToolTip="对上次扫描的文件夹进行增量扫描" Background="#4CAF50" Foreground="White"/>
-                        <Button Content="❌ 取消" Command="{Binding CancelScanCommand}" Margin="5,0" ToolTip="取消当前扫描" Background="#F44336" Foreground="White" Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                        <Separator Margin="10,0"/>
-                        <!-- 扫描模式选择 -->
-                        <CheckBox Content="启用增量扫描" IsChecked="{Binding UseIncrementalScan}" VerticalAlignment="Center" Margin="5,0" ToolTip="增量扫描只处理新增或修改的文件，速度更快"/>
-                        <Separator Margin="10,0"/>
-                        <!-- 扫描状态显示 -->
-                        <StackPanel Orientation="Vertical" Margin="10,0" Width="300">
-                            <TextBlock Text="{Binding ScanStatus}" FontWeight="Bold" TextWrapping="Wrap"/>
-                            <ProgressBar Value="{Binding ScanProgress}" Height="10" Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,5"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,5">
-                                <TextBlock Text="新增:" Foreground="Green" Margin="0,0,5,0"/>
-                                <TextBlock Text="{Binding NewFoundCount}"/>
-                                <TextBlock Text="更新:" Foreground="Blue" Margin="10,0,5,0"/>
-                                <TextBlock Text="{Binding UpdatedCount}"/>
-                                <TextBlock Text="跳过:" Foreground="Gray" Margin="10,0,5,0"/>
-                                <TextBlock Text="{Binding SkippedCount}"/>
-                            </StackPanel>
-                        </StackPanel>
-                        <!-- 新增的设置按钮 -->
-                        <Button Content="⚙️ 设置" Command="{Binding OpenSettingsCommand}" Width="80" Height="35" ToolTip="设置" Style="{StaticResource MaterialDesignOutlinedButton}">
-                            <Button.ContentTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="设置" Margin="5,0,0,0"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </Button.ContentTemplate>
-                        </Button>
-                    </StackPanel>
-                </ToolBar>
-
+                <views:MyToolBar Grid.Row="0" />
                 <!-- 扫描状态显示 -->
                 <Border Grid.Row="0" Background="#FFF8E1" Height="30" VerticalAlignment="Bottom" Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <StackPanel Orientation="Horizontal" Margin="10,0">
@@ -203,7 +131,6 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                     </ScrollViewer>
-
                     <!-- 详情面板 -->
                     <Border Grid.Column="1" BorderBrush="#E0E0E0" BorderThickness="1,0,0,0">
                         <views:WallpaperDetailView />
