@@ -24,7 +24,6 @@
             </ResourceDictionary.MergedDictionaries>
             <converters:ImagePathToSourceConverter x:Key="ImageToSourceConverter"/>
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
-            <converters:DebugConverter x:Key="DebugConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 

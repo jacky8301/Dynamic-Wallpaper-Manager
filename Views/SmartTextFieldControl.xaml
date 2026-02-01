@@ -20,7 +20,7 @@
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
             <!-- 反向布尔转换器 -->
             <con:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
-            <con:DebugConverter x:Key="DebugConverter"/>
+            <con:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -43,8 +43,9 @@
                    Text="{Binding Content, Mode=TwoWay}" 
                    TextWrapping="Wrap"
                    FontSize="14"
+                   Padding="8,6"
                    VerticalAlignment="Center"
-                   Visibility="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"/>
+                   Visibility="{Binding IsEditMode, Converter={StaticResource InverseBooleanToVisibilityConverter}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
         <!-- 编辑模式 -->
         <TextBox x:Name="EditTextBox"
@@ -52,7 +53,7 @@
                  Text="{Binding Content, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                  FontSize="14"
                  Padding="8,6"
-                 Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                 Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter},Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                  TextWrapping="Wrap"
                  VerticalAlignment="Center"/>
 
@@ -66,7 +67,7 @@
                 BorderThickness="0"
                 VerticalAlignment="Center"
                 Margin="5,0"
-                Visibility="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"/>
+                Visibility="{Binding IsEditMode, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
 
         <Button x:Name="SaveButton" 
                 Grid.Column="2" 
