@@ -33,8 +33,6 @@ namespace WallpaperEngine.Views {
             var window = FindParentWindow();
             if (window != null) {
                 window.WindowState = window.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-                // 可选：根据窗口状态切换最大化按钮的图标（如“□”和“❐”）
-                // MaximizeButton.Content = window.WindowState == WindowState.Maximized ? "❐" : "□";
             }
         }
 

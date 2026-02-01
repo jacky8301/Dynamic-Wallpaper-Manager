@@ -1,0 +1,93 @@
+﻿<UserControl x:Class="WallpaperEngine.Views.SmartTextFieldControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:WallpaperEngine.Views"
+             xmlns:vm="clr-namespace:WallpaperEngine.ViewModels"
+             xmlns:con="clr-namespace:WallpaperEngine.Converters"
+             xmlns:dg="clr-namespace:System.Diagnostics;assembly=WindowsBase"
+             mc:Ignorable="d" 
+             d:DesignHeight="60" d:DesignWidth="400"
+            >
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/FieldLabel.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- 布尔到可见性转换器 -->
+            <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+            <!-- 反向布尔转换器 -->
+            <con:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+            <con:DebugConverter x:Key="DebugConverter"/>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="0,8" x:Name="myGrid">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="100"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- 字段标签 -->
+        <TextBlock Grid.Column="0" 
+                   Text="{Binding Label, Mode=TwoWay, dg:PresentationTraceSources.TraceLevel=High}" 
+                   Style="{StaticResource FieldLabel}"/>
+
+        <!-- 查看模式 -->
+        <TextBlock x:Name="ViewText" 
+                   Grid.Column="1" 
+                   Text="{Binding Content, Mode=TwoWay}" 
+                   TextWrapping="Wrap"
+                   FontSize="14"
+                   VerticalAlignment="Center"
+                   Visibility="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"/>
+
+        <!-- 编辑模式 -->
+        <TextBox x:Name="EditTextBox"
+                 Grid.Column="1"
+                 Text="{Binding Content, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                 FontSize="14"
+                 Padding="8,6"
+                 Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"
+                 TextWrapping="Wrap"
+                 VerticalAlignment="Center"/>
+
+        <!-- 编辑操作按钮 -->
+        <Button x:Name="EditButton" 
+                Grid.Column="2" 
+                Command="{Binding StartEditCommand}" 
+                Style="{StaticResource MaterialDesignOutlinedButton}"
+                Content="✏️"
+                Background="Transparent"
+                BorderThickness="0"
+                VerticalAlignment="Center"
+                Margin="5,0"
+                Visibility="{Binding IsEditMode, Converter={StaticResource InverseBooleanConverter}}"/>
+
+        <Button x:Name="SaveButton" 
+                Grid.Column="2" 
+                Command="{Binding SaveCommand}" 
+                Style="{StaticResource MaterialDesignRaisedButton}"
+                Background="#4CAF50"
+                Foreground="White"
+                Content="💾 保存" 
+                Margin="5,0"
+                Padding="15,8"
+                VerticalAlignment="Center"
+                Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+        <Button x:Name="CancelButton" 
+                Grid.Column="3" 
+                Command="{Binding CancelCommand}"
+                Style="{StaticResource MaterialDesignOutlinedButton}"
+                Content="❌ 取消" 
+                Margin="5,0"
+                Padding="15,8"
+                VerticalAlignment="Center"
+                Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+    </Grid>
+</UserControl>

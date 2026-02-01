@@ -1,0 +1,40 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- 智能文本框样式：查看模式下为TextBlock，编辑模式下为TextBox -->
+    <Style x:Key="SmartTextField" TargetType="ContentControl">
+        <Setter Property="Margin" Value="0,4"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Grid>
+                        <!-- 查看模式 -->
+                        <TextBlock x:Name="ViewText" 
+                           Text="{TemplateBinding Content}"
+                           TextWrapping="Wrap"
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           Visibility="Collapsed"/>
+
+                        <!-- 编辑模式 -->
+                        <TextBox x:Name="EditTextBox"
+                         Text="{TemplateBinding Content}"
+                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                         FontSize="14"
+                         Padding="8,6"
+                         Visibility="Collapsed"
+                         TextWrapping="Wrap"/>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsEditMode}" Value="False">
+                            <Setter TargetName="ViewText" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                            <Setter TargetName="EditTextBox" Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

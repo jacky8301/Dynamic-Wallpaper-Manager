@@ -1,7 +1,8 @@
 ﻿using Newtonsoft.Json;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace WallpaperEngine.Models {
-    public class WallpaperProject {
+    public  partial class WallpaperProject : ObservableObject{
         [JsonProperty("title")]
         public string Title { get; set; } = string.Empty;
 
@@ -9,7 +10,8 @@ namespace WallpaperEngine.Models {
         public string Description { get; set; } = string.Empty;
 
         [JsonProperty("file")]
-        public string File { get; set; } = string.Empty;
+        [ObservableProperty]
+        private string file  = string.Empty;
 
         [JsonProperty("preview")]
         public string Preview { get; set; } = "preview.jpg";

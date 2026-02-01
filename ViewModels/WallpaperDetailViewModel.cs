@@ -17,11 +17,12 @@ namespace WallpaperEngine.ViewModels {
         private readonly IDataContextService _dataContextService;
         private WallpaperItem _originalItem;
         [ObservableProperty]
-        private WallpaperItem _currentWallpaper;
+        private WallpaperItem? _currentWallpaper;
         [ObservableProperty]
         private bool _isEditMode;
         [ObservableProperty]
         private string _editStatus = "就绪";
+        public SmartTextFieldViewModel wallpaperTitleViewModel { get; set; }
         // 新增：类型列表数据源
         public ObservableCollection<string> WallpaperTypes { get; } = new ObservableCollection<string>
         {
@@ -30,7 +31,6 @@ namespace WallpaperEngine.ViewModels {
             "web",
             "application"
         };
-
         public WallpaperDetailViewModel(IDataContextService dataContextService)
         {
             _dbManager = new DatabaseManager();
@@ -38,11 +38,18 @@ namespace WallpaperEngine.ViewModels {
             // 订阅状态变化事件
             _dataContextService.CurrentWallpaperChanged += OnCurrentWallpaperChanged;
 
+            wallpaperTitleViewModel = new SmartTextFieldViewModel
+            {
+                Label = "标题",
+                Content = CurrentWallpaper?.Project?.Title,
+                IsEditMode = false
+            };
+
             // 初始化命令
             StartEditCommand = new RelayCommand(StartEdit);
             SaveEditCommand = new AsyncRelayCommand(SaveEdit, CanSaveEdit);
             CancelEditCommand = new RelayCommand(CancelEdit);
-            SetContentFileCommand = new RelayCommand<string>(SetContentFileName);
+            
         }
 
         private void OnCurrentWallpaperChanged(object? sender, WallpaperItem? newWallpaper)
@@ -50,12 +57,12 @@ namespace WallpaperEngine.ViewModels {
             // 当服务中的状态改变时，更新自己的数据
             CurrentWallpaper = newWallpaper;
             CurrentWallpaper.LoadFileListAsync().ConfigureAwait(false);
+            wallpaperTitleViewModel.Content = CurrentWallpaper?.Project?.Title;
         }
 
         public ICommand StartEditCommand { get; }
         public ICommand SaveEditCommand { get; }
         public ICommand CancelEditCommand { get; }
-        public ICommand SetContentFileCommand { get; }
 
         public void Initialize(WallpaperItem? wallpaper = null)
         {
@@ -63,8 +70,8 @@ namespace WallpaperEngine.ViewModels {
             CurrentWallpaper = wallpaper;
             _originalItem = CreateBackup(wallpaper);
         }
-
-        private async void SetContentFileName(string? fileName)
+        [RelayCommand]
+        private async Task SetContentFileName(string? fileName)
         {
             if (CurrentWallpaper != null) {
                 CurrentWallpaper.Project.File = fileName;
