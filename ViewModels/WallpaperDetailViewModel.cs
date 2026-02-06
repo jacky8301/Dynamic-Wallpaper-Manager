@@ -38,7 +38,7 @@ namespace WallpaperEngine.ViewModels {
             // 订阅状态变化事件
             _dataContextService.CurrentWallpaperChanged += OnCurrentWallpaperChanged;
 
-            wallpaperTitleViewModel = new SmartTextFieldViewModel
+            wallpaperTitleViewModel = new SmartTextFieldViewModel(this)
             {
                 Label = "标题",
                 Content = CurrentWallpaper?.Project?.Title,
@@ -56,7 +56,7 @@ namespace WallpaperEngine.ViewModels {
         {
             // 当服务中的状态改变时，更新自己的数据
             CurrentWallpaper = newWallpaper;
-            CurrentWallpaper.LoadFileListAsync().ConfigureAwait(false);
+            CurrentWallpaper?.LoadFileListAsync()?.ConfigureAwait(false);
             wallpaperTitleViewModel.Content = CurrentWallpaper?.Project?.Title;
         }
 
@@ -127,9 +127,6 @@ namespace WallpaperEngine.ViewModels {
         private bool CanSaveEdit()
         {
             return true;
-            return CurrentWallpaper != null &&
-                   IsEditMode &&
-                   !string.IsNullOrWhiteSpace(CurrentWallpaper.Project.Title);
         }
 
         private void CancelEdit()

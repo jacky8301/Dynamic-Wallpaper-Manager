@@ -13,6 +13,8 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private string? _label;
 
+        WallpaperDetailViewModel _detail;
+
         // 原始内容备份（用于取消操作）
         private string? _originalContent;
 
@@ -53,8 +55,9 @@ namespace WallpaperEngine.ViewModels {
         /// <summary>
         /// 构造函数
         /// </summary>
-        public SmartTextFieldViewModel()
+        public SmartTextFieldViewModel(WallpaperDetailViewModel wallpaperDetailViewModel)
         {
+            _detail = wallpaperDetailViewModel;
             PropertyChanged += OnPropertyChanged;
         }
 
@@ -65,7 +68,8 @@ namespace WallpaperEngine.ViewModels {
                 // 内容在非编辑模式下被外部更改时的处理
                 if (_originalContent != Content) {
                     // 可以在这里添加逻辑，例如验证或通知
-
+                    //_detail.CurrentWallpaper.Project.Title = Content ?? string.Empty;
+                    //_detail.SaveEditCommand.Execute(null);
                 }
             }
         }
