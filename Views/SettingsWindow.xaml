@@ -4,17 +4,98 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     Title="设置"
-    Width="600"
-    Height="450"
-    Background="White"
+    Width="650"
+    Height="500"
+    FontFamily="Segoe UI"
     WindowStartupLocation="CenterOwner">
 
     <Window.Resources>
-        <Style x:Key="SettingGroupStyle" TargetType="GroupBox">
-            <Setter Property="Margin" Value="10" />
-            <Setter Property="Padding" Value="15" />
-            <Setter Property="BorderThickness" Value="1" />
+        <!--  增强的设置组样式  -->
+        <Style x:Key="EnhancedSettingGroupStyle" TargetType="GroupBox">
+            <Setter Property="Margin" Value="0,0,0,16" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupBox">
+                        <Border
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{DynamicResource MaterialDesignDivider}"
+                            BorderThickness="1"
+                            CornerRadius="6"
+                            Effect="{StaticResource MaterialDesignShadowDepth1}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <!--  组标题区域  -->
+                                <Border
+                                    Grid.Row="0"
+                                    Padding="16,12,16,12"
+                                    Background="{DynamicResource MaterialDesignCardBackground}"
+                                    CornerRadius="6,6,0,0">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="16"
+                                        FontWeight="SemiBold"
+                                        Foreground="{DynamicResource MaterialDesignBody}"
+                                        Text="{TemplateBinding Header}" />
+                                </Border>
+
+                                <!--  内容区域  -->
+                                <Border
+                                    Grid.Row="1"
+                                    Padding="16"
+                                    Background="{DynamicResource MaterialDesignPaper}"
+                                    CornerRadius="0,0,6,6">
+                                    <ContentPresenter Margin="0" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--  增强文本框样式  -->
+        <Style
+            x:Key="EnhancedTextBox"
+            BasedOn="{StaticResource MaterialDesignOutlinedTextBox}"
+            TargetType="TextBox">
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="materialDesign:HintAssist.FloatingScale" Value="0.8" />
             <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}" />
+        </Style>
+
+        <!--  状态指示文本样式  -->
+        <Style x:Key="StatusTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+            <Style.Triggers>
+                <Trigger Property="Text" Value="">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!--  成功状态样式  -->
+        <Style
+            x:Key="SuccessStatusTextStyle"
+            BasedOn="{StaticResource StatusTextStyle}"
+            TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignSuccessBrush}" />
+        </Style>
+
+        <!--  错误状态样式  -->
+        <Style
+            x:Key="ErrorStatusTextStyle"
+            BasedOn="{StaticResource StatusTextStyle}"
+            TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource MaterialDesignErrorBrush}" />
         </Style>
     </Window.Resources>
 
@@ -25,72 +106,116 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!--  标题  -->
-        <TextBlock
+        <!--  标题区域增强  -->
+        <Border
             Grid.Row="0"
-            Margin="0,0,0,20"
-            FontSize="20"
-            FontWeight="Bold"
-            Foreground="{DynamicResource MaterialDesignBody}"
-            Text="设置" />
+            Margin="0,0,0,24"
+            Padding="16,12"
+            Background="{DynamicResource MaterialDesignCardBackground}"
+            CornerRadius="8"
+            Effect="{StaticResource MaterialDesignShadowDepth1}">
+            <StackPanel Orientation="Horizontal">
+                <materialDesign:PackIcon
+                    Width="24"
+                    Height="24"
+                    Margin="0,0,12,0"
+                    Foreground="{DynamicResource MaterialDesignPrimaryBrush}"
+                    Kind="Cog" />
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="22"
+                    FontWeight="SemiBold"
+                    Text="应用设置" />
+            </StackPanel>
+        </Border>
 
         <!--  设置内容区域  -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer
+            Grid.Row="1"
+            Padding="2"
+            VerticalScrollBarVisibility="Auto">
             <StackPanel>
                 <!--  Wallpaper Engine路径设置  -->
-                <GroupBox Header="Wallpaper Engine设置" Style="{StaticResource SettingGroupStyle}">
+                <GroupBox Header="Wallpaper Engine设置" Style="{StaticResource EnhancedSettingGroupStyle}">
                     <StackPanel>
                         <TextBlock
-                            Margin="0,0,0,10"
-                            FontWeight="SemiBold"
+                            Margin="0,0,0,12"
+                            FontSize="14"
+                            FontWeight="Medium"
+                            Foreground="{DynamicResource MaterialDesignBody}"
                             Text="Wallpaper Engine工具路径" />
 
-                        <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                        <StackPanel Margin="0,0,0,8" Orientation="Horizontal">
                             <TextBox
-                                Width="300"
+                                Width="320"
                                 materialDesign:HintAssist.Hint="例如：C:\Program Files\Wallpaper Engine\wallpaper32.exe"
-                                Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                                Style="{StaticResource EnhancedTextBox}"
                                 Text="{Binding WallpaperEnginePath, UpdateSourceTrigger=PropertyChanged}" />
 
                             <Button
-                                Width="80"
-                                Margin="10,0,0,0"
+                                Width="90"
+                                Margin="12,0,0,0"
                                 Command="{Binding BrowsePathCommand}"
                                 Content="浏览..."
-                                Style="{StaticResource MaterialDesignOutlinedButton}" />
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                ToolTip="选择Wallpaper Engine可执行文件" />
 
                             <Button
-                                Margin="10,0,0,0"
+                                Margin="12,0,0,0"
                                 Content="自动检测"
                                 Style="{StaticResource MaterialDesignOutlinedButton}"
                                 ToolTip="尝试自动检测Wallpaper Engine安装路径" />
                         </StackPanel>
 
-                        <TextBlock
-                            Margin="0,5,0,0"
-                            FontSize="11"
-                            Foreground="Gray"
-                            Text="{Binding PathStatus}" />
+                        <!--  动态状态提示  -->
+                        <TextBlock Style="{StaticResource SuccessStatusTextStyle}" Text="{Binding PathStatus}" />
 
-                        <TextBlock
-                            Margin="0,10,0,0"
-                            FontSize="10"
-                            Foreground="{DynamicResource MaterialDesignSecondaryForeground}"
-                            Text="提示：设置正确的Wallpaper Engine工具路径后，才能使用应用壁纸功能"
-                            TextWrapping="Wrap" />
+                        <Border
+                            Margin="0,12,0,0"
+                            Padding="12,10"
+                            Background="{DynamicResource MaterialDesignInformationBackground}"
+                            CornerRadius="4">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon
+                                    Width="16"
+                                    Height="16"
+                                    Margin="0,0,8,0"
+                                    Foreground="{DynamicResource MaterialDesignInformationForeground}"
+                                    Kind="Information" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="{DynamicResource MaterialDesignInformationForeground}"
+                                    Text="设置正确的Wallpaper Engine工具路径后，才能使用应用壁纸功能"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </GroupBox>
+
+                <!--  可以在这里添加更多设置组  -->
+                <TextBlock
+                    Margin="0,16,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="11"
+                    FontStyle="Italic"
+                    Foreground="{DynamicResource MaterialDesignSecondaryForeground}"
+                    Text="更多设置选项将在后续版本中提供..." />
             </StackPanel>
         </ScrollViewer>
-        <!--  按钮区域  -->
+
+        <!--  按钮区域美化  -->
         <Border
             Grid.Row="2"
-            Margin="-20,0,-20,-20"
-            Padding="10">
+            Margin="-20,16,-20,-20"
+            Padding="20,16"
+            Background="{DynamicResource MaterialDesignCardBackground}"
+            CornerRadius="8,8,0,0"
+            Effect="{StaticResource MaterialDesignShadowDepth2}">
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
                 <Button
                     Width="100"
-                    Margin="0,0,10,0"
+                    Margin="0,0,12,0"
                     Click="OK_Button_Click"
                     Content="确定"
                     Style="{StaticResource MaterialDesignRaisedButton}" />
