@@ -118,7 +118,7 @@ namespace WallpaperEngine.Services {
                     wallpaperItem.Project.Title = project.Title;
                     wallpaperItem.Project.Description = project.Description;
                     wallpaperItem.Project.Tags = project.Tags;
-                    wallpaperItem.Project.Type = project.Type;
+                    wallpaperItem.Project.Type = project.Type.ToLower();
                     wallpaperItem.Project.File = project.File;
                     wallpaperItem.Category = category;
                     // ... 更新其他可能变化的属性，但 IsFavorite 和 FavoritedDate 保持不变！

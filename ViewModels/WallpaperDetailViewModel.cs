@@ -4,7 +4,6 @@ using Newtonsoft.Json;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using WallpaperEngine.Data;
@@ -22,6 +21,8 @@ namespace WallpaperEngine.ViewModels {
         private bool _isEditMode;
         [ObservableProperty]
         private string _editStatus = "就绪";
+        [ObservableProperty]
+        private string _selectedType;
         public SmartTextFieldViewModel wallpaperTitleViewModel { get; set; }
         // 新增：类型列表数据源
         public ObservableCollection<string> WallpaperTypes { get; } = new ObservableCollection<string>
@@ -44,12 +45,10 @@ namespace WallpaperEngine.ViewModels {
                 Content = CurrentWallpaper?.Project?.Title,
                 IsEditMode = false
             };
-
             // 初始化命令
             StartEditCommand = new RelayCommand(StartEdit);
             SaveEditCommand = new AsyncRelayCommand(SaveEdit, CanSaveEdit);
-            CancelEditCommand = new RelayCommand(CancelEdit);
-            
+            CancelEditCommand = new RelayCommand(CancelEdit);            
         }
 
         private void OnCurrentWallpaperChanged(object? sender, WallpaperItem? newWallpaper)
@@ -58,6 +57,7 @@ namespace WallpaperEngine.ViewModels {
             CurrentWallpaper = newWallpaper;
             CurrentWallpaper?.LoadFileListAsync()?.ConfigureAwait(false);
             wallpaperTitleViewModel.Content = CurrentWallpaper?.Project?.Title;
+            SelectedType = CurrentWallpaper?.Project?.Type;
         }
 
         public ICommand StartEditCommand { get; }
@@ -105,6 +105,12 @@ namespace WallpaperEngine.ViewModels {
 
             try {
                 EditStatus = "正在保存...";
+                //if (wallpaperTitleViewModel.Content != null) {
+                //    CurrentWallpaper.Project.Title = wallpaperTitleViewModel.Content;
+                //}
+                if (SelectedType != null && CurrentWallpaper.Project.Type != SelectedType) {
+                    CurrentWallpaper.Project.Type = SelectedType.ToLower();
+                }
 
                 // 保存到project.json
                 await SaveToProjectJsonAsync();
@@ -180,7 +186,7 @@ namespace WallpaperEngine.ViewModels {
                     Description = source.Project.Description,
                     File = source.Project.File,
                     Preview = source.Project.Preview,
-                    Type = source.Project.Type,
+                    Type = source.Project.Type.ToLower(),
                     Tags = new List<string>(source.Project.Tags ?? new List<string>()),
                     ContentRating = source.Project.ContentRating,
                     Visibility = source.Project.Visibility

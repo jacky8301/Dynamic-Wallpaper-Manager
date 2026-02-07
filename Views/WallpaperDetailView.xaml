@@ -106,8 +106,8 @@
                                     FontSize="16"
                                     IsEnabled="{Binding IsEditMode}"
                                     ItemsSource="{Binding WallpaperTypes}"
-                                    SelectedItem="{Binding CurrentWallpaper.Project.Type, Mode=TwoWay}"
-                                    Style="{StaticResource MaterialDesignOutlinedComboBox}" />
+                                    SelectedItem="{Binding SelectedType, Mode=TwoWay}"
+                                    Style="{StaticResource MaterialDesignDataGridComboBox}" />
                                 <!--  分类  -->
                                 <TextBlock
                                     Grid.Row="1"
@@ -228,7 +228,7 @@
                                                     CommandParameter="{Binding}"
                                                     Content="选择为预览图"
                                                     FontSize="10"
-                                                    IsEnabled=""
+                                                    IsEnabled="True"
                                                     Style="{StaticResource MaterialDesignOutlinedButton}" />
                                             </Grid>
                                         </DataTemplate>
