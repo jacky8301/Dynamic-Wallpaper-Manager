@@ -51,16 +51,6 @@
                 Foreground="White"
                 ToolTip="取消当前扫描"
                 Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}" />
-
-            <Separator Margin="10,0" />
-            <!--  扫描模式选择  -->
-            <CheckBox
-                Margin="5,0"
-                VerticalAlignment="Center"
-                Content="启用增量扫描"
-                IsChecked="{Binding UseIncrementalScan}"
-                ToolTip="增量扫描只处理新增或修改的文件，速度更快" />
-
             <Separator Margin="10,0" />
             <!--  扫描状态显示  -->
             <StackPanel
