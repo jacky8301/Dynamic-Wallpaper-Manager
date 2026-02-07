@@ -61,7 +61,19 @@
                         <StackPanel>
                             <TextBlock Style="{StaticResource SectionHeader}" Text="基本信息" />
                             <!--  标题字段  -->
-                            <local:SmartTextFieldControl x:Name="editTitle" />
+                            <!--  描述字段  -->
+                            <Grid Margin="0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="100" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource FieldLabel}" Text="标题:" />
+                                <ContentControl
+                                    Grid.Column="1"
+                                    Height="60"
+                                    Content="{Binding Title, Mode=TwoWay}"
+                                    Style="{StaticResource SmartTextField}" />
+                            </Grid>
                             <!--  描述字段  -->
                             <Grid Margin="0,8">
                                 <Grid.ColumnDefinitions>
@@ -72,7 +84,7 @@
                                 <ContentControl
                                     Grid.Column="1"
                                     Height="60"
-                                    Content="{Binding CurrentWallpaper.Project.Description}"
+                                    Content="{Binding Description, Mode=TwoWay}"
                                     Style="{StaticResource SmartTextField}" />
                             </Grid>
                         </StackPanel>
@@ -93,7 +105,6 @@
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-
 
                                 <TextBlock
                                     Grid.Row="0"

@@ -9,7 +9,7 @@
                     <Grid>
                         <!-- 查看模式 -->
                         <TextBlock x:Name="ViewText" 
-                           Text="{TemplateBinding Content}"
+                           Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content, Mode=TwoWay}"
                            TextWrapping="Wrap"
                            FontSize="14"
                            VerticalAlignment="Center"
@@ -17,7 +17,7 @@
 
                         <!-- 编辑模式 -->
                         <TextBox x:Name="EditTextBox"
-                         Text="{TemplateBinding Content}"
+                         Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content, Mode=TwoWay}"
                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                          FontSize="14"
                          Padding="8,6"

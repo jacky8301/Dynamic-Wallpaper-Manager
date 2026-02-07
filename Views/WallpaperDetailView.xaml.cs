@@ -9,8 +9,7 @@ namespace WallpaperEngine.Views {
         {
             InitializeComponent();
             this.DataContext = ViewModel;
-            ViewModel.Initialize();
-            this.editTitle.DataContext = ViewModel.wallpaperTitleViewModel;
+            ViewModel.Initialize();            
         }
     }
 }

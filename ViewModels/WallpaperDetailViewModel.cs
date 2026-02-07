@@ -23,7 +23,10 @@ namespace WallpaperEngine.ViewModels {
         private string _editStatus = "就绪";
         [ObservableProperty]
         private string _selectedType;
-        public SmartTextFieldViewModel wallpaperTitleViewModel { get; set; }
+        [ObservableProperty]
+        private string _description;
+        [ObservableProperty]
+        private string _title;
         // 新增：类型列表数据源
         public ObservableCollection<string> WallpaperTypes { get; } = new ObservableCollection<string>
         {
@@ -39,12 +42,6 @@ namespace WallpaperEngine.ViewModels {
             // 订阅状态变化事件
             _dataContextService.CurrentWallpaperChanged += OnCurrentWallpaperChanged;
 
-            wallpaperTitleViewModel = new SmartTextFieldViewModel(this)
-            {
-                Label = "标题",
-                Content = CurrentWallpaper?.Project?.Title,
-                IsEditMode = false
-            };
             // 初始化命令
             StartEditCommand = new RelayCommand(StartEdit);
             SaveEditCommand = new AsyncRelayCommand(SaveEdit, CanSaveEdit);
@@ -56,8 +53,9 @@ namespace WallpaperEngine.ViewModels {
             // 当服务中的状态改变时，更新自己的数据
             CurrentWallpaper = newWallpaper;
             CurrentWallpaper?.LoadFileListAsync()?.ConfigureAwait(false);
-            wallpaperTitleViewModel.Content = CurrentWallpaper?.Project?.Title;
             SelectedType = CurrentWallpaper?.Project?.Type;
+            Description = CurrentWallpaper?.Project?.Description;
+            Title = CurrentWallpaper?.Project?.Title;
         }
 
         public ICommand StartEditCommand { get; }
@@ -75,6 +73,23 @@ namespace WallpaperEngine.ViewModels {
         {
             if (CurrentWallpaper != null) {
                 CurrentWallpaper.Project.File = fileName;
+                try {
+                    // 保存到project.json
+                    await SaveToProjectJsonAsync();
+                    // 更新数据库
+                    await UpdateDatabaseAsync();
+                    // 重新加载壁纸信息
+                } catch (Exception ex) {
+                    ShowErrorMessage($"保存失败: {ex.Message}");
+                }
+            }
+        }
+
+        [RelayCommand]
+        private async Task SetPreviewFileName(string? fileName)
+        {
+            if (CurrentWallpaper != null) {
+                CurrentWallpaper.Project.Preview = fileName;
                 try {
                     // 保存到project.json
                     await SaveToProjectJsonAsync();
@@ -105,11 +120,15 @@ namespace WallpaperEngine.ViewModels {
 
             try {
                 EditStatus = "正在保存...";
-                //if (wallpaperTitleViewModel.Content != null) {
-                //    CurrentWallpaper.Project.Title = wallpaperTitleViewModel.Content;
-                //}
+                if (Title != null && CurrentWallpaper.Project.Title != Title) {
+                    CurrentWallpaper.Project.Title = Title;
+                }
                 if (SelectedType != null && CurrentWallpaper.Project.Type != SelectedType) {
                     CurrentWallpaper.Project.Type = SelectedType.ToLower();
+                }
+
+                if (Description != null && CurrentWallpaper.Project.Description != Description) {
+                    CurrentWallpaper.Project.Description = Description;
                 }
 
                 // 保存到project.json
