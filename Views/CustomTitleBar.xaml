@@ -1,34 +1,39 @@
-﻿<UserControl x:Class="WallpaperEngine.Views.CustomTitleBar"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             Height="40">
+﻿<UserControl
+    x:Class="WallpaperEngine.Views.CustomTitleBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Height="40">
     <Border Background="{DynamicResource MaterialDesign.Brush.Primary.Light}">
         <Grid>
-            <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                       VerticalAlignment="Center" 
-                       Margin="10,0"
-                       Foreground="White"
-                       FontSize="14"/>
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="MinimizeButton" 
-                        Style="{StaticResource MaterialDesignToolButton}"
-                        WindowChrome.IsHitTestVisibleInChrome="True"
-                        Content="-"
-                        FontSize="14"
-                        Click="MinimizeButton_Click"/>
-                <Button x:Name="MaximizeButton"
-                        Style="{StaticResource MaterialDesignToolButton}"
-                        WindowChrome.IsHitTestVisibleInChrome="True"
-                        Content="□"
-                        FontSize="14"
-                        Click="MaximizeButton_Click"/>
-                <Button x:Name="CloseButton"
-                        Style="{StaticResource MaterialDesignToolButton}"
-                        WindowChrome.IsHitTestVisibleInChrome="True"
-                        Content="×"
-                        FontSize="14"
-                        Click="CloseButton_Click"
-                        Foreground="Red"/>
+            <TextBlock
+                Margin="10,0"
+                VerticalAlignment="Center"
+                FontSize="14"
+                Foreground="White"
+                Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <Button
+                    x:Name="MinimizeButton"
+                    Click="MinimizeButton_Click"
+                    Content="-"
+                    FontSize="14"
+                    Style="{StaticResource MaterialDesignToolButton}"
+                    WindowChrome.IsHitTestVisibleInChrome="True" />
+                <Button
+                    x:Name="MaximizeButton"
+                    Click="MaximizeButton_Click"
+                    Content="□"
+                    FontSize="14"
+                    Style="{StaticResource MaterialDesignToolButton}"
+                    WindowChrome.IsHitTestVisibleInChrome="True" />
+                <Button
+                    x:Name="CloseButton"
+                    Click="CloseButton_Click"
+                    Content="×"
+                    FontSize="14"
+                    Foreground="Red"
+                    Style="{StaticResource MaterialDesignToolButton}"
+                    WindowChrome.IsHitTestVisibleInChrome="True" />
             </StackPanel>
         </Grid>
     </Border>

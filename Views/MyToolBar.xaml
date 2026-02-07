@@ -1,83 +1,111 @@
-﻿<UserControl x:Class="WallpaperEngine.Views.MyToolBar"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             mc:Ignorable="d">
+﻿<UserControl
+    x:Class="WallpaperEngine.Views.MyToolBar"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
     <ToolBar Background="#F0F0F0">
-        <StackPanel Orientation="Horizontal" Margin="5">
-            <!-- 搜索区域 -->
+        <StackPanel Margin="5" Orientation="Horizontal">
+            <!--  搜索区域  -->
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="搜索:" VerticalAlignment="Center"/>
-                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
-                         KeyDown="TextBox_KeyDown" 
-                         VerticalAlignment="Center" 
-                         Width="200" 
-                         Margin="5,0"/>
+                <TextBlock VerticalAlignment="Center" Text="搜索:" />
+                <TextBox
+                    Width="200"
+                    Margin="5,0"
+                    VerticalAlignment="Center"
+                    KeyDown="TextBox_KeyDown"
+                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
             </StackPanel>
-            <!-- 分类筛选 -->
-            <ComboBox ItemsSource="{Binding Categories}" 
-                      SelectedItem="{Binding SelectedCategory}" 
-                      Width="100" Margin="5,0"/>
-            <!-- 收藏筛选 -->
-            <CheckBox Content="仅显示收藏" 
-                      IsChecked="{Binding ShowFavoritesOnly}" 
-                      ToolTip="只显示已收藏的壁纸"/>
+            <!--  分类筛选  -->
+            <ComboBox
+                Width="100"
+                Margin="5,0"
+                ItemsSource="{Binding Categories}"
+                SelectedItem="{Binding SelectedCategory}" />
+            <!--  收藏筛选  -->
+            <CheckBox
+                Content="仅显示收藏"
+                IsChecked="{Binding ShowFavoritesOnly}"
+                ToolTip="只显示已收藏的壁纸" />
 
-            <Separator/>
-            <!-- 扫描按钮组 -->
-            <Button Content="📁 扫描壁纸" 
-                    Command="{Binding ScanWallpapersCommand}" 
-                    Margin="5,0" 
-                    ToolTip="扫描壁纸文件夹"/>
-            <Button Content="⚡ 快速增量扫描" 
-                    Command="{Binding QuickIncrementalScanCommand}" 
-                    Margin="5,0" 
-                    ToolTip="对上次扫描的文件夹进行增量扫描" 
-                    Background="#4CAF50" 
-                    Foreground="White"/>
-            <Button Content="❌ 取消" 
-                    Command="{Binding CancelScanCommand}" 
-                    Margin="5,0" 
-                    ToolTip="取消当前扫描" 
-                    Background="#F44336" 
-                    Foreground="White" 
-                    Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Separator />
+            <!--  扫描按钮组  -->
+            <Button
+                Margin="5,0"
+                Command="{Binding ScanWallpapersCommand}"
+                Content="📁 扫描壁纸"
+                ToolTip="扫描壁纸文件夹" />
+            <Button
+                Margin="5,0"
+                Background="#4CAF50"
+                Command="{Binding QuickIncrementalScanCommand}"
+                Content="⚡ 快速增量扫描"
+                Foreground="White"
+                ToolTip="对上次扫描的文件夹进行增量扫描" />
+            <Button
+                Margin="5,0"
+                Background="#F44336"
+                Command="{Binding CancelScanCommand}"
+                Content="❌ 取消"
+                Foreground="White"
+                ToolTip="取消当前扫描"
+                Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-            <Separator Margin="10,0"/>
-            <!-- 扫描模式选择 -->
-            <CheckBox Content="启用增量扫描" 
-                      IsChecked="{Binding UseIncrementalScan}" 
-                      VerticalAlignment="Center" 
-                      Margin="5,0" 
-                      ToolTip="增量扫描只处理新增或修改的文件，速度更快"/>
+            <Separator Margin="10,0" />
+            <!--  扫描模式选择  -->
+            <CheckBox
+                Margin="5,0"
+                VerticalAlignment="Center"
+                Content="启用增量扫描"
+                IsChecked="{Binding UseIncrementalScan}"
+                ToolTip="增量扫描只处理新增或修改的文件，速度更快" />
 
-            <Separator Margin="10,0"/>
-            <!-- 扫描状态显示 -->
-            <StackPanel Orientation="Vertical" Margin="10,0" Width="300">
-                <TextBlock Text="{Binding ScanStatus}" FontWeight="Bold" TextWrapping="Wrap"/>
-                <ProgressBar Value="{Binding ScanProgress}" Height="10" 
-                           Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}" 
-                           Margin="0,5"/>
-                <StackPanel Orientation="Horizontal" Margin="0,5">
-                    <TextBlock Text="新增:" Foreground="Green" Margin="0,0,5,0"/>
-                    <TextBlock Text="{Binding NewFoundCount}"/>
-                    <TextBlock Text="更新:" Foreground="Blue" Margin="10,0,5,0"/>
-                    <TextBlock Text="{Binding UpdatedCount}"/>
-                    <TextBlock Text="跳过:" Foreground="Gray" Margin="10,0,5,0"/>
-                    <TextBlock Text="{Binding SkippedCount}"/>
+            <Separator Margin="10,0" />
+            <!--  扫描状态显示  -->
+            <StackPanel
+                Width="300"
+                Margin="10,0"
+                Orientation="Vertical">
+                <TextBlock
+                    FontWeight="Bold"
+                    Text="{Binding ScanStatus}"
+                    TextWrapping="Wrap" />
+                <ProgressBar
+                    Height="10"
+                    Margin="0,5"
+                    Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Value="{Binding ScanProgress}" />
+                <StackPanel Margin="0,5" Orientation="Horizontal">
+                    <TextBlock
+                        Margin="0,0,5,0"
+                        Foreground="Green"
+                        Text="新增:" />
+                    <TextBlock Text="{Binding NewFoundCount}" />
+                    <TextBlock
+                        Margin="10,0,5,0"
+                        Foreground="Blue"
+                        Text="更新:" />
+                    <TextBlock Text="{Binding UpdatedCount}" />
+                    <TextBlock
+                        Margin="10,0,5,0"
+                        Foreground="Gray"
+                        Text="跳过:" />
+                    <TextBlock Text="{Binding SkippedCount}" />
                 </StackPanel>
             </StackPanel>
-            <!-- 设置按钮 -->
-            <Button Content="⚙️ 设置" 
-                    Command="{Binding OpenSettingsCommand}" 
-                    Width="80" Height="35" 
-                    ToolTip="设置" 
-                    Style="{StaticResource MaterialDesignOutlinedButton}">
+            <!--  设置按钮  -->
+            <Button
+                Width="80"
+                Height="35"
+                Command="{Binding OpenSettingsCommand}"
+                Content="⚙️ 设置"
+                Style="{StaticResource MaterialDesignOutlinedButton}"
+                ToolTip="设置">
                 <Button.ContentTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="设置" Margin="5,0,0,0"/>
+                            <TextBlock Margin="5,0,0,0" Text="设置" />
                         </StackPanel>
                     </DataTemplate>
                 </Button.ContentTemplate>
