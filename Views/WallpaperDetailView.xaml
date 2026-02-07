@@ -189,7 +189,7 @@
                                 <TextBlock
                                     Margin="20,0,0,8"
                                     FontSize="14"
-                                    Text="{Binding CurrentWallpaper.Project.Preview}" />
+                                    Text="{Binding PreviewFileName, Mode=TwoWay}" />
                             </StackPanel>
                             <TextBlock Style="{StaticResource SectionHeader}" Text="目录文件" />
 

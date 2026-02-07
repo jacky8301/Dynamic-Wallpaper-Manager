@@ -27,6 +27,10 @@ namespace WallpaperEngine.ViewModels {
         private string _description;
         [ObservableProperty]
         private string _title;
+        [ObservableProperty]
+        private string _previewFileName;
+        [ObservableProperty]
+        private string _contentFileName;
         // 新增：类型列表数据源
         public ObservableCollection<string> WallpaperTypes { get; } = new ObservableCollection<string>
         {
@@ -56,6 +60,7 @@ namespace WallpaperEngine.ViewModels {
             SelectedType = CurrentWallpaper?.Project?.Type;
             Description = CurrentWallpaper?.Project?.Description;
             Title = CurrentWallpaper?.Project?.Title;
+            PreviewFileName = CurrentWallpaper?.Project?.Preview;
         }
 
         public ICommand StartEditCommand { get; }
@@ -71,34 +76,37 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private async Task SetContentFileName(string? fileName)
         {
-            if (CurrentWallpaper != null) {
-                CurrentWallpaper.Project.File = fileName;
-                try {
-                    // 保存到project.json
-                    await SaveToProjectJsonAsync();
-                    // 更新数据库
-                    await UpdateDatabaseAsync();
-                    // 重新加载壁纸信息
-                } catch (Exception ex) {
-                    ShowErrorMessage($"保存失败: {ex.Message}");
-                }
+            if (CurrentWallpaper == null || CurrentWallpaper.Project.File == fileName) {
+                return;
             }
-        }
+            try {
+                CurrentWallpaper.Project.File = fileName;
+                // 保存到project.json
+                await SaveToProjectJsonAsync();
+                // 更新数据库
+                await UpdateDatabaseAsync();
+                // 重新加载壁纸信息
+            } catch (Exception ex) {
+                ShowErrorMessage($"保存失败: {ex.Message}");
+            }
+        }        
 
         [RelayCommand]
         private async Task SetPreviewFileName(string? fileName)
         {
-            if (CurrentWallpaper != null) {
-                CurrentWallpaper.Project.Preview = fileName;
-                try {
-                    // 保存到project.json
-                    await SaveToProjectJsonAsync();
-                    // 更新数据库
-                    await UpdateDatabaseAsync();
-                    // 重新加载壁纸信息
-                } catch (Exception ex) {
-                    ShowErrorMessage($"保存失败: {ex.Message}");
-                }
+            if (CurrentWallpaper == null || CurrentWallpaper.Project.Preview == fileName) {
+                return;
+            }
+            CurrentWallpaper.Project.Preview = fileName;
+            PreviewFileName = fileName;
+            try {
+                // 保存到project.json
+                await SaveToProjectJsonAsync();
+                // 更新数据库
+                await UpdateDatabaseAsync();
+                // 重新加载壁纸信息
+            } catch (Exception ex) {
+                ShowErrorMessage($"保存失败: {ex.Message}");
             }
         }
 
