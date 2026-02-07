@@ -17,14 +17,14 @@ namespace WallpaperEngine.Services {
         }
 
         // 非模态显示（使用独立窗口）
-        public static void Show(MaterialDialogParams parameters)
-        {
-            var window = new MaterialDialogWindow(parameters) {
-                Owner = System.Windows.Application.Current.MainWindow,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner
-            };
-            window.Show();
-        }
+        //public static void Show(MaterialDialogParams parameters)
+        //{
+        //    var window = new MaterialDialogWindow(parameters) {
+        //        Owner = System.Windows.Application.Current.MainWindow,
+        //        WindowStartupLocation = WindowStartupLocation.CenterOwner
+        //    };
+        //    window.Show();
+        //}
 
         // 快速调用方法
         public static async Task<bool> ShowConfirmationAsync(string message, string title = "确认")

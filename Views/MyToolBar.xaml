@@ -33,13 +33,13 @@
             <!--  扫描按钮组  -->
             <Button
                 Margin="5,0"
-                Command="{Binding ScanWallpapersCommand}"
+                Command="{Binding FullScanWallpapersCommand}"
                 Content="📁 扫描壁纸"
                 ToolTip="扫描壁纸文件夹" />
             <Button
                 Margin="5,0"
                 Background="#4CAF50"
-                Command="{Binding QuickIncrementalScanCommand}"
+                Command="{Binding IncrementalScanWallpapersCommand}"
                 Content="⚡ 快速增量扫描"
                 Foreground="White"
                 ToolTip="对上次扫描的文件夹进行增量扫描" />

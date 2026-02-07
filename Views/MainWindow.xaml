@@ -171,7 +171,7 @@
                                                         Margin="5"
                                                         FontWeight="Bold"
                                                         Foreground="White"
-                                                        Text="{Binding Project.Title}"
+                                                        Text="{Binding Project.Title, Mode=TwoWay}"
                                                         TextWrapping="Wrap" />
                                                 </Border>
                                                 <!--  收藏按钮 - 固定在右上角  -->

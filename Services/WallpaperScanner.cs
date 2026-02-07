@@ -8,6 +8,7 @@ namespace WallpaperEngine.Services {
     public class WallpaperScanner {
         private readonly DatabaseManager _dbManager;
         private CancellationTokenSource _cancellationTokenSource;
+        bool _isIncrementalScan = false;
 
         public WallpaperScanner(DatabaseManager dbManager)
         {
@@ -20,8 +21,9 @@ namespace WallpaperEngine.Services {
             _cancellationTokenSource.Cancel();
         }
 
-        public async Task<bool> ScanWallpapersAsync(string rootFolderPath, IProgress<ScanProgress> progress = null)
+        public async Task<bool> ScanWallpapersAsync(string rootFolderPath, bool inc, IProgress<ScanProgress> progress = null)
         {
+            _isIncrementalScan = inc;
             if (!Directory.Exists(rootFolderPath)) {
                 throw new DirectoryNotFoundException($"目录不存在: {rootFolderPath}");
             }
@@ -56,7 +58,7 @@ namespace WallpaperEngine.Services {
                     if (cancellationToken.IsCancellationRequested) return false;
 
                     try {
-                        var wallpaper = await ProcessWallpaperFolderAsync(folder);
+                        var wallpaper = await WallpaperFolderProcessor.Process(folder, _isIncrementalScan, _dbManager);
                         if (wallpaper != null) {
                             _dbManager.SaveWallpaper(wallpaper);
                             validCount++;
@@ -89,86 +91,6 @@ namespace WallpaperEngine.Services {
             }
         }
 
-        private async Task<WallpaperItem> ProcessWallpaperFolderAsync(string folderPath)
-        {
-
-            try {
-
-                WallpaperItem wallpaperItem = null;
-                var projectFile = Path.Combine(folderPath, "project.json");
-                if (!File.Exists(projectFile)) {
-                    string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                    string defaultProjectPath = Path.Combine(baseDirectory, "project.json");
-                    File.Copy(defaultProjectPath, Path.Combine(folderPath, "project.json"));
-                }
-
-                var jsonContent = await File.ReadAllTextAsync(projectFile);
-                var project = JsonConvert.DeserializeObject<WallpaperProject>(jsonContent);
-
-                if (project == null) {
-                    return wallpaperItem;
-                }
-
-                // 自动分类
-                string category = GetCategory(project);
-                var existingWallpaper = _dbManager.GetWallpaperByFolderPath(folderPath);
-                if (existingWallpaper != null) {
-                    wallpaperItem = existingWallpaper;
-                    wallpaperItem.IsNewlyAdded = false;
-                    wallpaperItem.Project.Title = project.Title;
-                    wallpaperItem.Project.Description = project.Description;
-                    wallpaperItem.Project.Tags = project.Tags;
-                    wallpaperItem.Project.Type = project.Type.ToLower();
-                    wallpaperItem.Project.File = project.File;
-                    wallpaperItem.Category = category;
-                    // ... 更新其他可能变化的属性，但 IsFavorite 和 FavoritedDate 保持不变！
-                } else {
-                    // 如果数据库中不存在：创建新项
-                    wallpaperItem = new WallpaperItem {
-                        FolderPath = folderPath,
-                        Project = project,
-                        Category = category, // 你的自动分类逻辑
-                        AddedDate = DateTime.Now,
-                        IsNewlyAdded = true // 标记为新添加
-                                            // IsFavorite 和 FavoritedDate 使用默认值（false, MinValue）
-                    };
-                }
-
-
-                return wallpaperItem;
-            } catch (Exception ex) {
-                System.Diagnostics.Debug.WriteLine($"处理壁纸文件夹错误 {folderPath}: {ex.Message}");
-                return null;
-            }
-        }
-
-        private static string GetCategory(WallpaperProject project)
-        {
-            var category = "未分类";
-            if (project.Tags != null && project.Tags.Count > 0) {
-                var tagCategories = new Dictionary<string, string[]>
-                    {
-                        { "自然", new[] { "nature", "自然", "风景", "landscape" } },
-                        { "抽象", new[] { "abstract", "抽象", "艺术", "art" } },
-                        { "游戏", new[] { "game", "游戏", "gaming" } },
-                        { "动漫", new[] { "anime", "动漫", "动画" } },
-                        { "科幻", new[] { "sci-fi", "科幻", "space" } },
-                        { "风景", new[] { "scenery", "风景", "view" } },
-                        { "建筑", new[] { "architecture", "建筑", "building" } },
-                        { "动物", new[] { "animal", "动物", "pet" } }
-                    };
-
-                foreach (var tag in project.Tags) {
-                    foreach (var cat in tagCategories) {
-                        if (cat.Value.Any(t => tag.ToLower().Contains(t.ToLower()))) {
-                            category = cat.Key;
-                            break;
-                        }
-                    }
-                    if (category != "未分类") break;
-                }
-            }
-            return category;
-        }
+        
     }
 }

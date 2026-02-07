@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -11,14 +12,11 @@ using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
 using WallpaperEngine.Views;
-using Serilog;
-using System.Threading.Tasks;
 
 namespace WallpaperEngine.ViewModels {
     public partial class MainViewModel : ObservableObject {
         public readonly DatabaseManager _dbManager;
         private readonly WallpaperScanner _scanner;
-        private readonly IncrementalScanner _incrementalScanner;
         private readonly PreviewService _previewService;
         private readonly ISettingsService _settingsService;
         private readonly IDataContextService _dataContextService;
@@ -72,9 +70,6 @@ namespace WallpaperEngine.ViewModels {
         private ObservableCollection<DatabaseManager.ScanInfo> _scanHistory = new();
 
         [ObservableProperty]
-        private bool _useIncrementalScan = true; // 默认启用增量扫描
-
-        [ObservableProperty]
         private int _newFoundCount;
 
         [ObservableProperty]
@@ -94,7 +89,6 @@ namespace WallpaperEngine.ViewModels {
         {
             _dbManager = new DatabaseManager();
             _scanner = new WallpaperScanner(_dbManager);
-            _incrementalScanner = new IncrementalScanner(_dbManager);
 
             WallpapersView = CollectionViewSource.GetDefaultView(Wallpapers);
             WallpapersView.Filter = FilterWallpapers;
@@ -201,29 +195,7 @@ namespace WallpaperEngine.ViewModels {
                     DialogType = DialogType.Warning }
                 );
             }
-        }
-
-        [RelayCommand]
-        private async Task ScanWallpapersAsync()
-        {
-            if (IsScanning) return;
-
-            try {
-                var dialog = new FolderBrowserDialog {
-                    Description = "选择壁纸文件夹根目录",
-                    ShowNewFolderButton = false,
-                    RootFolder = Environment.SpecialFolder.MyComputer,
-                    SelectedPath = GetLastUsedFolder()
-                };
-
-                var result = dialog.ShowDialog();
-                if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.SelectedPath)) {
-                    await StartScanningAsync(dialog.SelectedPath);
-                }
-            } catch (Exception ex) {
-                HandleScanError(ex);
-            }
-        }
+        }        
 
         [RelayCommand]
         private void LoadScanHistory()
@@ -243,16 +215,7 @@ namespace WallpaperEngine.ViewModels {
                 // 这里需要添加清除历史记录的方法
                 LoadScanHistory();
             }
-        }
-
-        [RelayCommand]
-        private void CancelScan()
-        {
-            if (IsScanning) {
-                _incrementalScanner.Cancel();
-                ScanStatus = "正在取消扫描...";
-            }
-        }
+        }        
 
         [RelayCommand]
         private async Task SearchWallpapers()
@@ -506,9 +469,9 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
-        private void ShowNotification(string message)
+        private async Task ShowNotification(string message)
         {
-            MaterialDialogService.Show(new MaterialDialogParams {
+            await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                 Message = message,
                 Title = "通知",
                 ConfirmButtonText = "OK",
@@ -519,12 +482,12 @@ namespace WallpaperEngine.ViewModels {
 
         // 转到壁纸目录命令
         [RelayCommand]
-        private void GoToWallpaperDirectory(object parameter)
+        private async Task GoToWallpaperDirectory(object parameter)
         {
 
             if (parameter is WallpaperItem wallpaper) {
                 SelectedWallpaper = wallpaper;
-                OpenWallpaperDirectory(wallpaper);
+                await OpenWallpaperDirectory(wallpaper);
             }
         }
 
@@ -548,7 +511,55 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
-        private async Task StartScanningAsync(string folderPath)
+        [RelayCommand]
+        private async Task FullScanWallpapers() // 全量扫描命令
+        {
+           await ScanWallpapers(false);
+        }
+        [RelayCommand]
+        private async Task IncrementalScanWallpapers()  // 增量扫描命令
+        {
+            await ScanWallpapers(true);
+        }
+        private async Task ScanWallpapers(bool isIncrement)
+        {
+            if (IsScanning) {
+                return;
+            }
+
+            try {
+                string scanPath = string.Empty;
+                bool hasLastScanPath = false;
+
+                var lastScan = ScanHistory.FirstOrDefault();
+                if (lastScan != null) {
+                    if (Directory.Exists(lastScan.ScanPath)) {
+                        hasLastScanPath = true;
+                    }
+                }
+
+                if (hasLastScanPath && isIncrement) {
+                    scanPath = lastScan.ScanPath;
+                    await DoScanWallpapers(scanPath, true);
+                } else {
+                    var dialog = new FolderBrowserDialog {
+                        Description = "选择壁纸文件夹根目录",
+                        ShowNewFolderButton = false,
+                        RootFolder = Environment.SpecialFolder.MyComputer,
+                        SelectedPath = GetLastUsedFolder()
+                    };
+                    var result = dialog.ShowDialog();
+                    if (result == DialogResult.OK && !string.IsNullOrEmpty(dialog.SelectedPath)) {
+                        await DoScanWallpapers(dialog.SelectedPath, isIncrement);
+                    }
+                    
+                }
+            }catch (Exception ex) {
+                await HandleScanError(ex);
+            }
+        }
+
+        private async Task DoScanWallpapers(string folderPath, bool isIncrement)
         {
             IsScanning = true;
             ScanStatus = "正在准备扫描...";
@@ -558,49 +569,23 @@ namespace WallpaperEngine.ViewModels {
             NewFoundCount = 0;
             UpdatedCount = 0;
             SkippedCount = 0;
-
             try {
-                if (UseIncrementalScan) {
-                    await PerformIncrementalScanAsync(folderPath);
-                } else {
-                    await PerformFullScanAsync(folderPath);
-                }
+
+                ScanStatus = "正在执行全量扫描...";
+                var progress = new Progress<ScanProgress>(UpdateProgress);
+                var result = await _scanner.ScanWallpapersAsync(folderPath, isIncrement, progress);
+                ScanStatus = result ? "全量扫描完成！" : "扫描被取消";
             } catch (Exception ex) {
-                HandleScanError(ex);
+                await HandleScanError(ex);
             } finally {
                 IsScanning = false;
                 SelectedCategory = "所有分类";
                 ShowFavoritesOnly = false;
                 SearchText = string.Empty;
+                _dbManager.SaveScanRecord(CurrentScanFolder, NewFoundCount, UpdatedCount, SkippedCount);
                 LoadScanHistory();
                 await LoadWallpapersAsync();
             }
-        }
-
-        private async Task PerformIncrementalScanAsync(string folderPath)
-        {
-            ScanStatus = "正在执行增量扫描...";
-
-            var progress = new Progress<ScanProgress>(UpdateProgress);
-            var stats = await _incrementalScanner.ScanIncrementallyAsync(folderPath, progress);
-
-            ScanStatus = $"增量扫描完成！\n" +
-                        $"新增: {stats.NewWallpapers}, 更新: {stats.UpdatedWallpapers}, 跳过: {stats.SkippedFolders}\n" +
-                        $"耗时: {stats.DurationMs / 1000.0:F1}秒";
-
-            NewFoundCount = stats.NewWallpapers;
-            UpdatedCount = stats.UpdatedWallpapers;
-            SkippedCount = stats.SkippedFolders;
-
-            ShowScanNotification(stats);
-        }
-
-        private async Task PerformFullScanAsync(string folderPath)
-        {
-            ScanStatus = "正在执行全量扫描...";
-            var progress = new Progress<ScanProgress>(UpdateProgress);
-            var result = await _scanner.ScanWallpapersAsync(folderPath, progress);
-            ScanStatus = result ? "全量扫描完成！" : "扫描被取消";
         }
         private void UpdateProgress(ScanProgress progress)
         {
@@ -618,24 +603,11 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
-        private async Task ShowScanNotification(IncrementalScanner.ScanStatistics stats)
-        {
-            var message = $"扫描完成！\n" +
-                         $"扫描文件夹: {Path.GetFileName(CurrentScanFolder)}\n" +
-                         $"总文件夹: {stats.TotalFolders}\n" +
-                         $"新增壁纸: {stats.NewWallpapers}\n" +
-                         $"更新壁纸: {stats.UpdatedWallpapers}\n" +
-                         $"跳过文件夹: {stats.SkippedFolders}\n" +
-                         $"耗时: {stats.DurationMs / 1000.0:F1}秒";
-
-            await MaterialDialogService.ShowConfirmationAsync(message, "扫描完成");
-        }
-
         private async Task HandleScanError(Exception ex)
         {
             ScanStatus = "扫描过程中发生错误";
 
-            System.Diagnostics.Debug.WriteLine($"扫描错误: {ex.Message}");
+            Log.Error($"扫描错误: {ex.Message}");
 
             var errorMessage = ex switch {
                 UnauthorizedAccessException => "没有权限访问指定的文件夹。请以管理员身份运行或选择其他文件夹。",
@@ -730,25 +702,7 @@ namespace WallpaperEngine.ViewModels {
                 // 更新选择状态
                 UpdateSelection(wallpaper);
             }
-        }
-        // 增量扫描命令
-        [RelayCommand]
-        private async Task QuickIncrementalScanAsync()
-        {
-            if (IsScanning) return;
-
-            // 获取上次扫描的文件夹
-            var lastScan = ScanHistory.FirstOrDefault();
-            if (lastScan != null) {
-                if (Directory.Exists(lastScan.ScanPath)) {
-                    await StartScanningAsync(lastScan.ScanPath);
-                    return;
-                }
-            }
-
-            // 如果没有历史记录，让用户选择
-            await ScanWallpapersAsync();
-        }
+        }       
         private void UpdateSelection(WallpaperItem selectedWallpaper)
         {
             // 清除之前的选择
