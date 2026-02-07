@@ -249,7 +249,7 @@
             </ScrollViewer>
             <StackPanel
                 Grid.Row="2"
-                Margin="20,0,0,20"
+                Margin="20,0,0,0"
                 Orientation="Horizontal">
                 <!--  编辑操作按钮  -->
                 <Button
@@ -263,8 +263,7 @@
 
                 <Button
                     x:Name="SaveButton"
-                    Margin="5"
-                    Padding="15,8"
+                    Margin="5,0,0,0"
                     Background="{StaticResource SuccessBrush}"
                     Command="{Binding SaveEditCommand}"
                     Content="💾 保存"
@@ -273,8 +272,7 @@
 
                 <Button
                     x:Name="CancelButton"
-                    Margin="5"
-                    Padding="15,8"
+                    Margin="5,0,0,0"
                     Command="{Binding CancelEditCommand}"
                     Content="❌ 取消"
                     Style="{StaticResource MaterialDesignOutlinedButton}"
@@ -284,8 +282,7 @@
             <Border
                 Grid.Row="3"
                 Margin="10,0"
-                Background="Black"
-                CornerRadius="4">
+                Background="Black">
                 <Image
                     VerticalAlignment="Center"
                     Source="{Binding CurrentWallpaper.PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}"
