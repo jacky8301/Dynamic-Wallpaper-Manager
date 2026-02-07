@@ -93,7 +93,7 @@
                                                 <!-- 分隔线 -->
                                                 <Separator/>
                                                 <!-- 收藏菜单项 -->
-                                                <!--<MenuItem Header="⭐️ 收藏壁纸" Style="{StaticResource WallpaperMenuItemStyle}" Command="{Binding DataContext.FavoriteWallpaperCommand, Source={x:Reference mainWindow}}" CommandParameter="{Binding}"/>-->
+                                                <MenuItem Header="⭐️ 收藏壁纸" Style="{StaticResource WallpaperMenuItemStyle}" Command="{Binding DataContext.ToggleFavoriteCommand, Source={x:Reference mainWindow}}" CommandParameter="{Binding}"/>
                                                 <!-- 分隔线 -->
                                                 <Separator/>
                                                 <!-- 删除菜单项 -->
@@ -115,7 +115,7 @@
                                             <Button Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                 CommandParameter="{Binding}"
                                                 HorizontalAlignment="Right" VerticalAlignment="Top"
-                                                Margin="5" Width="50" Height="50"
+                                                Margin="5"
                                                 Style="{StaticResource FavoriteButtonStyle}">
                                                 <!-- 根据 IsFavorite 属性动态显示不同图标 -->
                                                 <Button.Content>

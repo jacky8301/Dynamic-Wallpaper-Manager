@@ -136,7 +136,7 @@
                             <TextBlock Text="目录文件" Style="{StaticResource SectionHeader}"/>
 
                             <Border Background="{StaticResource LightBackground}" CornerRadius="4" Padding="12" 
-                                Height="120">
+                                Height="Auto">
                                 <ListBox ItemsSource="{Binding CurrentWallpaper.FileNameList}" 
                                      Style="{StaticResource MaterialDesignFilterChipOutlineListBox}"
                                      BorderThickness="0" Background="Transparent">
@@ -144,16 +144,23 @@
                                         <DataTemplate>
                                             <Grid Margin="0,2">
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
 
-                                                <TextBlock Text="{Binding}" FontSize="12" VerticalAlignment="Center"
-                                                       TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock Text="{Binding}" ToolTip="{Binding}" FontSize="12" VerticalAlignment="Center"
+                                                       TextTrimming="CharacterEllipsis" Margin="0,0,20,0"/>
 
-                                                <Button Grid.Column="1" Content="选择" 
+                                                <Button Grid.Column="1" Content="选择为内容文件" 
                                                     Command="{Binding DataContext.SetContentFileNameCommand,
                                                              RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                    CommandParameter="{Binding}" 
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                    FontSize="10" Padding="8,2" Height="22" />
+                                                <Button Grid.Column="2" Content="选择为预览图" Margin="5,0,0,0"
+                                                    Command="{Binding DataContext.SetPreviewFileNameCommand,
+                                                    RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                     CommandParameter="{Binding}" 
                                                     Style="{StaticResource MaterialDesignOutlinedButton}"
                                                     FontSize="10" Padding="8,2" Height="22" />

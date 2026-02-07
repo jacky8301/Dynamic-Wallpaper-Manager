@@ -14,7 +14,7 @@ namespace WallpaperEngine.Converters {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             try {
-                string imagePath = value as string;
+                string? imagePath = value as string;
                 if (string.IsNullOrEmpty(imagePath) || !File.Exists(imagePath)) {
                     Log.Warning("Image path is null, empty, or does not exist: {ImagePath}. Using default image.", value);
                     return GetDefaultImage();
