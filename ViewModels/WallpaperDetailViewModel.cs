@@ -230,16 +230,15 @@ namespace WallpaperEngine.ViewModels {
 
         private void ShowSaveSuccessMessage()
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(() => {
-                System.Windows.MessageBox.Show("壁纸详情已成功保存!", "保存成功",
-                    System.Windows.MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.Application.Current.Dispatcher.Invoke(async () => {
+                await MaterialDialogService.ShowConfirmationAsync("壁纸详情已成功保存!", "保存成功");
             });
         }
 
         private void ShowErrorMessage(string message)
         {
-             System.Windows.Application.Current.Dispatcher.Invoke(() => {
-                System.Windows.MessageBox.Show(message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+             System.Windows.Application.Current.Dispatcher.Invoke(async () => {
+                 await MaterialDialogService.ShowErrorAsync(message, "错误");
             });
         }
     }

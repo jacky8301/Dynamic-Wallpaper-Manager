@@ -13,7 +13,6 @@ using WallpaperEngine.Services;
 using WallpaperEngine.Views;
 using Serilog;
 using System.Threading.Tasks;
-using CommunityToolkit.Mvvm.DependencyInjection;
 
 namespace WallpaperEngine.ViewModels {
     public partial class MainViewModel : ObservableObject {
@@ -166,11 +165,15 @@ namespace WallpaperEngine.ViewModels {
         }
 
         // 实际的预览窗口打开逻辑
-        private void OpenPreviewWindow(WallpaperItem wallpaper)
+        private async Task OpenPreviewWindow(WallpaperItem wallpaper)
         {
             if (wallpaper?.Project == null) {
-                System.Windows.MessageBox.Show("壁纸数据无效，无法预览", "错误",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = "壁纸数据无效，无法预览",
+                    Title = "错误",
+                    ShowCancelButton = false,
+                    DialogType = DialogType.Error
+                });
                 return;
             }
 
@@ -191,8 +194,12 @@ namespace WallpaperEngine.ViewModels {
 
                 previewWindow.ShowDialog();
             } catch (Exception ex) {
-                System.Windows.MessageBox.Show($"打开预览窗口失败: {ex.Message}", "错误",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = $"打开预览窗口失败: {ex.Message}",
+                    Title = "错误",
+                    ShowCancelButton = false,
+                    DialogType = DialogType.Warning }
+                );
             }
         }
 
@@ -229,15 +236,10 @@ namespace WallpaperEngine.ViewModels {
         }
 
         [RelayCommand]
-        private void ClearScanHistory()
+        private async Task ClearScanHistory()
         {
-            var result = System.Windows.MessageBox.Show(
-                "确定要清除所有扫描历史记录吗？",
-                "确认清除",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes) {
+            bool result = await MaterialDialogService.ShowConfirmationAsync("确定要清除所有扫描历史记录吗？","确认清除");
+            if (result) {
                 // 这里需要添加清除历史记录的方法
                 LoadScanHistory();
             }
@@ -307,15 +309,16 @@ namespace WallpaperEngine.ViewModels {
             var confirmationMessage = BuildDeletionConfirmationMessage(wallpaper);
 
             // 显示确认对话框[6,8](@ref)
-            var result = System.Windows.MessageBox.Show(
-                confirmationMessage,
-                "确认删除壁纸",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Warning,
-                MessageBoxResult.No
-            );
-
-            if (result == MessageBoxResult.Yes) {
+            var result = await MaterialDialogService.ShowDialogAsync (new MaterialDialogParams {
+                    DialogHost = "MainRootDialog",
+                    Title = "确认删除壁纸",
+                    Message = confirmationMessage,
+                    ConfirmButtonText = "删除",
+                    CancelButtonText = "取消",                    
+                    DialogType = DialogType.Warning
+            });
+                           
+            if (result.Confirmed) {
                 await ExecuteDeletion(wallpaper);
             } else {
                 // 用户取消删除
@@ -381,21 +384,23 @@ namespace WallpaperEngine.ViewModels {
                 } else {
                     // 删除失败，重新添加回集合
                     wallpaper.DeletionStatus = "删除失败";
-                    ShowErrorMessage($"删除壁纸 '{wallpaper.Project.Title}' 失败");
+                    await ShowErrorMessage($"删除壁纸 '{wallpaper.Project.Title}' 失败");
                 }
             } catch (Exception ex) {
                 wallpaper.DeletionStatus = "删除错误";
-                ShowErrorMessage($"删除过程中发生错误: {ex.Message}");
+                await ShowErrorMessage($"删除过程中发生错误: {ex.Message}");
             }
         }
 
-        private void ShowErrorMessage(string message)
+        private async Task ShowErrorMessage(string message)
         {
-            System.Windows.MessageBox.Show(
-                message,
-                "删除错误",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                Message = message,
+                Title = "删除错误",
+                ConfirmButtonText = "OK",
+                ShowCancelButton = false,
+                DialogType = DialogType.Error
+            });
         }
         private void ShowDeletionSuccess(WallpaperItem wallpaper)
         {
@@ -503,8 +508,13 @@ namespace WallpaperEngine.ViewModels {
 
         private void ShowNotification(string message)
         {
-            // 可以使用 MaterialDesign 的 Snackbar 或其他通知机制
-            System.Diagnostics.Debug.WriteLine($"通知: {message}");
+            MaterialDialogService.Show(new MaterialDialogParams {
+                Message = message,
+                Title = "通知",
+                ConfirmButtonText = "OK",
+                ShowCancelButton = false,
+                DialogType = DialogType.Information
+            });
         }
 
         // 转到壁纸目录命令
@@ -519,25 +529,22 @@ namespace WallpaperEngine.ViewModels {
         }
 
         // 打开壁纸目录的具体实现
-        private void OpenWallpaperDirectory(WallpaperItem wallpaper)
+        private async Task OpenWallpaperDirectory(WallpaperItem wallpaper)
         {
             try {
                 if (Directory.Exists(wallpaper.FolderPath)) {
                     // 使用explorer打开目录
                     Process.Start("explorer.exe", wallpaper.FolderPath);
                 } else {
-                    System.Windows.MessageBox.Show(
-                        $"壁纸目录不存在：{wallpaper.FolderPath}",
-                        "错误",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
+                    await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                        Message = $"壁纸目录不存在：{wallpaper.FolderPath}",
+                        Title = "错误",
+                        ShowCancelButton = false,
+                        DialogType = DialogType.Warning
+                    });                    
                 }
             } catch (Exception ex) {
-                System.Windows.MessageBox.Show(
-                    $"打开目录失败：{ex.Message}",
-                    "错误",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                await MaterialDialogService.ShowErrorAsync($"打开目录失败：{ex.Message}","错误");
             }
         }
 
@@ -611,7 +618,7 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
-        private void ShowScanNotification(IncrementalScanner.ScanStatistics stats)
+        private async Task ShowScanNotification(IncrementalScanner.ScanStatistics stats)
         {
             var message = $"扫描完成！\n" +
                          $"扫描文件夹: {Path.GetFileName(CurrentScanFolder)}\n" +
@@ -621,11 +628,10 @@ namespace WallpaperEngine.ViewModels {
                          $"跳过文件夹: {stats.SkippedFolders}\n" +
                          $"耗时: {stats.DurationMs / 1000.0:F1}秒";
 
-            System.Windows.MessageBox.Show(message, "扫描完成",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            await MaterialDialogService.ShowConfirmationAsync(message, "扫描完成");
         }
 
-        private void HandleScanError(Exception ex)
+        private async Task HandleScanError(Exception ex)
         {
             ScanStatus = "扫描过程中发生错误";
 
@@ -638,8 +644,13 @@ namespace WallpaperEngine.ViewModels {
                 _ => $"扫描壁纸时发生错误:\n{ex.Message}"
             };
 
-            System.Windows.MessageBox.Show(errorMessage, "扫描错误",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                Message = errorMessage,
+                Title = "扫描错误",
+                ShowCancelButton = false,
+                DialogType = DialogType.Error
+            }
+            );
         }
 
         private void CheckLastScanTime()
@@ -675,7 +686,7 @@ namespace WallpaperEngine.ViewModels {
                 // 处理异常
             }
         }
-        private List<WallpaperItem> LoadWallpapers()
+        private async Task<List<WallpaperItem>> LoadWallpapers()
         {
             List<WallpaperItem> wallpapers = new();
             try {
@@ -686,8 +697,11 @@ namespace WallpaperEngine.ViewModels {
                 Log.Debug("LoadWallpapers from db finish");
                 return results;
             } catch (Exception ex) {
-                System.Windows.MessageBox.Show($"加载壁纸列表失败: {ex.Message}", "错误",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams { 
+                    Message =  $"加载壁纸列表失败: {ex.Message}", Title = "错误",
+                    ShowCancelButton =false, DialogType = DialogType.Error
+                 }
+                 );
                 return null;
             }
         }

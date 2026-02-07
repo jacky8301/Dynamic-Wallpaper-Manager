@@ -229,7 +229,15 @@
                                                     CommandParameter="{Binding}"
                                                     Content="选择为内容文件"
                                                     FontSize="10"
-                                                    Style="{StaticResource MaterialDesignOutlinedButton}" />
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}">
+                                                    <!--<Button.IsEnabled>
+                                                        <Binding
+                                                            Converter="{StaticResource MyConverter}"
+                                                            ElementName="InputTextBox"
+                                                            Path="Text" />
+                                                    </Button.IsEnabled>-->
+                                                </Button>
+
                                                 <Button
                                                     Grid.Column="2"
                                                     Height="22"
@@ -239,8 +247,14 @@
                                                     CommandParameter="{Binding}"
                                                     Content="选择为预览图"
                                                     FontSize="10"
-                                                    IsEnabled="True"
-                                                    Style="{StaticResource MaterialDesignOutlinedButton}" />
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}">
+                                                    <!--<Button.IsEnabled>
+                                                        <Binding
+                                                            Converter="{StaticResource MyConverter}"
+                                                            ElementName="InputTextBox"
+                                                            Path="Text" />
+                                                    </Button.IsEnabled>-->
+                                                </Button>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>

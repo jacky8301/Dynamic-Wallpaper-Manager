@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="clr-namespace:WallpaperEngine.Converters"
     xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:views="clr-namespace:WallpaperEngine.Views"
     xmlns:vm="clr-namespace:WallpaperEngine.ViewModels"
     x:Name="mainWindow"
@@ -36,173 +37,175 @@
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
-    <Grid>
-        <!--  你的主界面内容  -->
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <!--  标题栏行  -->
-            <RowDefinition Height="*" />
-            <!--  内容行  -->
-        </Grid.RowDefinitions>
-        <!--  自定义标题栏  -->
-        <views:CustomTitleBar Title="Wallpaper Engine 壁纸管理工具" Grid.Row="0" />
-        <!--  主内容区域  -->
-        <Grid Grid.Row="1">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-                <!--  工具栏  -->
-                <views:MyToolBar Grid.Row="0" />
-                <!--  扫描状态显示  -->
-                <Border
-                    Grid.Row="0"
-                    Height="30"
-                    VerticalAlignment="Bottom"
-                    Background="#FFF8E1"
-                    Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <StackPanel Margin="10,0" Orientation="Horizontal">
-                        <TextBlock
-                            FontWeight="Bold"
-                            Foreground="{Binding IsScanning}"
-                            Text="{Binding ScanStatus}" />
-                        <ProgressBar
-                            Width="200"
-                            Height="10"
-                            Margin="20,0"
-                            IsIndeterminate="{Binding IsIndeterminate}"
-                            Value="{Binding ScanProgress}" />
-                        <TextBlock
-                            Margin="10,0"
-                            Foreground="Gray"
-                            Text="{Binding ScannedCount, StringFormat=已扫描: {0} 个}" />
-                    </StackPanel>
-                </Border>
-                <!--  内容区域  -->
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="3*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
-                    <!--  壁纸网格  -->
-                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl
-                            ItemsSource="{Binding Wallpapers}"
-                            ScrollViewer.IsDeferredScrollingEnabled="True"
-                            VirtualizingPanel.IsVirtualizing="True"
-                            VirtualizingPanel.VirtualizationMode="Recycling">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border
-                                        Width="200"
-                                        Height="150"
-                                        Margin="5"
-                                        BorderBrush="#E0E0E0"
-                                        BorderThickness="1"
-                                        Cursor="Hand">
-                                        <!--  右键菜单定义  -->
-                                        <Border.ContextMenu>
-                                            <ContextMenu Style="{StaticResource WallpaperItemContextMenuStyle}">
-                                                <!--  预览菜单项  -->
-                                                <MenuItem
-                                                    Command="{Binding DataContext.PreviewWallpaperCommand, Source={x:Reference mainWindow}}"
-                                                    CommandParameter="{Binding}"
-                                                    Header="👁️ 预览壁纸"
-                                                    Style="{StaticResource WallpaperMenuItemStyle}" />
-                                                <!--  分隔线  -->
-                                                <Separator />
-                                                <!--  应用菜单项  -->
-                                                <MenuItem
-                                                    Command="{Binding DataContext.ApplyWallpaperCommand, Source={x:Reference mainWindow}}"
-                                                    CommandParameter="{Binding}"
-                                                    Header="🚀 应用壁纸"
-                                                    Style="{StaticResource WallpaperMenuItemStyle}" />
-                                                <!--  分隔线  -->
-                                                <Separator />
-                                                <!--  转到目录菜单项  -->
-                                                <MenuItem
-                                                    Command="{Binding DataContext.GoToWallpaperDirectoryCommand, Source={x:Reference mainWindow}}"
-                                                    CommandParameter="{Binding}"
-                                                    Header="📁 转到壁纸目录"
-                                                    Style="{StaticResource WallpaperMenuItemStyle}" />
-                                                <!--  分隔线  -->
-                                                <Separator />
-                                                <!--  收藏菜单项  -->
-                                                <MenuItem
-                                                    Command="{Binding DataContext.ToggleFavoriteCommand, Source={x:Reference mainWindow}}"
-                                                    CommandParameter="{Binding}"
-                                                    Header="⭐️ 收藏壁纸"
-                                                    Style="{StaticResource WallpaperMenuItemStyle}" />
-                                                <!--  分隔线  -->
-                                                <Separator />
-                                                <!--  删除菜单项  -->
-                                                <MenuItem
-                                                    Command="{Binding DataContext.DeleteWallpaperCommand, Source={x:Reference mainWindow}}"
-                                                    CommandParameter="{Binding}"
-                                                    Foreground="Red"
-                                                    Header="🗑️ 删除壁纸"
-                                                    Style="{StaticResource WallpaperMenuItemStyle}" />
-                                            </ContextMenu>
-                                        </Border.ContextMenu>
-                                        <Border.InputBindings>
-                                            <!--  将左键双击手势绑定到命令  -->
-                                            <MouseBinding
-                                                Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding}"
-                                                Gesture="LeftDoubleClick" />
-                                            <!--  处理单击事件  -->
-                                            <MouseBinding
-                                                Command="{Binding DataContext.SelectWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding}"
-                                                Gesture="LeftClick" />
-                                        </Border.InputBindings>
-                                        <Grid>
-                                            <Image Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}" Stretch="UniformToFill" />
-                                            <Border VerticalAlignment="Bottom" Background="#80000000">
-                                                <TextBlock
-                                                    Margin="5"
-                                                    FontWeight="Bold"
-                                                    Foreground="White"
-                                                    Text="{Binding Project.Title}"
-                                                    TextWrapping="Wrap" />
-                                            </Border>
-                                            <!--  收藏按钮 - 固定在右上角  -->
-                                            <Button
-                                                Margin="5"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Top"
-                                                Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                CommandParameter="{Binding}"
-                                                Style="{StaticResource FavoriteButtonStyle}">
-                                                <!--  根据 IsFavorite 属性动态显示不同图标  -->
-                                                <Button.Content>
-                                                    <MultiBinding Converter="{StaticResource FavoriteIconConverter}">
-                                                        <Binding Path="IsFavorite" />
-                                                        <Binding Path="IsMouseOver" RelativeSource="{RelativeSource Mode=Self}" />
-                                                    </MultiBinding>
-                                                </Button.Content>
-                                            </Button>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                    <!--  详情面板  -->
+    <materialDesign:DialogHost Identifier="MainRootDialog">
+        <Grid>
+            <!--  你的主界面内容  -->
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <!--  标题栏行  -->
+                <RowDefinition Height="*" />
+                <!--  内容行  -->
+            </Grid.RowDefinitions>
+            <!--  自定义标题栏  -->
+            <views:CustomTitleBar Title="Wallpaper Engine 壁纸管理工具" Grid.Row="0" />
+            <!--  主内容区域  -->
+            <Grid Grid.Row="1">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <!--  工具栏  -->
+                    <views:MyToolBar Grid.Row="0" />
+                    <!--  扫描状态显示  -->
                     <Border
-                        Grid.Column="1"
-                        BorderBrush="#E0E0E0"
-                        BorderThickness="1,0,0,0">
-                        <views:WallpaperDetailView />
+                        Grid.Row="0"
+                        Height="30"
+                        VerticalAlignment="Bottom"
+                        Background="#FFF8E1"
+                        Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Margin="10,0" Orientation="Horizontal">
+                            <TextBlock
+                                FontWeight="Bold"
+                                Foreground="{Binding IsScanning}"
+                                Text="{Binding ScanStatus}" />
+                            <ProgressBar
+                                Width="200"
+                                Height="10"
+                                Margin="20,0"
+                                IsIndeterminate="{Binding IsIndeterminate}"
+                                Value="{Binding ScanProgress}" />
+                            <TextBlock
+                                Margin="10,0"
+                                Foreground="Gray"
+                                Text="{Binding ScannedCount, StringFormat=已扫描: {0} 个}" />
+                        </StackPanel>
                     </Border>
+                    <!--  内容区域  -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <!--  壁纸网格  -->
+                        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl
+                                ItemsSource="{Binding Wallpapers}"
+                                ScrollViewer.IsDeferredScrollingEnabled="True"
+                                VirtualizingPanel.IsVirtualizing="True"
+                                VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel Orientation="Horizontal" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border
+                                            Width="200"
+                                            Height="150"
+                                            Margin="5"
+                                            BorderBrush="#E0E0E0"
+                                            BorderThickness="1"
+                                            Cursor="Hand">
+                                            <!--  右键菜单定义  -->
+                                            <Border.ContextMenu>
+                                                <ContextMenu Style="{StaticResource WallpaperItemContextMenuStyle}">
+                                                    <!--  预览菜单项  -->
+                                                    <MenuItem
+                                                        Command="{Binding DataContext.PreviewWallpaperCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}"
+                                                        Header="👁️ 预览壁纸"
+                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
+                                                    <!--  分隔线  -->
+                                                    <Separator />
+                                                    <!--  应用菜单项  -->
+                                                    <MenuItem
+                                                        Command="{Binding DataContext.ApplyWallpaperCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}"
+                                                        Header="🚀 应用壁纸"
+                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
+                                                    <!--  分隔线  -->
+                                                    <Separator />
+                                                    <!--  转到目录菜单项  -->
+                                                    <MenuItem
+                                                        Command="{Binding DataContext.GoToWallpaperDirectoryCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}"
+                                                        Header="📁 转到壁纸目录"
+                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
+                                                    <!--  分隔线  -->
+                                                    <Separator />
+                                                    <!--  收藏菜单项  -->
+                                                    <MenuItem
+                                                        Command="{Binding DataContext.ToggleFavoriteCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}"
+                                                        Header="⭐️ 收藏壁纸"
+                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
+                                                    <!--  分隔线  -->
+                                                    <Separator />
+                                                    <!--  删除菜单项  -->
+                                                    <MenuItem
+                                                        Command="{Binding DataContext.DeleteWallpaperCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}"
+                                                        Foreground="Red"
+                                                        Header="🗑️ 删除壁纸"
+                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
+                                                </ContextMenu>
+                                            </Border.ContextMenu>
+                                            <Border.InputBindings>
+                                                <!--  将左键双击手势绑定到命令  -->
+                                                <MouseBinding
+                                                    Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Gesture="LeftDoubleClick" />
+                                                <!--  处理单击事件  -->
+                                                <MouseBinding
+                                                    Command="{Binding DataContext.SelectWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Gesture="LeftClick" />
+                                            </Border.InputBindings>
+                                            <Grid>
+                                                <Image Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}" Stretch="UniformToFill" />
+                                                <Border VerticalAlignment="Bottom" Background="#80000000">
+                                                    <TextBlock
+                                                        Margin="5"
+                                                        FontWeight="Bold"
+                                                        Foreground="White"
+                                                        Text="{Binding Project.Title}"
+                                                        TextWrapping="Wrap" />
+                                                </Border>
+                                                <!--  收藏按钮 - 固定在右上角  -->
+                                                <Button
+                                                    Margin="5"
+                                                    HorizontalAlignment="Right"
+                                                    VerticalAlignment="Top"
+                                                    Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource FavoriteButtonStyle}">
+                                                    <!--  根据 IsFavorite 属性动态显示不同图标  -->
+                                                    <Button.Content>
+                                                        <MultiBinding Converter="{StaticResource FavoriteIconConverter}">
+                                                            <Binding Path="IsFavorite" />
+                                                            <Binding Path="IsMouseOver" RelativeSource="{RelativeSource Mode=Self}" />
+                                                        </MultiBinding>
+                                                    </Button.Content>
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        <!--  详情面板  -->
+                        <Border
+                            Grid.Column="1"
+                            BorderBrush="#E0E0E0"
+                            BorderThickness="1,0,0,0">
+                            <views:WallpaperDetailView />
+                        </Border>
+                    </Grid>
                 </Grid>
             </Grid>
         </Grid>
-    </Grid>
+    </materialDesign:DialogHost>
 </Window>

@@ -5,6 +5,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using WallpaperEngine.Models;
 using WallpaperEngine.ViewModels;
+using WallpaperEngine.Services;
+using System.Threading.Tasks;
 
 namespace WallpaperEngine.Views {
     public partial class PreviewWindow : Window {
@@ -51,7 +53,7 @@ namespace WallpaperEngine.Views {
                 DragMove();
             }
         }
-        private void LoadPreview()
+        private async Task LoadPreview()
         {
             if (_wallpaper == null) {
                 ShowUnsupportedPreview();
@@ -74,8 +76,7 @@ namespace WallpaperEngine.Views {
                         break;
                 }
             } catch (Exception ex) {
-                System.Windows.MessageBox.Show($"加载预览失败: {ex.Message}", "错误",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                await MaterialDialogService.ShowErrorAsync($"加载预览失败: {ex.Message}", "错误");                   
                 ShowUnsupportedPreview();
             }
         }
