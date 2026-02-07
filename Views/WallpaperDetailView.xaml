@@ -130,18 +130,6 @@
                                     Margin="0,4"
                                     Content="{Binding CurrentWallpaper.Category}"
                                     Style="{StaticResource SmartTextField}" />
-
-                                <!--  内容文件名  -->
-                                <TextBlock
-                                    Grid.Row="2"
-                                    Style="{StaticResource FieldLabel}"
-                                    Text="文件名:" />
-                                <ContentControl
-                                    Grid.Row="2"
-                                    Grid.Column="1"
-                                    Margin="0,4"
-                                    Content="{Binding CurrentWallpaper.Project.File}"
-                                    Style="{StaticResource SmartTextField}" />
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -185,7 +173,16 @@
                     <Border Style="{StaticResource MaterialCard}">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource SectionHeader}" Text="预览图" />
+                                <!--  内容文件名  -->
+                                <TextBlock Style="{StaticResource SectionHeader}" Text="文件名:" />
+                                <ContentControl
+                                    Margin="20,0,0,8"
+                                    Content="{Binding ContentFileName}"
+                                    FontSize="14"
+                                    Style="{StaticResource SmartTextField}" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource SectionHeader}" Text="预览图:" />
                                 <TextBlock
                                     Margin="20,0,0,8"
                                     FontSize="14"
@@ -229,14 +226,7 @@
                                                     CommandParameter="{Binding}"
                                                     Content="选择为内容文件"
                                                     FontSize="10"
-                                                    Style="{StaticResource MaterialDesignOutlinedButton}">
-                                                    <!--<Button.IsEnabled>
-                                                        <Binding
-                                                            Converter="{StaticResource MyConverter}"
-                                                            ElementName="InputTextBox"
-                                                            Path="Text" />
-                                                    </Button.IsEnabled>-->
-                                                </Button>
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}" />
 
                                                 <Button
                                                     Grid.Column="2"
@@ -247,14 +237,7 @@
                                                     CommandParameter="{Binding}"
                                                     Content="选择为预览图"
                                                     FontSize="10"
-                                                    Style="{StaticResource MaterialDesignOutlinedButton}">
-                                                    <!--<Button.IsEnabled>
-                                                        <Binding
-                                                            Converter="{StaticResource MyConverter}"
-                                                            ElementName="InputTextBox"
-                                                            Path="Text" />
-                                                    </Button.IsEnabled>-->
-                                                </Button>
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}" />
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>

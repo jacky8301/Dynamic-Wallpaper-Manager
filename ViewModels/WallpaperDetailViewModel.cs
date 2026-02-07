@@ -49,7 +49,9 @@ namespace WallpaperEngine.ViewModels {
             // 初始化命令
             StartEditCommand = new RelayCommand(StartEdit);
             SaveEditCommand = new AsyncRelayCommand(SaveEdit, CanSaveEdit);
-            CancelEditCommand = new RelayCommand(CancelEdit);            
+            CancelEditCommand = new RelayCommand(CancelEdit);
+            SetPreviewFileNameCommand = new AsyncRelayCommand<string?>(SetPreviewFileName, CanSetPreviewFileName);
+            SetContentFileNameCommand = new AsyncRelayCommand<string?>(SetContentFileName, CanSetContentFileName);
         }
 
         private void OnCurrentWallpaperChanged(object? sender, WallpaperItem? newWallpaper)
@@ -61,11 +63,14 @@ namespace WallpaperEngine.ViewModels {
             Description = CurrentWallpaper?.Project?.Description;
             Title = CurrentWallpaper?.Project?.Title;
             PreviewFileName = CurrentWallpaper?.Project?.Preview;
+            ContentFileName = CurrentWallpaper?.Project?.File;
         }
 
         public ICommand StartEditCommand { get; }
         public ICommand SaveEditCommand { get; }
         public ICommand CancelEditCommand { get; }
+        public ICommand SetPreviewFileNameCommand { get; }
+        public ICommand SetContentFileNameCommand { get; }
 
         public void Initialize(WallpaperItem? wallpaper = null)
         {
@@ -73,13 +78,16 @@ namespace WallpaperEngine.ViewModels {
             CurrentWallpaper = wallpaper;
             _originalItem = CreateBackup(wallpaper);
         }
-        [RelayCommand]
+        
         private async Task SetContentFileName(string? fileName)
         {
-            if (CurrentWallpaper == null || CurrentWallpaper.Project.File == fileName) {
+            if (CurrentWallpaper == null ||
+                fileName == null ||
+                CurrentWallpaper.Project.File == fileName) {
                 return;
             }
             try {
+                ContentFileName = fileName;
                 CurrentWallpaper.Project.File = fileName;
                 // 保存到project.json
                 await SaveToProjectJsonAsync();
@@ -89,9 +97,49 @@ namespace WallpaperEngine.ViewModels {
             } catch (Exception ex) {
                 ShowErrorMessage($"保存失败: {ex.Message}");
             }
-        }        
-
-        [RelayCommand]
+        }
+        private bool IsValidContentFileName(string? fileName)
+        {
+            string lowerFileName = fileName?.ToLower() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(lowerFileName)) {
+                return false;
+            }
+            if (lowerFileName == "project.json" ||
+                lowerFileName == "preview.jpg" ||
+                lowerFileName == "preview.png" ||
+                lowerFileName == "preview.jpeg" ||
+                lowerFileName == "preview.gif" ||
+                lowerFileName == "thumbs.db") {
+                return false;
+            }
+            return true;
+        }
+        private bool IsValidPreviewFileName(string? fileName)
+        {
+            string lowerFileName = fileName?.ToLower() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(lowerFileName)) {
+                return false;
+            }
+            if (lowerFileName == "project.json" || lowerFileName == "thumbs.db") {
+                return false;
+            }
+            return true;
+        }
+        bool CanSetContentFileName(string? fileName)
+        {
+            if (CurrentWallpaper == null || fileName == null) {
+                return false;
+            }
+            return IsValidContentFileName(fileName);
+        }
+        bool CanSetPreviewFileName(string? fileName)
+        {
+            if (CurrentWallpaper == null || fileName == null) {
+                return false;
+            }
+            return IsValidPreviewFileName(fileName);
+        }
+        
         private async Task SetPreviewFileName(string? fileName)
         {
             if (CurrentWallpaper == null || CurrentWallpaper.Project.Preview == fileName) {
