@@ -12,7 +12,7 @@
         WindowStyle="None"
         AllowsTransparency="True"
         Loaded="mainWindow_Loaded"
-        >
+    >
     <!-- 设置WindowChrome，定义可拖动区域等 -->
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="40" 
@@ -93,7 +93,7 @@
                                                 <!-- 分隔线 -->
                                                 <Separator/>
                                                 <!-- 收藏菜单项 -->
-                                                <MenuItem Header="⭐️ 收藏壁纸" Style="{StaticResource WallpaperMenuItemStyle}" Command="{Binding DataContext.FavoriteWallpaperCommand, Source={x:Reference mainWindow}}" CommandParameter="{Binding}"/>
+                                                <!--<MenuItem Header="⭐️ 收藏壁纸" Style="{StaticResource WallpaperMenuItemStyle}" Command="{Binding DataContext.FavoriteWallpaperCommand, Source={x:Reference mainWindow}}" CommandParameter="{Binding}"/>-->
                                                 <!-- 分隔线 -->
                                                 <Separator/>
                                                 <!-- 删除菜单项 -->
@@ -121,7 +121,7 @@
                                                 <Button.Content>
                                                     <MultiBinding Converter="{StaticResource FavoriteIconConverter}">
                                                         <Binding Path="IsFavorite"/>
-                                                        <Binding Path="IsMouseOver" RelativeSource="{RelativeSource AncestorType=Button}"/>
+                                                        <Binding Path="IsMouseOver" RelativeSource="{RelativeSource Mode=Self}"/>
                                                     </MultiBinding>
                                                 </Button.Content>
                                             </Button>
