@@ -8,6 +8,7 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Data;
+using System.Windows.Media.Imaging;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
@@ -639,11 +640,25 @@ namespace WallpaperEngine.ViewModels {
                    Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
         }
 
+        public event EventHandler LoadWallpapersCompleted;
+        public void OnEventLoadWallpapersCompleted()
+        {
+            LoadWallpapersCompleted?.Invoke(this, EventArgs.Empty);
+        }
         public async Task LoadWallpapersAsync()
         {
             try {
                 // 在后台线程获取数据
                 var wallpapers = await Task.Run(() => LoadWallpapers());
+                await Task.Run(() => {
+                    foreach (var wallpaper in wallpapers) {
+                        if (!ImageCache._cache.ContainsKey(wallpaper.PreviewImagePath)) {
+                            var bitmap = ImageLoader.LoadImage(wallpaper.PreviewImagePath);
+                            ImageCache._cache[wallpaper.PreviewImagePath] = bitmap;
+                        }
+                    }
+                    OnEventLoadWallpapersCompleted();
+                });
 
                 // 在UI线程更新集合
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
@@ -656,6 +671,7 @@ namespace WallpaperEngine.ViewModels {
                 });
             } catch (Exception ex) {
                 // 处理异常
+                Log.Fatal($"加载壁纸列表失败: {ex.Message}");
             }
         }
         private async Task<List<WallpaperItem>> LoadWallpapers()

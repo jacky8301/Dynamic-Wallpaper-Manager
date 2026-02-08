@@ -2,6 +2,7 @@
 using Serilog;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Animation;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.ViewModels;
@@ -11,8 +12,14 @@ namespace WallpaperEngine.Views {
         public MainWindow()
         {
             InitializeComponent();
-            this.DataContext = Ioc.Default.GetService<MainViewModel>();
+            ViewModel = Ioc.Default.GetService<MainViewModel>();
+            this.DataContext = ViewModel;
+            ViewModel.LoadWallpapersCompleted += (s, e) => {
+                // 在壁纸加载完成后隐藏加载层
+                Dispatcher.Invoke(() => HideLoadingOverlay());
+            };
         }
+        private MainViewModel ViewModel;
         // 允许通过拖动标题栏移动窗口
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
@@ -35,10 +42,32 @@ namespace WallpaperEngine.Views {
 
         private async void mainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            MainViewModel vm = DataContext as MainViewModel;
             Log.Debug("LoadWallpapersAsync started");
-            await vm.LoadWallpapersAsync();
+            await ViewModel.LoadWallpapersAsync();
             Log.Debug("LoadWallpapersAsync finish");
+        }
+
+        // 隐藏加载层并显示主内容
+        private void HideLoadingOverlay()
+        {
+            // 创建一个淡出动画
+            var fadeOutAnimation = new DoubleAnimation {
+                From = 1.0,
+                To = 0.0,
+                Duration = TimeSpan.FromSeconds(0.8),
+                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+            };
+
+            // 动画完成后的回调
+            fadeOutAnimation.Completed += (s, args) =>
+            {
+                // 完全隐藏叠加层，并恢复主内容的交互能力
+                LoadingOverlay.Visibility = Visibility.Collapsed;
+                LoadingOverlay.IsHitTestVisible = false;
+            };
+
+            // 开始动画
+            LoadingOverlay.BeginAnimation(UIElement.OpacityProperty, fadeOutAnimation);
         }
     }
 }
