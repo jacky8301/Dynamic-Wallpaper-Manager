@@ -11,12 +11,26 @@ Unicode True
 !include "nsDialogs.nsh"
 !include "LogicLib.nsh"
 
+; Function to kill running process
+!macro KillProcess
+    DetailPrint "正在检查并关闭运行中的程序..."
+    nsExec::ExecToStack 'taskkill /F /IM "Dynamic Wallpaper Manager.exe" /T'
+    Pop $0 ; Return value
+    Pop $1 ; Output
+    ${If} $0 == 0
+        DetailPrint "已关闭运行中的程序"
+    ${Else}
+        DetailPrint "未发现运行中的程序"
+    ${EndIf}
+    Sleep 500 ; Wait for process to fully terminate
+!macroend
+
 ; General settings
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "${PRODUCT_NAME}-${PRODUCT_VERSION}.exe"
-InstallDir "$PROGRAMFILES\DynamicWallpaperManager"
-InstallDirRegKey HKLM "Software\${PRODUCT_NAME}" "InstallDir"
-RequestExecutionLevel admin
+InstallDir "$LOCALAPPDATA\DynamicWallpaperManager"
+InstallDirRegKey HKCU "Software\${PRODUCT_NAME}" "InstallDir"
+RequestExecutionLevel user
 
 ; Interface Settings
 !define MUI_ABORTWARNING
@@ -82,20 +96,24 @@ Function StartupOptionsPageLeave
     ${NSD_GetState} $StartupCheckbox $StartupCheckboxState
 FunctionEnd
 
+; Initialization function - kill process before installation
+Function .onInit
+    !insertmacro KillProcess
+FunctionEnd
+
 ; Installation section
 Section "主程序" SecMain
     SectionIn RO
-    StrCpy $INSTDIR "$PROGRAMFILES\DynamicWallpaperManager" 
     SetOutPath "$INSTDIR"
     File /r "bin\Release\net8.0-windows\*.*"
 
     ; Write registry keys for uninstaller
-    WriteRegStr HKLM "Software\${PRODUCT_NAME}" "InstallDir" "$INSTDIR"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayName" "${PRODUCT_NAME}"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "UninstallString" "$INSTDIR\Uninstall.exe"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayVersion" "${PRODUCT_VERSION}"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "Publisher" "${PRODUCT_PUBLISHER}"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayIcon" "$INSTDIR\Dynamic Wallpaper Manager.exe"
+    WriteRegStr HKCU "Software\${PRODUCT_NAME}" "InstallDir" "$INSTDIR"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayName" "${PRODUCT_NAME}"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "UninstallString" "$INSTDIR\Uninstall.exe"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayVersion" "${PRODUCT_VERSION}"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "Publisher" "${PRODUCT_PUBLISHER}"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayIcon" "$INSTDIR\Dynamic Wallpaper Manager.exe"
     WriteUninstaller "$INSTDIR\Uninstall.exe"
 
     ; Create Start Menu shortcuts
@@ -116,6 +134,9 @@ FunctionEnd
 
 ; Uninstaller section
 Section "Uninstall"
+    ; Kill running process before uninstallation
+    !insertmacro KillProcess
+
     ; Remove files
     Delete "$INSTDIR\Dynamic Wallpaper Manager.exe"
     Delete "$INSTDIR\*.dll"
@@ -133,7 +154,7 @@ Section "Uninstall"
     RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
 
     ; Remove registry keys
-    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
-    DeleteRegKey HKLM "Software\${PRODUCT_NAME}"
+    DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+    DeleteRegKey HKCU "Software\${PRODUCT_NAME}"
     DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}"
 SectionEnd
