@@ -94,6 +94,35 @@
                                 ScrollViewer.IsDeferredScrollingEnabled="True"
                                 VirtualizingPanel.IsVirtualizing="True"
                                 VirtualizingPanel.VirtualizationMode="Recycling">
+                                <ItemsControl.Resources>
+                                    <Style x:Key="SelectableBorderStyle" TargetType="Border">
+                                        <Setter Property="Background" Value="LightGray" />
+                                        <!--  默认背景  -->
+                                        <Setter Property="BorderBrush" Value="DarkGray" />
+                                        <!--  默认边框  -->
+                                        <Setter Property="BorderThickness" Value="1" />
+                                        <Setter Property="CornerRadius" Value="5" />
+                                        <!--  可选：圆角  -->
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="Background" Value="Red" />
+                                                <!--  选中背景  -->
+                                                <Setter Property="BorderBrush" Value="Red" />
+                                                <!--  选中边框  -->
+                                                <!--  可以添加更多视觉变化，如阴影  -->
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect
+                                                            BlurRadius="10"
+                                                            ShadowDepth="0"
+                                                            Color="Red" />
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ItemsControl.Resources>
+
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <WrapPanel Orientation="Horizontal" />
@@ -107,7 +136,8 @@
                                             Margin="5"
                                             BorderBrush="#E0E0E0"
                                             BorderThickness="1"
-                                            Cursor="Hand">
+                                            Cursor="Hand"
+                                            Style="{StaticResource SelectableBorderStyle}">
                                             <!--  右键菜单定义  -->
                                             <Border.ContextMenu>
                                                 <ContextMenu Style="{StaticResource WallpaperItemContextMenuStyle}">
