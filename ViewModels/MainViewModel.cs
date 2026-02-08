@@ -718,7 +718,12 @@ namespace WallpaperEngine.ViewModels {
                 // 更新选择状态
                 UpdateSelection(wallpaper);
             }
-        }       
+        }
+        [RelayCommand]
+        private void CancelScan()
+        {
+            _scanner.CancelScan();
+        }
         private void UpdateSelection(WallpaperItem selectedWallpaper)
         {
             // 清除之前的选择

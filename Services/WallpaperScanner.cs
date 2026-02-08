@@ -60,11 +60,9 @@ namespace WallpaperEngine.Services {
 
                     try {
                         var wallpaper = await ProcessWallpaper(folder, _isIncrementalScan);
-                        if (wallpaper != null) {
-                            _dbManager.SaveWallpaper(wallpaper);
+                        if (wallpaper != null) {                            
                             validCount++;
                         }
-
                         processed++;
 
                         progress?.Report(new ScanProgress {
@@ -121,6 +119,8 @@ namespace WallpaperEngine.Services {
                     }
                     wallpaperItem.Project = project;
                     string category = GetCategory(project);  // 自动分类
+                    wallpaperItem.Category = category;
+                    _dbManager.SaveWallpaper(wallpaperItem);
                     return wallpaperItem;
                 } else {
                     return existingWallpaper;
