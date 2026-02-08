@@ -15,7 +15,7 @@
                     Margin="5,0"
                     VerticalAlignment="Center"
                     KeyDown="TextBox_KeyDown"
-                    Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                    Text="{Binding SearchText}" />
             </StackPanel>
             <!--  分类筛选  -->
             <ComboBox

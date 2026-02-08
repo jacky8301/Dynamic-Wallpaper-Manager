@@ -40,52 +40,5 @@ namespace WallpaperEngine.Views {
             await vm.LoadWallpapersAsync();
             Log.Debug("LoadWallpapersAsync finish");
         }
-
-        private void TextBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-        {
-            if (e.Handled) {
-                return;
-            }
-            switch (e.Key) {
-                case Key.Enter: {
-                        if (DataContext is MainViewModel vm) {
-                            vm.SearchText = (sender as System.Windows.Controls.TextBox).Text;
-                            vm.SearchWallpapersCommand.Execute(null);
-                        }
-                    }
-                    e.Handled = true;
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private void OnClickPreviewButton(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is MainViewModel vm) {
-                vm.PreviewWallpaperCommand.Execute(vm.SelectedWallpaper);
-            }
-        }
-
-        private void OnClickDeleteWallpaperButton(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is MainViewModel vm) {
-                vm.DeleteWallpaperCommand.Execute(vm.SelectedWallpaper);
-            }
-        }
-
-        private void OnClickApplyWallpaperButton(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is MainViewModel vm) {
-                vm.ApplyWallpaperCommand.Execute(vm.SelectedWallpaper);
-            }
-        }
-
-        private void OnClickFavoriteButton(object sender, RoutedEventArgs e)
-        {
-            if (DataContext is MainViewModel vm) {
-                vm.ToggleFavoriteCommand.Execute(vm.SelectedWallpaper);
-            }
-        }
     }
 }
