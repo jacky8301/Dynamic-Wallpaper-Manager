@@ -4,10 +4,11 @@ using System.IO;
 using WallpaperEngine.Models;
 
 namespace WallpaperEngine.Data {
-    public class DatabaseManager : IDisposable {
+    public sealed class DatabaseManager : IDisposable {
+        //private static readonly Lazy<DatabaseManager> lazy = new(() => new DatabaseManager(),isThreadSafe:true);
         private SqliteConnection m_connection;
         private readonly string m_dbPath;
-
+        //public static DatabaseManager Instance { get { return lazy.Value; } }
         public DatabaseManager(string databasePath = "wallpapers.db")
         {
             m_dbPath = databasePath;

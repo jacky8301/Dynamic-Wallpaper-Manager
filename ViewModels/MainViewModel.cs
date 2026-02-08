@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using System.Collections.ObjectModel;
@@ -88,7 +89,7 @@ namespace WallpaperEngine.ViewModels {
 
         public MainViewModel(IDataContextService dataContextService)
         {
-            _dbManager = new DatabaseManager();
+            _dbManager = Ioc.Default.GetService<DatabaseManager>();
             _scanner = new WallpaperScanner(_dbManager);
 
             WallpapersView = CollectionViewSource.GetDefaultView(Wallpapers);

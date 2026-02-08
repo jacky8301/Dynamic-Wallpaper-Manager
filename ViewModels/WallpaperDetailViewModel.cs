@@ -1,5 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -40,8 +42,8 @@ namespace WallpaperEngine.ViewModels {
             "application"
         };
         public WallpaperDetailViewModel(IDataContextService dataContextService)
-        {            
-            _dbManager = new DatabaseManager();
+        {
+            _dbManager = Ioc.Default.GetRequiredService<DatabaseManager>();
             _dataContextService = dataContextService;
             // 订阅状态变化事件
             _dataContextService.CurrentWallpaperChanged += OnCurrentWallpaperChanged;

@@ -7,23 +7,24 @@ using WallpaperEngine.Data;
 using WallpaperEngine.Services;
 using WallpaperEngine.ViewModels;
 using Application = System.Windows.Application;
+using WallpaperEngine.Views;
 
 namespace WallpaperEngine {
     /// Interaction logic for App.xaml
-    public partial class App : Application {
+    public partial class App : Application {       
         private System.Threading.Mutex _mutex;
         public App()
         {
             Ioc.Default.ConfigureServices(
                 new ServiceCollection()
                      // 在这里注册你的服务
+                    .AddSingleton<DatabaseManager>(new DatabaseManager(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wallpapers.db")))
                     .AddSingleton<ISettingsService, SettingsService>()
                     .AddSingleton<IDataContextService, DataContextService>()
                     .AddSingleton<SettingsViewModel>()
                     .AddSingleton<WallpaperDetailViewModel>()
                     .AddSingleton<PreviewViewModel>()
-                    .AddSingleton<MainViewModel>()
-                   
+                    .AddSingleton<MainViewModel>()                 
                     .BuildServiceProvider()
             );
         }
@@ -46,10 +47,10 @@ namespace WallpaperEngine {
 
             if (!createdNew) {
                 // 如果互斥体已存在，则关闭当前实例
-                System.Windows.MessageBox.Show("应用程序已在运行中。", "提示");
+                Log.Information("应用程序已在运行中");
                 Current.Shutdown();
                 return;
-            }           
+            }                     
             base.OnStartup(e);
         }
 

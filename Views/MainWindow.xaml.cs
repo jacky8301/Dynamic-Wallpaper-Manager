@@ -3,12 +3,10 @@ using Serilog;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Animation;
-using WallpaperEngine.Data;
-using WallpaperEngine.Models;
 using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views {
-    public partial class MainWindow : Window {
+    public partial class MainWindow : System.Windows.Window {
         public MainWindow()
         {
             InitializeComponent();
@@ -17,7 +15,7 @@ namespace WallpaperEngine.Views {
             ViewModel.LoadWallpapersCompleted += (s, e) => {
                 // 在壁纸加载完成后隐藏加载层
                 Dispatcher.Invoke(() => HideLoadingOverlay());
-            };
+            };           
         }
         private MainViewModel ViewModel;
         // 允许通过拖动标题栏移动窗口
@@ -42,9 +40,20 @@ namespace WallpaperEngine.Views {
 
         private async void mainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // 从App类获取启动参数
+            string[] args = Environment.GetCommandLineArgs();
+
+            // 判断是否包含-autostart参数
+            bool isAutoStart = args.Contains("-autostart");
+
+            if (isAutoStart) {
+                this.Hide();
+                this.WindowState = WindowState.Minimized;
+            }
             Log.Debug("LoadWallpapersAsync started");
             await ViewModel.LoadWallpapersAsync();
             Log.Debug("LoadWallpapersAsync finish");
+            
         }
 
         // 隐藏加载层并显示主内容

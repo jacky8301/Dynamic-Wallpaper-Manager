@@ -1,10 +1,9 @@
 ﻿; Use Unicode for proper Chinese character support
 Unicode True
 
-!define PRODUCT_NAME "Dynamic Wallpaper Manager"
+!define PRODUCT_NAME "DynamicWallpaperManager"
 !define PRODUCT_VERSION "0.9.0"
-!define PRODUCT_PUBLISHER "Dynamic Wallpaper Manager Team"
-!define PRODUCT_WEB_SITE "https://github.com/yourusername/Dynamic-Wallpaper-Manager"
+!define PRODUCT_PUBLISHER "Jacky Zheng"
 
 ; Include Modern UI
 !include "MUI2.nsh"
@@ -14,7 +13,7 @@ Unicode True
 ; Function to kill running process
 !macro KillProcess
     DetailPrint "正在检查并关闭运行中的程序..."
-    nsExec::ExecToStack 'taskkill /F /IM "Dynamic Wallpaper Manager.exe" /T'
+    nsExec::ExecToStack 'taskkill /F /IM "DynamicWallpaperManager.exe" /T'
     Pop $0 ; Return value
     Pop $1 ; Output
     ${If} $0 == 0
@@ -28,7 +27,7 @@ Unicode True
 ; General settings
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "${PRODUCT_NAME}-${PRODUCT_VERSION}.exe"
-InstallDir "$LOCALAPPDATA\DynamicWallpaperManager"
+InstallDir "$APPDATA\DynamicWallpaperManager"
 InstallDirRegKey HKCU "Software\${PRODUCT_NAME}" "InstallDir"
 RequestExecutionLevel user
 
@@ -48,16 +47,13 @@ RequestExecutionLevel user
 ; Directory page
 !insertmacro MUI_PAGE_DIRECTORY
 
-; Components page with startup option
-Page custom StartupOptionsPage StartupOptionsPageLeave
-
 ; Instfiles page
 !insertmacro MUI_PAGE_INSTFILES
 
 ; Finish page
 !define MUI_FINISHPAGE_TITLE "安装完成"
 !define MUI_FINISHPAGE_TEXT "${PRODUCT_NAME} 已成功安装到您的计算机。$\r$\n$\r$\n点击 完成 关闭此向导。"
-!define MUI_FINISHPAGE_RUN "$INSTDIR\Dynamic Wallpaper Manager.exe"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\DynamicWallpaperManager.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "运行 ${PRODUCT_NAME}"
 !define MUI_FINISHPAGE_SHOWREADME ""
 !define MUI_FINISHPAGE_SHOWREADME_TEXT "在桌面创建快捷方式"
@@ -73,29 +69,6 @@ Page custom StartupOptionsPage StartupOptionsPageLeave
 ; Language
 !insertmacro MUI_LANGUAGE "SimpChinese"
 
-; Variables
-Var StartupCheckbox
-Var StartupCheckboxState
-
-; Startup options page
-Function StartupOptionsPage
-    nsDialogs::Create 1018
-    Pop $0
-
-    ${NSD_CreateLabel} 0 0 100% 24u "选择附加选项："
-    Pop $0
-
-    ${NSD_CreateCheckbox} 10 30u 100% 12u "开机自动启动 ${PRODUCT_NAME}"
-    Pop $StartupCheckbox
-    ${NSD_Check} $StartupCheckbox
-
-    nsDialogs::Show
-FunctionEnd
-
-Function StartupOptionsPageLeave
-    ${NSD_GetState} $StartupCheckbox $StartupCheckboxState
-FunctionEnd
-
 ; Initialization function - kill process before installation
 Function .onInit
     !insertmacro KillProcess
@@ -105,7 +78,7 @@ FunctionEnd
 Section "主程序" SecMain
     SectionIn RO
     SetOutPath "$INSTDIR"
-    File /r "bin\Release\net8.0-windows\*.*"
+    File /r "bin\x86\Release\net8.0-windows\*.*"
 
     ; Write registry keys for uninstaller
     WriteRegStr HKCU "Software\${PRODUCT_NAME}" "InstallDir" "$INSTDIR"
@@ -113,23 +86,19 @@ Section "主程序" SecMain
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "UninstallString" "$INSTDIR\Uninstall.exe"
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayVersion" "${PRODUCT_VERSION}"
     WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "Publisher" "${PRODUCT_PUBLISHER}"
-    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayIcon" "$INSTDIR\Dynamic Wallpaper Manager.exe"
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}" "DisplayIcon" "$INSTDIR\DynamicWallpaperManager.exe"
     WriteUninstaller "$INSTDIR\Uninstall.exe"
 
     ; Create Start Menu shortcuts
     CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
-    CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\Dynamic Wallpaper Manager.exe"
+    CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\DynamicWallpaperManager.exe"
     CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\卸载.lnk" "$INSTDIR\Uninstall.exe"
-
-    ; Create startup item if checkbox is checked
-    ${If} $StartupCheckboxState == ${BST_CHECKED}
-        WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}" "$INSTDIR\Dynamic Wallpaper Manager.exe"
-    ${EndIf}
+    WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}" "$INSTDIR\DynamicWallpaperManager.exe -autostart"
 SectionEnd
 
 ; Desktop shortcut function
 Function CreateDesktopShortcut
-    CreateShortcut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\Dynamic Wallpaper Manager.exe"
+    CreateShortcut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\DynamicWallpaperManager.exe"
 FunctionEnd
 
 ; Uninstaller section
@@ -138,7 +107,7 @@ Section "Uninstall"
     !insertmacro KillProcess
 
     ; Remove files
-    Delete "$INSTDIR\Dynamic Wallpaper Manager.exe"
+    Delete "$INSTDIR\DynamicWallpaperManager.exe"
     Delete "$INSTDIR\*.dll"
     Delete "$INSTDIR\preview.jpg"
     Delete "$INSTDIR\project.json"
