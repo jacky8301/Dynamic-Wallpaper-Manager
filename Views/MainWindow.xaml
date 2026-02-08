@@ -5,6 +5,7 @@
     xmlns:converters="clr-namespace:WallpaperEngine.Converters"
     xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:tb="http://www.hardcodet.net/taskbar"
     xmlns:views="clr-namespace:WallpaperEngine.Views"
     xmlns:vm="clr-namespace:WallpaperEngine.ViewModels"
     x:Name="mainWindow"
@@ -242,11 +243,11 @@
             <!--  (2) 加载叠加层  -->
             <Grid
                 x:Name="LoadingOverlay"
+                Margin="0,40"
                 Panel.ZIndex="100"
                 Background="#E5111111"
                 IsHitTestVisible="True"
-                Visibility="Visible"
-                Margin="0,40" >
+                Visibility="Visible">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <!--  进度条  -->
                     <ProgressBar
@@ -263,6 +264,20 @@
                         Text="正在加载，请稍候..." />
                 </StackPanel>
             </Grid>
+            <!--  系统托盘图标  -->
+            <tb:TaskbarIcon
+                x:Name="TrayIcon"
+                IconSource="/Assets/app.ico"
+                ToolTipText="我的WPF应用"
+                TrayLeftMouseDown="TrayIcon_TrayLeftMouseDown">
+                <tb:TaskbarIcon.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Click="ShowWindow_Click" Header="显示窗口" />
+                        <Separator />
+                        <MenuItem Click="ExitApp_Click" Header="退出" />
+                    </ContextMenu>
+                </tb:TaskbarIcon.ContextMenu>
+            </tb:TaskbarIcon>
         </Grid>
     </materialDesign:DialogHost>
 </Window>

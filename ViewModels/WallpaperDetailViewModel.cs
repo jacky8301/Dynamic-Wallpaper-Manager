@@ -41,7 +41,10 @@ namespace WallpaperEngine.ViewModels {
         };
         public WallpaperDetailViewModel(IDataContextService dataContextService)
         {
-            _dbManager = new DatabaseManager();
+            // wallpaper.db保存到用户应用数据目录下的WallpaperEngine文件夹中
+            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string dbPath = Path.Combine(appDataPath, "WallpaperEngine", "wallpaper.db");
+            _dbManager = new DatabaseManager(dbPath);
             _dataContextService = dataContextService;
             // 订阅状态变化事件
             _dataContextService.CurrentWallpaperChanged += OnCurrentWallpaperChanged;

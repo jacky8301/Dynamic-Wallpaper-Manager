@@ -8,6 +8,8 @@ Unicode True
 
 ; Include Modern UI
 !include "MUI2.nsh"
+!include "nsDialogs.nsh"
+!include "LogicLib.nsh"
 
 ; General settings
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
@@ -32,6 +34,9 @@ RequestExecutionLevel admin
 ; Directory page
 !insertmacro MUI_PAGE_DIRECTORY
 
+; Components page with startup option
+Page custom StartupOptionsPage StartupOptionsPageLeave
+
 ; Instfiles page
 !insertmacro MUI_PAGE_INSTFILES
 
@@ -43,6 +48,8 @@ RequestExecutionLevel admin
 !define MUI_FINISHPAGE_SHOWREADME ""
 !define MUI_FINISHPAGE_SHOWREADME_TEXT "在桌面创建快捷方式"
 !define MUI_FINISHPAGE_SHOWREADME_FUNCTION CreateDesktopShortcut
+!define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
+!define MUI_FINISHPAGE_NOREBOOTSUPPORT
 !insertmacro MUI_PAGE_FINISH
 
 ; Uninstaller pages
@@ -51,6 +58,29 @@ RequestExecutionLevel admin
 
 ; Language
 !insertmacro MUI_LANGUAGE "SimpChinese"
+
+; Variables
+Var StartupCheckbox
+Var StartupCheckboxState
+
+; Startup options page
+Function StartupOptionsPage
+    nsDialogs::Create 1018
+    Pop $0
+
+    ${NSD_CreateLabel} 0 0 100% 24u "选择附加选项："
+    Pop $0
+
+    ${NSD_CreateCheckbox} 10 30u 100% 12u "开机自动启动 ${PRODUCT_NAME}"
+    Pop $StartupCheckbox
+    ${NSD_Check} $StartupCheckbox
+
+    nsDialogs::Show
+FunctionEnd
+
+Function StartupOptionsPageLeave
+    ${NSD_GetState} $StartupCheckbox $StartupCheckboxState
+FunctionEnd
 
 ; Installation section
 Section "主程序" SecMain
@@ -72,6 +102,11 @@ Section "主程序" SecMain
     CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
     CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk" "$INSTDIR\Dynamic Wallpaper Manager.exe"
     CreateShortcut "$SMPROGRAMS\${PRODUCT_NAME}\卸载.lnk" "$INSTDIR\Uninstall.exe"
+
+    ; Create startup item if checkbox is checked
+    ${If} $StartupCheckboxState == ${BST_CHECKED}
+        WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}" "$INSTDIR\Dynamic Wallpaper Manager.exe"
+    ${EndIf}
 SectionEnd
 
 ; Desktop shortcut function
@@ -100,4 +135,5 @@ Section "Uninstall"
     ; Remove registry keys
     DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
     DeleteRegKey HKLM "Software\${PRODUCT_NAME}"
+    DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCT_NAME}"
 SectionEnd

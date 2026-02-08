@@ -69,5 +69,32 @@ namespace WallpaperEngine.Views {
             // 开始动画
             LoadingOverlay.BeginAnimation(UIElement.OpacityProperty, fadeOutAnimation);
         }
+
+        private void TrayIcon_TrayLeftMouseDown(object sender, RoutedEventArgs e)
+        {
+            ShowMainWindow();
+        }
+        // 右键菜单项：显示窗口
+        private void ShowWindow_Click(object sender, RoutedEventArgs e)
+        {
+            ShowMainWindow();
+        }
+
+        // 公共的显示窗口方法
+        private void ShowMainWindow()
+        {
+            this.Show();
+            this.WindowState = WindowState.Normal;
+            this.Activate(); // 将窗口提到前台
+        }
+
+        // 右键菜单项：退出应用
+        private void ExitApp_Click(object sender, RoutedEventArgs e)
+        {
+            // 显式释放托盘图标资源
+            TrayIcon.Dispose();
+            // 关闭整个应用程序
+            System.Windows.Application.Current.Shutdown();
+        }
     }
 }
