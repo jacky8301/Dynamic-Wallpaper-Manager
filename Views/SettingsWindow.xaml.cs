@@ -9,12 +9,11 @@ namespace WallpaperEngine.Views
         public SettingsWindow()
         {
             InitializeComponent();
-            this.DataContext = Ioc.Default.GetService<ViewModels.SettingsViewModel>();
         }
 
         private void OK_Button_Click(object sender, RoutedEventArgs e)
         {
-            Ioc.Default.GetService<ViewModels.SettingsViewModel>().SaveSettings();
+            Ioc.Default.GetService<SettingsViewModel>().SaveSettings();
             Close();
         }
 

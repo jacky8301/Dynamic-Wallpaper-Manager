@@ -119,7 +119,7 @@ namespace WallpaperEngine.ViewModels {
         {
             var settingsWindow = new SettingsWindow {
                 Owner = System.Windows.Application.Current.MainWindow,
-                DataContext = new SettingsViewModel(_settingsService),
+                DataContext = Ioc.Default.GetService<SettingsViewModel>(),
                 WindowStartupLocation = WindowStartupLocation.CenterOwner
             };
 
