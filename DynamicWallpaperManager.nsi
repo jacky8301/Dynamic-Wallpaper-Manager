@@ -2,7 +2,7 @@
 Unicode True
 
 !define PRODUCT_NAME "DynamicWallpaperManager"
-!define PRODUCT_VERSION "0.9.2"
+!define PRODUCT_VERSION "0.9.5"
 !define PRODUCT_PUBLISHER "Jacky Zheng"
 
 ; Include Modern UI
@@ -41,9 +41,6 @@ RequestExecutionLevel user
 !define MUI_WELCOMEPAGE_TEXT "这将在您的计算机上安装 ${PRODUCT_NAME} ${PRODUCT_VERSION}。$\r$\n$\r$\n${PRODUCT_NAME} 是一个动态壁纸管理工具，让您的桌面更加生动。$\r$\n$\r$\n建议在继续之前关闭所有其他应用程序。$\r$\n$\r$\n点击 下一步 继续。"
 !insertmacro MUI_PAGE_WELCOME
 
-; License page (optional - uncomment if you have a license file)
-; !insertmacro MUI_PAGE_LICENSE "License.txt"
-
 ; Directory page
 !insertmacro MUI_PAGE_DIRECTORY
 
@@ -78,7 +75,16 @@ FunctionEnd
 Section "主程序" SecMain
     SectionIn RO
     SetOutPath "$INSTDIR"
-    File /r "bin\x86\Release\net8.0-windows\*.*"
+    File /r "bin\x86\Release\net8.0-windows\runtimes"
+    File /r "bin\x86\Release\net8.0-windows\*.dll"
+    File "bin\x86\Release\net8.0-windows\DynamicWallpaperManager.exe"
+    File "bin\x86\Release\net8.0-windows\preview.jpg"
+    File "bin\x86\Release\net8.0-windows\project.json"
+    File /r "bin\x86\Release\net8.0-windows\assets\*.*"
+    File "bin\x86\Release\net8.0-windows\DynamicWallpaperManager.dll.config"
+    File "bin\x86\Release\net8.0-windows\DynamicWallpaperManager.deps.json"
+    File "bin\x86\Release\net8.0-windows\DynamicWallpaperManager.runtimeconfig.json"
+    File "bin\x86\Release\net8.0-windows\app.manifest"
 
     ; Write registry keys for uninstaller
     WriteRegStr HKCU "Software\${PRODUCT_NAME}" "InstallDir" "$INSTDIR"
@@ -114,8 +120,16 @@ Section "Uninstall"
     Delete "$INSTDIR\assets\*.*"
     RMDir "$INSTDIR\assets"
     Delete "$INSTDIR\Uninstall.exe"
+    Delete "$INSTDIR\app.manifest"
+    Delete "$INSTDIR\runtimes\*.*"
+    RMDir "$INSTDIR\runtimes"
+    Delete "$INSTDIR\DynamicWallpaperManager.dll.config"
+    Delete "$INSTDIR\DynamicWallpaperManager.deps.json"
+    Delete "$INSTDIR\DynamicWallpaperManager.runtimeconfig.json"
+    Delete "$INSTDIR\LOG\*.*"
+    RMDir "$INSTDIR\LOG"
     RMDir "$INSTDIR"
-
+    
     ; Remove shortcuts
     Delete "$DESKTOP\${PRODUCT_NAME}.lnk"
     Delete "$SMPROGRAMS\${PRODUCT_NAME}\${PRODUCT_NAME}.lnk"

@@ -9,8 +9,8 @@ namespace WallpaperEngine.Services {
 
         public SettingsService()
         {
-            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var appFolder = Path.Combine(appDataPath, "WallpaperEngine");
+            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var appFolder = Path.Combine(appDataPath, "DynamicWallpaperManager");
             Directory.CreateDirectory(appFolder);
             _settingsFilePath = Path.Combine(appFolder, "settings.json");
         }

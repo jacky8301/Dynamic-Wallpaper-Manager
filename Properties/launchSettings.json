@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "DynamicWallpaperManager": {
+      "commandName": "Project",
+      "commandLineArgs": "Show"
+    }
+  }
+}
