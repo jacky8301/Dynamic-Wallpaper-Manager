@@ -104,7 +104,8 @@ SectionEnd
 
 ; Desktop shortcut function
 Function CreateDesktopShortcut
-    CreateShortcut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\DynamicWallpaperManager.exe"
+    CreateShortcut "$DESKTOP\${PRODUCT_NAME}.lnk" "$INSTDIR\DynamicWallpaperManager.exe" \
+                                    "-Show"
 FunctionEnd
 
 ; Uninstaller section
