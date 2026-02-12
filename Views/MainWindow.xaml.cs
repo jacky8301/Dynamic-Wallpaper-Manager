@@ -55,7 +55,6 @@ namespace WallpaperEngine.Views {
             Log.Debug("LoadWallpapersAsync finish");
             
         }
-
         // 隐藏加载层并显示主内容
         private void HideLoadingOverlay()
         {
@@ -78,17 +77,11 @@ namespace WallpaperEngine.Views {
             // 开始动画
             LoadingOverlay.BeginAnimation(UIElement.OpacityProperty, fadeOutAnimation);
         }
-
-        private void TrayIcon_TrayLeftMouseDown(object sender, RoutedEventArgs e)
-        {
-            ShowMainWindow();
-        }
         // 右键菜单项：显示窗口
         private void ShowWindow_Click(object sender, RoutedEventArgs e)
         {
             ShowMainWindow();
         }
-
         // 公共的显示窗口方法
         private void ShowMainWindow()
         {
@@ -96,7 +89,6 @@ namespace WallpaperEngine.Views {
             this.WindowState = WindowState.Normal;
             this.Activate(); // 将窗口提到前台
         }
-
         // 右键菜单项：退出应用
         private void ExitApp_Click(object sender, RoutedEventArgs e)
         {

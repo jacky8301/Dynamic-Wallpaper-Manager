@@ -268,8 +268,7 @@
             <tb:TaskbarIcon
                 x:Name="TrayIcon"
                 IconSource="/Assets/app.ico"
-                ToolTipText="我的WPF应用"
-                TrayLeftMouseDown="TrayIcon_TrayLeftMouseDown">
+                ToolTipText="Dynamic Wallpaper Manager">
                 <tb:TaskbarIcon.ContextMenu>
                     <ContextMenu>
                         <MenuItem Click="ShowWindow_Click" Header="显示窗口" />

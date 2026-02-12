@@ -9,7 +9,6 @@ using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Data;
-using System.Windows.Media.Imaging;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
