@@ -2,20 +2,140 @@
     x:Class="WallpaperEngine.Views.MyToolBar"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:WallpaperEngine.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:fa="http://schemas.fontawesome.io/icons/"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
+    <UserControl.Resources>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibilityConverter" />
+    </UserControl.Resources>
     <ToolBar Background="#F0F0F0">
         <StackPanel Margin="5" Orientation="Horizontal">
-            <!--  搜索区域  -->
-            <StackPanel Orientation="Horizontal">
-                <TextBlock VerticalAlignment="Center" Text="搜索:" />
-                <TextBox
-                    Width="200"
-                    Margin="5,0"
+            <!--  搜索框 - FontAwesome版本  -->
+            <StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,5,0"
                     VerticalAlignment="Center"
-                    KeyDown="TextBox_KeyDown"
-                    Text="{Binding SearchText}" />
+                    Text="搜索:" />
+
+                <Border
+                    Width="260"
+                    Height="32"
+                    Background="White"
+                    BorderBrush="#E0E0E0"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                    <Grid Margin="2,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <!--  搜索文本框  -->
+                        <TextBox
+                            x:Name="SearchTextBox"
+                            Grid.Column="0"
+                            Padding="8,0,0,0"
+                            VerticalContentAlignment="Center"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            KeyDown="TextBox_KeyDown"
+                            Text="{Binding SearchText, UpdateSourceTrigger=Explicit}">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Margin" Value="0" />
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="WhiteSmoke" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                        <!--  清除按钮 - 圆形背景，悬停效果  -->
+                        <Button
+                            Grid.Column="1"
+                            Width="24"
+                            Height="24"
+                            Margin="0,0,4,0"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="ClearButton_Click"
+                            Cursor="Hand"
+                            ToolTip="清除"
+                            Visibility="{Binding SearchText, Converter={StaticResource StringToVisibilityConverter}}">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border
+                                                    Width="24"
+                                                    Height="24"
+                                                    Background="{TemplateBinding Background}"
+                                                    CornerRadius="12">
+                                                    <fa:ImageAwesome
+                                                        Width="16"
+                                                        Height="16"
+                                                        Foreground="Gray"
+                                                        Icon="TimesCircle" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#FFE0E0E0" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!--  搜索按钮 - 悬停效果  -->
+                        <Button
+                            Grid.Column="2"
+                            Width="28"
+                            Height="28"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="SearchButton_Click"
+                            Cursor="Hand"
+                            ToolTip="搜索">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border
+                                                    Width="28"
+                                                    Height="28"
+                                                    Background="{TemplateBinding Background}"
+                                                    CornerRadius="4">
+                                                    <fa:ImageAwesome
+                                                        Width="16"
+                                                        Height="16"
+                                                        Foreground="#555555"
+                                                        Icon="Search" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#FFE0E0E0" />
+                                            <Setter Property="Cursor" Value="Hand" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                    </Grid>
+                </Border>
             </StackPanel>
             <!--  分类筛选  -->
             <ComboBox

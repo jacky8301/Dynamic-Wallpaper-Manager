@@ -6,10 +6,10 @@ using TextBox = System.Windows.Controls.TextBox;
 
 namespace WallpaperEngine.Views {
     public partial class MyToolBar : System.Windows.Controls.UserControl {
+        private MainViewModel viewModel => Ioc.Default.GetService<MainViewModel>();
         public MyToolBar()
         {
             InitializeComponent();
-
         }
         private void TextBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
@@ -17,16 +17,28 @@ namespace WallpaperEngine.Views {
                 return;
             }
             switch (e.Key) {
-                case Key.Enter: {
-                        var _viewModel = Ioc.Default.GetService<MainViewModel>();
-                        _viewModel.SearchText = (sender as System.Windows.Controls.TextBox).Text;
-                        _viewModel.SearchWallpapersCommand.Execute(null);
+                case Key.Enter: {                        
+                        viewModel.SearchText = SearchTextBox.Text;
+                        viewModel.SearchWallpapersCommand.Execute(null);
                     }
                     e.Handled = true;
                     break;
                 default:
                     break;
             }
+        }
+
+        private void ClearButton_Click(object sender, RoutedEventArgs e)
+        {
+            SearchTextBox.Clear();
+            viewModel.SearchText = string.Empty;
+            viewModel.SearchWallpapersCommand.Execute(null);
+        }
+
+        private void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            viewModel.SearchText = SearchTextBox.Text;
+            viewModel.SearchWallpapersCommand.Execute(null);
         }
     }
 }
