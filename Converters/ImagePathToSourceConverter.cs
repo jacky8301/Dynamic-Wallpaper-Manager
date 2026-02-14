@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 using WallpaperEngine.Services;
@@ -21,8 +22,19 @@ namespace WallpaperEngine.Converters {
                 if (ImageCache._cache.TryGetValue(imagePath, out var cachedImage)) {
                     return cachedImage;
                 }
+                // 磁盘缓存命中 → 存入内存缓存 → 返回
+                var diskCached = ThumbnailDiskCache.TryLoad(imagePath);
+                if (diskCached != null) {
+                    ImageCache._cache[imagePath] = diskCached;
+                    return diskCached;
+                }
                 var bitmap = ImageLoader.LoadImage(imagePath);
                 ImageCache._cache[imagePath] = bitmap;
+                // 异步写入磁盘缓存（不阻塞返回）
+                if (bitmap != null) {
+                    var bitmapToCache = bitmap;
+                    Task.Run(() => ThumbnailDiskCache.Save(imagePath, bitmapToCache));
+                }
                 return bitmap;
             } catch (Exception ex) {
                 Log.Fatal(ex, "Failed to load image from path: {ImagePath}", value);
