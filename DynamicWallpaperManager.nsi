@@ -2,7 +2,7 @@
 Unicode True
 
 !define PRODUCT_NAME "DynamicWallpaperManager"
-!define PRODUCT_VERSION "0.9.9"
+!define PRODUCT_VERSION "1.0.0"
 !define PRODUCT_PUBLISHER "Jacky Zheng"
 
 ; Include Modern UI

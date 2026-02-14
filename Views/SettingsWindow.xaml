@@ -125,7 +125,7 @@
                     VerticalAlignment="Center"
                     FontSize="22"
                     FontWeight="SemiBold"
-                    Text="应用设置" />
+                    Text="设置" />
             </StackPanel>
         </Border>
 
@@ -159,12 +159,6 @@
                                 Content="浏览..."
                                 Style="{StaticResource MaterialDesignOutlinedButton}"
                                 ToolTip="选择Wallpaper Engine可执行文件" />
-
-                            <Button
-                                Margin="12,0,0,0"
-                                Content="自动检测"
-                                Style="{StaticResource MaterialDesignOutlinedButton}"
-                                ToolTip="尝试自动检测Wallpaper Engine安装路径" />
                         </StackPanel>
 
                         <!--  动态状态提示  -->
@@ -194,13 +188,6 @@
                 </GroupBox>
 
                 <!--  可以在这里添加更多设置组  -->
-                <TextBlock
-                    Margin="0,16,0,0"
-                    HorizontalAlignment="Center"
-                    FontSize="11"
-                    FontStyle="Italic"
-                    Foreground="{DynamicResource MaterialDesignSecondaryForeground}"
-                    Text="更多设置选项将在后续版本中提供..." />
             </StackPanel>
         </ScrollViewer>
 
