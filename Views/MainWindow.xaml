@@ -38,6 +38,46 @@
                 <ResourceDictionary Source="/Styles/ToolBarStyle.xaml" />
                 <ResourceDictionary Source="/Styles/ModernComboBoxStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <!--  Tab 切换按钮样式  -->
+            <Style x:Key="TabRadioButtonStyle" TargetType="RadioButton">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="Foreground" Value="#666666" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="Padding" Value="16,0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RadioButton">
+                            <Border
+                                x:Name="border"
+                                Padding="{TemplateBinding Padding}"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="Transparent"
+                                BorderThickness="0,0,0,2">
+                                <ContentPresenter
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Foreground" Value="#007ACC" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                    <Setter TargetName="border" Property="BorderBrush" Value="#007ACC" />
+                                </Trigger>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="IsMouseOver" Value="True" />
+                                        <Condition Property="IsChecked" Value="False" />
+                                    </MultiTrigger.Conditions>
+                                    <Setter TargetName="border" Property="Background" Value="#F0F0F0" />
+                                    <Setter Property="Foreground" Value="#333333" />
+                                </MultiTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </Window.Resources>
     <materialDesign:DialogHost Identifier="MainRootDialog">
@@ -57,10 +97,22 @@
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
                         <!--  工具栏  -->
                         <views:MyToolBar Grid.Row="0" />
+                        <!--  Tab 切换栏  -->
+                        <Border Grid.Row="1" Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
+                            <StackPanel Orientation="Horizontal" Height="36">
+                                <RadioButton Content="全部壁纸" GroupName="MainTab"
+                                             IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToZeroConverter}}"
+                                             Style="{StaticResource TabRadioButtonStyle}" />
+                                <RadioButton Content="我的收藏" GroupName="MainTab"
+                                             IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToOneConverter}}"
+                                             Style="{StaticResource TabRadioButtonStyle}" />
+                            </StackPanel>
+                        </Border>
                         <!--  扫描状态显示  -->
                         <Border
                             Grid.Row="0"
@@ -86,7 +138,7 @@
                             </StackPanel>
                         </Border>
                         <!--  内容区域  -->
-                        <Grid Grid.Row="1">
+                        <Grid Grid.Row="2">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="3*" />
                                 <ColumnDefinition Width="1*" />

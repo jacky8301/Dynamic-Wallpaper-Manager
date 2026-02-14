@@ -1,9 +1,20 @@
 using Newtonsoft.Json;
 using System.IO;
 using System.Text;
+using WallpaperEngine.Models;
 
 namespace WallpaperEngine.ViewModels {
     public partial class WallpaperDetailViewModel {
+        partial void OnIsEditModeChanged(bool value)
+        {
+            SaveEditCommand.NotifyCanExecuteChanged();
+        }
+
+        partial void OnCurrentWallpaperChanged(WallpaperItem? value)
+        {
+            SaveEditCommand.NotifyCanExecuteChanged();
+        }
+
         private void StartEdit()
         {
             if (CurrentWallpaper == null) return;

@@ -35,11 +35,6 @@
                     SelectedItem="{Binding SelectedCategory}"                    
                     ToolTip="按分类筛选壁纸" />
             </StackPanel>
-            <!--  收藏筛选  -->
-            <CheckBox
-                Content="仅显示收藏"
-                IsChecked="{Binding ShowFavoritesOnly}"
-                ToolTip="只显示已收藏的壁纸" />
 
             <Separator />
             <!--  扫描按钮组  -->

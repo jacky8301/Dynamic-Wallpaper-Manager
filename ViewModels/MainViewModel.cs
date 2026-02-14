@@ -39,6 +39,9 @@ namespace WallpaperEngine.ViewModels {
         private bool _showFavoritesOnly;
 
         [ObservableProperty]
+        private int _currentTab;
+
+        [ObservableProperty]
         private bool _isScanning;
 
         [ObservableProperty]

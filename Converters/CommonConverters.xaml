@@ -6,4 +6,6 @@
     <local:FavoriteIconConverter x:Key="FavoriteIconConverter" />
     <local:ImagePathToSourceConverter x:Key="ImageToSourceConverter" />
     <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+    <local:IntEqualConverter x:Key="EqualToZeroConverter" Target="0" />
+    <local:IntEqualConverter x:Key="EqualToOneConverter" Target="1" />
 </ResourceDictionary>

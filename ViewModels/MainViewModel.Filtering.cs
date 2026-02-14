@@ -22,6 +22,10 @@ namespace WallpaperEngine.ViewModels {
         partial void OnSearchTextChanged(string value) => WallpapersView.Refresh();
         partial void OnSelectedCategoryChanged(string value) => WallpapersView.Refresh();
         partial void OnShowFavoritesOnlyChanged(bool value) => WallpapersView.Refresh();
+        partial void OnCurrentTabChanged(int value)
+        {
+            ShowFavoritesOnly = value == 1;
+        }
 
         [RelayCommand]
         private async Task SearchWallpapers()
@@ -34,7 +38,7 @@ namespace WallpaperEngine.ViewModels {
         {
             SearchText = string.Empty;
             SelectedCategory = "所有分类";
-            ShowFavoritesOnly = false;
+            CurrentTab = 0;
 
             await LoadWallpapersAsync();
         }
