@@ -12,6 +12,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Styles/ModernComboBoxStyle.xaml" />
+                <ResourceDictionary Source="/Converters/CommonConverters.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -32,8 +33,32 @@
                     Width="130"
                     ItemContainerStyle="{StaticResource ModernComboBoxItem}"
                     ItemsSource="{Binding Categories}"
-                    SelectedItem="{Binding SelectedCategory}"                    
-                    ToolTip="按分类筛选壁纸" />
+                    SelectedItem="{Binding SelectedCategory}"
+                    Tag="{Binding}"
+                    ToolTip="按分类筛选壁纸">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}"
+                                       Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                <TextBlock.ContextMenu>
+                                    <ContextMenu
+                                        Visibility="{Binding Converter={StaticResource ProtectedCategoryToVisibilityConverter}}">
+                                        <MenuItem
+                                            Header="✏️ 重命名"
+                                            Command="{Binding PlacementTarget.Tag.RenameCategoryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                            CommandParameter="{Binding}" />
+                                        <Separator />
+                                        <MenuItem
+                                            Header="🗑️ 删除分类"
+                                            Foreground="Red"
+                                            Command="{Binding PlacementTarget.Tag.DeleteCategoryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                            CommandParameter="{Binding}" />
+                                    </ContextMenu>
+                                </TextBlock.ContextMenu>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
             </StackPanel>
 
             <Separator />

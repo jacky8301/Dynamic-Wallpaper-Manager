@@ -218,5 +218,72 @@ namespace WallpaperEngine.ViewModels {
                 }
             }
         }
+
+        private static readonly HashSet<string> ProtectedCategories = new() { "所有分类", "未分类" };
+
+        [RelayCommand]
+        private async Task RenameCategory(string category)
+        {
+            if (string.IsNullOrEmpty(category) || ProtectedCategories.Contains(category)) return;
+
+            var result = await MaterialDialogService.ShowInputAsync("重命名分类", "请输入新的分类名称", category);
+            if (result.Confirmed && result.Data is string newName && !string.IsNullOrWhiteSpace(newName) && newName != category) {
+                if (Categories.Contains(newName)) {
+                    await MaterialDialogService.ShowErrorAsync("该分类名称已存在", "错误");
+                    return;
+                }
+                try {
+                    _dbManager.RenameCategory(category, newName);
+                    var index = Categories.IndexOf(category);
+                    Categories[index] = newName;
+                    // 更新内存中壁纸的分类
+                    foreach (var w in Wallpapers.Where(w => w.Category == category)) {
+                        w.Category = newName;
+                    }
+                    if (SelectedCategory == category) {
+                        SelectedCategory = newName;
+                    }
+                    // 同步详情页分类列表
+                    var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
+                    if (detailVm != null) {
+                        var detailIndex = detailVm.CategoryList.IndexOf(category);
+                        if (detailIndex >= 0) {
+                            detailVm.CategoryList[detailIndex] = newName;
+                        }
+                    }
+                } catch (Exception ex) {
+                    Log.Warning($"重命名分类失败: {ex.Message}");
+                }
+            }
+        }
+
+        [RelayCommand]
+        private async Task DeleteCategory(string category)
+        {
+            if (string.IsNullOrEmpty(category) || ProtectedCategories.Contains(category)) return;
+
+            var confirmed = await MaterialDialogService.ShowConfirmationAsync(
+                $"确定要删除分类「{category}」吗？\n该分类下的壁纸将被重置为「未分类」。",
+                "删除分类");
+
+            if (confirmed) {
+                try {
+                    _dbManager.DeleteCategory(category);
+                    Categories.Remove(category);
+                    // 更新内存中壁纸的分类
+                    foreach (var w in Wallpapers.Where(w => w.Category == category)) {
+                        w.Category = "未分类";
+                    }
+                    if (SelectedCategory == category) {
+                        SelectedCategory = "所有分类";
+                    }
+                    // 同步详情页分类列表
+                    var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
+                    detailVm?.CategoryList.Remove(category);
+                } catch (Exception ex) {
+                    Log.Warning($"删除分类失败: {ex.Message}");
+                }
+            }
+        }
     }
 }

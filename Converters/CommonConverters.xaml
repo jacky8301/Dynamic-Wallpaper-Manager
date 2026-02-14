@@ -10,4 +10,5 @@
     <local:IntEqualConverter x:Key="EqualToOneConverter" Target="1" />
     <local:IntEqualConverter x:Key="EqualToTwoConverter" Target="2" />
     <local:FavoriteTextConverter x:Key="FavoriteTextConverter" />
+    <local:ProtectedCategoryToVisibilityConverter x:Key="ProtectedCategoryToVisibilityConverter" />
 </ResourceDictionary>

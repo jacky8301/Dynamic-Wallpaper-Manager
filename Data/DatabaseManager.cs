@@ -578,5 +578,55 @@ namespace WallpaperEngine.Data {
             command.Parameters.AddWithValue("@name", name);
             command.ExecuteNonQuery();
         }
+
+        // 删除自定义分类，将该分类下的壁纸重置为"未分类"
+        public void DeleteCategory(string name)
+        {
+            using var transaction = m_connection.BeginTransaction();
+            try {
+                using var updateCmd = m_connection.CreateCommand();
+                updateCmd.CommandText = "UPDATE Wallpapers SET Category = '未分类' WHERE Category = @name";
+                updateCmd.Parameters.AddWithValue("@name", name);
+                updateCmd.ExecuteNonQuery();
+
+                using var deleteCmd = m_connection.CreateCommand();
+                deleteCmd.CommandText = "DELETE FROM Categories WHERE Name = @name";
+                deleteCmd.Parameters.AddWithValue("@name", name);
+                deleteCmd.ExecuteNonQuery();
+
+                transaction.Commit();
+            } catch {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        // 重命名分类，同时更新所有壁纸的分类名
+        public void RenameCategory(string oldName, string newName)
+        {
+            using var transaction = m_connection.BeginTransaction();
+            try {
+                using var updateCmd = m_connection.CreateCommand();
+                updateCmd.CommandText = "UPDATE Wallpapers SET Category = @newName WHERE Category = @oldName";
+                updateCmd.Parameters.AddWithValue("@oldName", oldName);
+                updateCmd.Parameters.AddWithValue("@newName", newName);
+                updateCmd.ExecuteNonQuery();
+
+                using var deleteCmd = m_connection.CreateCommand();
+                deleteCmd.CommandText = "DELETE FROM Categories WHERE Name = @oldName";
+                deleteCmd.Parameters.AddWithValue("@oldName", oldName);
+                deleteCmd.ExecuteNonQuery();
+
+                using var insertCmd = m_connection.CreateCommand();
+                insertCmd.CommandText = "INSERT OR IGNORE INTO Categories (Name) VALUES (@newName)";
+                insertCmd.Parameters.AddWithValue("@newName", newName);
+                insertCmd.ExecuteNonQuery();
+
+                transaction.Commit();
+            } catch {
+                transaction.Rollback();
+                throw;
+            }
+        }
     }
 }
