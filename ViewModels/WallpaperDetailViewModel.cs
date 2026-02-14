@@ -1,13 +1,6 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Text;
-using System.Windows;
-using System.Windows.Input;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
@@ -33,14 +26,22 @@ namespace WallpaperEngine.ViewModels {
         private string _previewFileName;
         [ObservableProperty]
         private string _contentFileName;
-        // 新增：类型列表数据源
-        public ObservableCollection<string> WallpaperTypes { get; } = new ObservableCollection<string>
+
+        // 类型列表数据源
+        public List<string> WallpaperTypes { get; } = new List<string>
         {
             "scene",
             "video",
             "web",
             "application"
         };
+
+        public IRelayCommand StartEditCommand { get; }
+        public IAsyncRelayCommand SaveEditCommand { get; }
+        public IRelayCommand CancelEditCommand { get; }
+        public IAsyncRelayCommand<string?> SetPreviewFileNameCommand { get; }
+        public IAsyncRelayCommand<string?> SetContentFileNameCommand { get; }
+
         public WallpaperDetailViewModel(IDataContextService dataContextService)
         {
             _dbManager = Ioc.Default.GetRequiredService<DatabaseManager>();
@@ -68,188 +69,11 @@ namespace WallpaperEngine.ViewModels {
             ContentFileName = CurrentWallpaper?.Project?.File;
         }
 
-        public ICommand StartEditCommand { get; }
-        public ICommand SaveEditCommand { get; }
-        public ICommand CancelEditCommand { get; }
-        public ICommand SetPreviewFileNameCommand { get; }
-        public ICommand SetContentFileNameCommand { get; }
-
         public void Initialize(WallpaperItem? wallpaper = null)
         {
             if (wallpaper == null) return;
             CurrentWallpaper = wallpaper;
             _originalItem = CreateBackup(wallpaper);
-        }
-        
-        private async Task SetContentFileName(string? fileName)
-        {
-            if (CurrentWallpaper == null ||
-                fileName == null ||
-                CurrentWallpaper.Project.File == fileName) {
-                return;
-            }
-            try {
-                ContentFileName = fileName;
-                CurrentWallpaper.Project.File = fileName;
-                // 保存到project.json
-                await SaveToProjectJsonAsync();
-                // 更新数据库
-                await UpdateDatabaseAsync();
-                // 重新加载壁纸信息
-            } catch (Exception ex) {
-                ShowErrorMessage($"保存失败: {ex.Message}");
-            }
-        }
-        private bool IsValidContentFileName(string? fileName)
-        {
-            string lowerFileName = fileName?.ToLower() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(lowerFileName)) {
-                return false;
-            }
-            if (lowerFileName == "project.json" ||
-                lowerFileName == "preview.jpg" ||
-                lowerFileName == "preview.png" ||
-                lowerFileName == "preview.jpeg" ||
-                lowerFileName == "preview.gif" ||
-                lowerFileName == "thumbs.db") {
-                return false;
-            }
-            return true;
-        }
-        private bool IsValidPreviewFileName(string? fileName)
-        {
-            string lowerFileName = fileName?.ToLower() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(lowerFileName)) {
-                return false;
-            }
-            if (lowerFileName == "project.json" || lowerFileName == "thumbs.db") {
-                return false;
-            }
-            return true;
-        }
-        bool CanSetContentFileName(string? fileName)
-        {
-            if (CurrentWallpaper == null || fileName == null) {
-                return false;
-            }
-            return IsValidContentFileName(fileName);
-        }
-        bool CanSetPreviewFileName(string? fileName)
-        {
-            if (CurrentWallpaper == null || fileName == null) {
-                return false;
-            }
-            return IsValidPreviewFileName(fileName);
-        }
-        
-        private async Task SetPreviewFileName(string? fileName)
-        {
-            if (CurrentWallpaper == null || CurrentWallpaper.Project.Preview == fileName) {
-                return;
-            }
-            CurrentWallpaper.Project.Preview = fileName;
-            PreviewFileName = fileName;
-            try {
-                // 保存到project.json
-                await SaveToProjectJsonAsync();
-                // 更新数据库
-                await UpdateDatabaseAsync();
-                // 重新加载壁纸信息
-            } catch (Exception ex) {
-                ShowErrorMessage($"保存失败: {ex.Message}");
-            }
-        }
-
-        private void StartEdit()
-        {
-            if (CurrentWallpaper == null) return;
-
-            IsEditMode = true;
-            EditStatus = "编辑模式";
-
-            // 创建编辑备份
-            _originalItem = CreateBackup(CurrentWallpaper);
-            CurrentWallpaper.IsEditing = true;
-        }
-
-        private async Task SaveEdit()
-        {
-            if (CurrentWallpaper == null) return;
-
-            try {
-                EditStatus = "正在保存...";
-                if (Title != null && CurrentWallpaper.Project.Title != Title) {
-                    CurrentWallpaper.Project.Title = Title;
-                }
-                if (SelectedType != null && CurrentWallpaper.Project.Type != SelectedType) {
-                    CurrentWallpaper.Project.Type = SelectedType.ToLower();
-                }
-
-                if (Description != null && CurrentWallpaper.Project.Description != Description) {
-                    CurrentWallpaper.Project.Description = Description;
-                }
-
-                // 保存到project.json
-                await SaveToProjectJsonAsync();
-
-                // 更新数据库
-                await UpdateDatabaseAsync();
-
-                // 退出编辑模式
-                IsEditMode = false;
-                CurrentWallpaper.IsEditing = false;
-                EditStatus = "保存成功";
-                // 显示成功消息
-                ShowSaveSuccessMessage();
-            } catch (Exception ex) {
-                EditStatus = "保存失败";
-                ShowErrorMessage($"保存失败: {ex.Message}");
-            }
-        }
-
-        private bool CanSaveEdit()
-        {
-            return true;
-        }
-
-        private void CancelEdit()
-        {
-            if (CurrentWallpaper == null) return;
-
-            // 恢复原始数据
-            if (_originalItem != null) {
-                RestoreFromBackup(CurrentWallpaper, _originalItem);
-            }
-
-            IsEditMode = false;
-            CurrentWallpaper.IsEditing = false;
-            EditStatus = "编辑已取消";
-        }
-
-        // 保存到project.json文件
-        private async Task SaveToProjectJsonAsync()
-        {
-            var projectJsonPath = Path.Combine(CurrentWallpaper.FolderPath, "project.json");
-
-            try {
-                var jsonSettings = new JsonSerializerSettings {
-                    Formatting = Formatting.Indented,
-                    NullValueHandling = NullValueHandling.Ignore
-                };
-
-                var jsonContent = JsonConvert.SerializeObject(CurrentWallpaper.Project, jsonSettings);
-                await File.WriteAllTextAsync(projectJsonPath, jsonContent, Encoding.UTF8);
-            } catch (Exception ex) {
-                throw new InvalidOperationException($"无法保存project.json: {ex.Message}", ex);
-            }
-        }
-
-        // 更新数据库
-        private async Task UpdateDatabaseAsync()
-        {
-            await Task.Run(() => {
-                _dbManager.UpdateWallpaper(CurrentWallpaper);
-            });
         }
 
         // 创建数据备份
@@ -288,15 +112,15 @@ namespace WallpaperEngine.ViewModels {
 
         private void ShowSaveSuccessMessage()
         {
-            System.Windows.Application.Current.Dispatcher.Invoke(async () => {
+            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 await MaterialDialogService.ShowConfirmationAsync("壁纸详情已成功保存!", "保存成功");
             });
         }
 
         private void ShowErrorMessage(string message)
         {
-             System.Windows.Application.Current.Dispatcher.Invoke(async () => {
-                 await MaterialDialogService.ShowErrorAsync(message, "错误");
+            System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
+                await MaterialDialogService.ShowErrorAsync(message, "错误");
             });
         }
     }
