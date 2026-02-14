@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System.IO;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
@@ -9,7 +9,18 @@ namespace WallpaperEngine.Services {
     public class WallpaperScanner {
         private readonly DatabaseManager _dbManager;
         private CancellationTokenSource _cancellationTokenSource;
-        bool _isIncrementalScan = false;
+
+        private static readonly Dictionary<string, string[]> TagCategories = new()
+        {
+            { "自然", new[] { "nature", "自然", "风景", "landscape" } },
+            { "抽象", new[] { "abstract", "抽象", "艺术", "art" } },
+            { "游戏", new[] { "game", "游戏", "gaming" } },
+            { "动漫", new[] { "anime", "动漫", "动画" } },
+            { "科幻", new[] { "sci-fi", "科幻", "space" } },
+            { "风景", new[] { "scenery", "风景", "view" } },
+            { "建筑", new[] { "architecture", "建筑", "building" } },
+            { "动物", new[] { "animal", "动物", "pet" } }
+        };
 
         public WallpaperScanner(DatabaseManager dbManager)
         {
@@ -22,14 +33,14 @@ namespace WallpaperEngine.Services {
             _cancellationTokenSource.Cancel();
         }
 
-        public async Task<bool> ScanWallpapersAsync(string rootFolderPath, bool inc, IProgress<ScanProgress> progress = null)
+        public async Task<bool> ScanWallpapersAsync(string rootFolderPath, bool isIncremental, IProgress<ScanProgress> progress = null)
         {
-            _isIncrementalScan = inc;
             if (!Directory.Exists(rootFolderPath)) {
                 throw new DirectoryNotFoundException($"目录不存在: {rootFolderPath}");
             }
 
             if (_cancellationTokenSource.IsCancellationRequested) {
+                _cancellationTokenSource.Dispose();
                 _cancellationTokenSource = new CancellationTokenSource();
             }
 
@@ -38,29 +49,19 @@ namespace WallpaperEngine.Services {
             try {
                 progress?.Report(new ScanProgress { Status = "正在搜索壁纸文件夹..." });
 
-                var validFolders = new List<string>();
-
                 var wallpaperFolders = Directory.GetDirectories(rootFolderPath);
-                foreach (var folder in wallpaperFolders) {
-                    if (cancellationToken.IsCancellationRequested) {
-                        return false;
-                    }
-                    validFolders.Add(folder);
-                }
-
-
-                int total = validFolders.Count;
+                int total = wallpaperFolders.Length;
                 int processed = 0;
                 int validCount = 0;
 
                 progress?.Report(new ScanProgress { Status = $"找到 {total} 个壁纸文件夹，开始处理..." });
 
-                foreach (var folder in validFolders) {
+                foreach (var folder in wallpaperFolders) {
                     if (cancellationToken.IsCancellationRequested) return false;
 
                     try {
-                        var wallpaper = await ProcessWallpaper(folder, _isIncrementalScan);
-                        if (wallpaper != null) {                            
+                        var wallpaper = await ProcessWallpaper(folder, isIncremental);
+                        if (wallpaper != null) {
                             validCount++;
                         }
                         processed++;
@@ -73,9 +74,9 @@ namespace WallpaperEngine.Services {
                             Status = $"正在处理: {Path.GetFileName(folder)}"
                         });
 
-                        await Task.Delay(50, cancellationToken);
+                        await Task.Yield();
                     } catch (Exception ex) {
-                        System.Diagnostics.Debug.WriteLine($"处理壁纸文件夹失败 {folder}: {ex.Message}");
+                        Log.Warning($"处理壁纸文件夹失败 {folder}: {ex.Message}");
                     }
                 }
 
@@ -89,42 +90,43 @@ namespace WallpaperEngine.Services {
                 throw;
             }
         }
-        public async Task<WallpaperItem> ProcessWallpaper(string folderPath, bool isIncrement)
+
+        public async Task<WallpaperItem> ProcessWallpaper(string folderPath, bool isIncremental)
         {
             try {
-                if (!Path.Exists(folderPath)) {  //  目录不存在，是无效项，跳过，如果数据库中有记录，删除记录
+                if (!Path.Exists(folderPath)) {
                     _dbManager.DeleteWallpaperByPath(folderPath);
                     return null;
                 }
+
                 var existingWallpaper = _dbManager.GetWallpaperByFolderPath(folderPath);
-                if (existingWallpaper == null || !isIncrement) {  // 数据库中没有记录，说明是新添加的目录
-                    WallpaperItem wallpaperItem = new WallpaperItem {
-                        FolderPath = folderPath,
-                        AddedDate = DateTime.Now,
-                        IsNewlyAdded = true
-                    };
-                    // 尝试解析 project.json，如果不存在，复制默认的 project.json 模板到该目录
-                    var projectFile = Path.Combine(folderPath, "project.json");
-                    if (!File.Exists(projectFile)) {
-                        string baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-                        string defaultProjectPath = Path.Combine(baseDirectory, "project.json");
-                        File.Copy(defaultProjectPath, Path.Combine(folderPath, "project.json"));
-                    }
-
-                    var jsonContent = await File.ReadAllTextAsync(projectFile);
-                    var project = JsonConvert.DeserializeObject<WallpaperProject>(jsonContent);
-
-                    if (project == null) {
-                        return wallpaperItem;
-                    }
-                    wallpaperItem.Project = project;
-                    string category = GetCategory(project);  // 自动分类
-                    wallpaperItem.Category = category;
-                    _dbManager.SaveWallpaper(wallpaperItem);
-                    return wallpaperItem;
-                } else {
+                if (existingWallpaper != null && isIncremental) {
                     return existingWallpaper;
                 }
+
+                var wallpaperItem = new WallpaperItem {
+                    FolderPath = folderPath,
+                    AddedDate = DateTime.Now,
+                    IsNewlyAdded = true
+                };
+
+                var projectFile = Path.Combine(folderPath, "project.json");
+                if (!File.Exists(projectFile)) {
+                    string defaultProjectPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "project.json");
+                    File.Copy(defaultProjectPath, projectFile);
+                }
+
+                var jsonContent = await File.ReadAllTextAsync(projectFile);
+                var project = JsonConvert.DeserializeObject<WallpaperProject>(jsonContent);
+
+                if (project == null) {
+                    return wallpaperItem;
+                }
+
+                wallpaperItem.Project = project;
+                wallpaperItem.Category = GetCategory(project);
+                _dbManager.SaveWallpaper(wallpaperItem);
+                return wallpaperItem;
             } catch (Exception ex) {
                 Log.Fatal($"Error processing folder {folderPath}: {ex.Message}");
                 return null;
@@ -133,31 +135,19 @@ namespace WallpaperEngine.Services {
 
         private static string GetCategory(WallpaperProject project)
         {
-            var category = "未分类";
-            if (project.Tags != null && project.Tags.Count > 0) {
-                var tagCategories = new Dictionary<string, string[]>
-                    {
-                        { "自然", new[] { "nature", "自然", "风景", "landscape" } },
-                        { "抽象", new[] { "abstract", "抽象", "艺术", "art" } },
-                        { "游戏", new[] { "game", "游戏", "gaming" } },
-                        { "动漫", new[] { "anime", "动漫", "动画" } },
-                        { "科幻", new[] { "sci-fi", "科幻", "space" } },
-                        { "风景", new[] { "scenery", "风景", "view" } },
-                        { "建筑", new[] { "architecture", "建筑", "building" } },
-                        { "动物", new[] { "animal", "动物", "pet" } }
-                    };
+            if (project.Tags == null || project.Tags.Count == 0) {
+                return "未分类";
+            }
 
-                foreach (var tag in project.Tags) {
-                    foreach (var cat in tagCategories) {
-                        if (cat.Value.Any(t => tag.ToLower().Contains(t.ToLower()))) {
-                            category = cat.Key;
-                            break;
-                        }
+            foreach (var tag in project.Tags) {
+                foreach (var cat in TagCategories) {
+                    if (cat.Value.Any(t => tag.Contains(t, StringComparison.OrdinalIgnoreCase))) {
+                        return cat.Key;
                     }
-                    if (category != "未分类") break;
                 }
             }
-            return category;
+
+            return "未分类";
         }
     }
 

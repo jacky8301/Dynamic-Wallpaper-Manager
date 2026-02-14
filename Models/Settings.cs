@@ -3,5 +3,4 @@ using CommunityToolkit.Mvvm.ComponentModel;
 public partial class ApplicationSettings : ObservableObject {
     [ObservableProperty]
     private string _wallpaperEnginePath;
-
 }
