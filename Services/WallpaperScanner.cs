@@ -50,7 +50,9 @@ namespace WallpaperEngine.Services {
                 progress?.Report(new ScanProgress { Status = "正在搜索壁纸文件夹..." });
 
                 return await Task.Run(async () => {
-                    var wallpaperFolders = Directory.GetDirectories(rootFolderPath);
+                    var wallpaperFolders = Directory.GetDirectories(rootFolderPath)
+                        .Where(f => long.TryParse(Path.GetFileName(f), out _))
+                        .ToArray();
                     int total = wallpaperFolders.Length;
                     int processed = 0;
                     int newCount = 0;

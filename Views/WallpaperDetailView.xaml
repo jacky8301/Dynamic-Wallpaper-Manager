@@ -200,6 +200,11 @@
                                     BorderThickness="0"
                                     ItemsSource="{Binding CurrentWallpaper.FileNameList}"
                                     Style="{StaticResource MaterialDesignFilterChipOutlineListBox}">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Vertical" />
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
                                     <ListBox.ItemTemplate>
                                         <DataTemplate>
                                             <Grid Margin="0,2">
@@ -226,7 +231,8 @@
                                                     CommandParameter="{Binding}"
                                                     Content="选择为内容文件"
                                                     FontSize="10"
-                                                    Style="{StaticResource MaterialDesignOutlinedButton}" />
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                    Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Self}, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
                                                 <Button
                                                     Grid.Column="2"
@@ -237,7 +243,8 @@
                                                     CommandParameter="{Binding}"
                                                     Content="选择为预览图"
                                                     FontSize="10"
-                                                    Style="{StaticResource MaterialDesignOutlinedButton}" />
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                    Visibility="{Binding IsEnabled, RelativeSource={RelativeSource Self}, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
