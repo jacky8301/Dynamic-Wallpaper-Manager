@@ -124,9 +124,12 @@ namespace WallpaperEngine.ViewModels {
         }
 
         [RelayCommand]
-        private void CancelScan()
+        private async Task CancelScan()
         {
-            _scanner.CancelScan();
+            bool confirmed = await MaterialDialogService.ShowConfirmationAsync("确定要取消当前扫描吗？", "取消扫描");
+            if (confirmed) {
+                _scanner.CancelScan();
+            }
         }
 
         private void CheckLastScanTime()

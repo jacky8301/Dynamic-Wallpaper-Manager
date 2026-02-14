@@ -41,7 +41,7 @@
             <Border
                 Grid.Row="0"
                 Background="{StaticResource PrimaryBrush}"
-                CornerRadius="8,8,0,0">
+               >
                 <TextBlock
                     Padding="20,10"
                     HorizontalAlignment="Center"

@@ -107,6 +107,30 @@
                     </DataTemplate>
                 </Button.ContentTemplate>
             </Button>
+
+            <Separator Margin="10,0" />
+
+            <!--  壁纸总数  -->
+            <StackPanel
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <materialDesign:PackIcon
+                    Width="16"
+                    Height="16"
+                    Margin="0,0,4,0"
+                    VerticalAlignment="Center"
+                    Foreground="#666"
+                    Kind="ImageMultiple" />
+                <TextBlock
+                    VerticalAlignment="Center"
+                    Foreground="#666"
+                    Text="壁纸总数: " />
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontWeight="SemiBold"
+                    Foreground="#007ACC"
+                    Text="{Binding WallpaperCount}" />
+            </StackPanel>
         </StackPanel>
     </ToolBar>
 </UserControl>

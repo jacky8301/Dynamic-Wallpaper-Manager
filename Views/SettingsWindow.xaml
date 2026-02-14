@@ -6,8 +6,17 @@
     Title="设置"
     Width="650"
     Height="500"
+    AllowsTransparency="True"
     FontFamily="Segoe UI"
-    WindowStartupLocation="CenterOwner">
+    ResizeMode="CanResize"
+    WindowStartupLocation="CenterOwner"
+    WindowStyle="None">
+    <WindowChrome.WindowChrome>
+        <WindowChrome
+            CaptionHeight="40"
+            GlassFrameThickness="0"
+            ResizeBorderThickness="6" />
+    </WindowChrome.WindowChrome>
 
     <Window.Resources>
         <!--  增强的设置组样式  -->
@@ -99,7 +108,85 @@
         </Style>
     </Window.Resources>
 
-    <Grid Margin="20">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  自定义标题栏  -->
+        <Border
+            Grid.Row="0"
+            Height="40"
+            Background="{DynamicResource MaterialDesign.Brush.Primary.Light}">
+            <Grid>
+                <StackPanel
+                    Margin="10,0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <Image
+                        Width="24"
+                        Height="24"
+                        Margin="0,0,8,0"
+                        VerticalAlignment="Center"
+                        Source="/Assets/app.ico" />
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Foreground="White"
+                        Text="设置" />
+                </StackPanel>
+
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button
+                        x:Name="MinimizeButton"
+                        Width="40"
+                        Height="40"
+                        Click="MinimizeButton_Click"
+                        Style="{StaticResource MaterialDesignToolButton}"
+                        ToolTip="最小化">
+                        <materialDesign:PackIcon
+                            Width="16"
+                            Height="16"
+                            Foreground="White"
+                            Kind="WindowMinimize" />
+                    </Button>
+                    <Button
+                        x:Name="MaximizeButton"
+                        Width="40"
+                        Height="40"
+                        Click="MaximizeButton_Click"
+                        Style="{StaticResource MaterialDesignToolButton}"
+                        ToolTip="最大化">
+                        <materialDesign:PackIcon
+                            Width="16"
+                            Height="16"
+                            Foreground="White"
+                            Kind="WindowMaximize" />
+                    </Button>
+                    <Button
+                        x:Name="CloseButton"
+                        Width="40"
+                        Height="40"
+                        Click="CloseButton_Click"
+                        Style="{StaticResource MaterialDesignToolButton}"
+                        ToolTip="关闭">
+                        <materialDesign:PackIcon
+                            Width="16"
+                            Height="16"
+                            Foreground="White"
+                            Kind="WindowClose" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!--  内容区域  -->
+        <Grid Grid.Row="1" Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -214,5 +301,6 @@
                     Style="{StaticResource MaterialDesignOutlinedButton}" />
             </StackPanel>
         </Border>
+        </Grid>
     </Grid>
 </Window>

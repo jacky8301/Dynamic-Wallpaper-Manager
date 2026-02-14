@@ -49,39 +49,39 @@ namespace WallpaperEngine.Services {
             try {
                 progress?.Report(new ScanProgress { Status = "正在搜索壁纸文件夹..." });
 
-                var wallpaperFolders = Directory.GetDirectories(rootFolderPath);
-                int total = wallpaperFolders.Length;
-                int processed = 0;
-                int validCount = 0;
+                return await Task.Run(async () => {
+                    var wallpaperFolders = Directory.GetDirectories(rootFolderPath);
+                    int total = wallpaperFolders.Length;
+                    int processed = 0;
+                    int validCount = 0;
 
-                progress?.Report(new ScanProgress { Status = $"找到 {total} 个壁纸文件夹，开始处理..." });
+                    progress?.Report(new ScanProgress { Status = $"找到 {total} 个壁纸文件夹，开始处理..." });
 
-                foreach (var folder in wallpaperFolders) {
-                    if (cancellationToken.IsCancellationRequested) return false;
+                    foreach (var folder in wallpaperFolders) {
+                        if (cancellationToken.IsCancellationRequested) return false;
 
-                    try {
-                        var wallpaper = await ProcessWallpaper(folder, isIncremental);
-                        if (wallpaper != null) {
-                            validCount++;
+                        try {
+                            var wallpaper = await ProcessWallpaper(folder, isIncremental);
+                            if (wallpaper != null) {
+                                validCount++;
+                            }
+                            processed++;
+
+                            progress?.Report(new ScanProgress {
+                                Percentage = processed * 100 / Math.Max(1, total),
+                                ProcessedCount = processed,
+                                TotalCount = total,
+                                CurrentFolder = folder,
+                                Status = $"正在处理: {Path.GetFileName(folder)}"
+                            });
+                        } catch (Exception ex) {
+                            Log.Warning($"处理壁纸文件夹失败 {folder}: {ex.Message}");
                         }
-                        processed++;
-
-                        progress?.Report(new ScanProgress {
-                            Percentage = processed * 100 / Math.Max(1, total),
-                            ProcessedCount = processed,
-                            TotalCount = total,
-                            CurrentFolder = folder,
-                            Status = $"正在处理: {Path.GetFileName(folder)}"
-                        });
-
-                        await Task.Yield();
-                    } catch (Exception ex) {
-                        Log.Warning($"处理壁纸文件夹失败 {folder}: {ex.Message}");
                     }
-                }
 
-                progress?.Report(new ScanProgress { Status = $"扫描完成，成功处理 {validCount} 个壁纸" });
-                return true;
+                    progress?.Report(new ScanProgress { Status = $"扫描完成，成功处理 {validCount} 个壁纸" });
+                    return true;
+                }, cancellationToken);
             } catch (OperationCanceledException) {
                 progress?.Report(new ScanProgress { Status = "扫描已被取消" });
                 return false;
