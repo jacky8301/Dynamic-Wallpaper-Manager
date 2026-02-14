@@ -12,10 +12,11 @@ namespace WallpaperEngine.Views {
             InitializeComponent();
             ViewModel = Ioc.Default.GetService<MainViewModel>();
             this.DataContext = ViewModel;
+            CollectionViewPanel.DataContext = Ioc.Default.GetService<CollectionViewModel>();
             ViewModel.LoadWallpapersCompleted += (s, e) => {
                 // 在壁纸加载完成后隐藏加载层
                 Dispatcher.Invoke(() => HideLoadingOverlay());
-            };           
+            };
         }
         private MainViewModel ViewModel;
         // 允许通过拖动标题栏移动窗口

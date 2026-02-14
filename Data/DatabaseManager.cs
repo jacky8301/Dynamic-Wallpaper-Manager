@@ -193,6 +193,25 @@ namespace WallpaperEngine.Data {
                 Name TEXT PRIMARY KEY
             )";
             command.ExecuteNonQuery();
+
+            // 创建合集表
+            command.CommandText = @"
+            CREATE TABLE IF NOT EXISTS Collections (
+                Id TEXT PRIMARY KEY,
+                Name TEXT NOT NULL,
+                CreatedDate TEXT NOT NULL
+            )";
+            command.ExecuteNonQuery();
+
+            // 创建合集-壁纸关联表
+            command.CommandText = @"
+            CREATE TABLE IF NOT EXISTS CollectionItems (
+                CollectionId TEXT NOT NULL,
+                WallpaperFolderPath TEXT NOT NULL,
+                AddedDate TEXT NOT NULL,
+                PRIMARY KEY (CollectionId, WallpaperFolderPath)
+            )";
+            command.ExecuteNonQuery();
         }
         // 插入或更新壁纸记录
         public void SaveWallpaper(WallpaperItem wallpaper)
@@ -308,6 +327,96 @@ namespace WallpaperEngine.Data {
         {
             m_connection?.Close();
             m_connection?.Dispose();
+        }
+
+        // ===== 合集管理 =====
+
+        public List<WallpaperCollection> GetAllCollections()
+        {
+            var collections = new List<WallpaperCollection>();
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "SELECT Id, Name, CreatedDate FROM Collections ORDER BY CreatedDate DESC";
+            using var reader = command.ExecuteReader();
+            while (reader.Read()) {
+                collections.Add(new WallpaperCollection {
+                    Id = reader["Id"].ToString(),
+                    Name = reader["Name"].ToString(),
+                    CreatedDate = DateTime.Parse(reader["CreatedDate"].ToString())
+                });
+            }
+            return collections;
+        }
+
+        public WallpaperCollection AddCollection(string name)
+        {
+            var collection = new WallpaperCollection {
+                Id = Guid.NewGuid().ToString(),
+                Name = name,
+                CreatedDate = DateTime.Now
+            };
+            using var command = m_connection.CreateCommand();
+            command.CommandText = @"
+                INSERT INTO Collections (Id, Name, CreatedDate)
+                VALUES (@id, @name, @createdDate)";
+            command.Parameters.AddWithValue("@id", collection.Id);
+            command.Parameters.AddWithValue("@name", collection.Name);
+            command.Parameters.AddWithValue("@createdDate", collection.CreatedDate.ToString("O"));
+            command.ExecuteNonQuery();
+            return collection;
+        }
+
+        public void RenameCollection(string id, string newName)
+        {
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "UPDATE Collections SET Name = @name WHERE Id = @id";
+            command.Parameters.AddWithValue("@name", newName);
+            command.Parameters.AddWithValue("@id", id);
+            command.ExecuteNonQuery();
+        }
+
+        public void DeleteCollection(string id)
+        {
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "DELETE FROM CollectionItems WHERE CollectionId = @id";
+            command.Parameters.AddWithValue("@id", id);
+            command.ExecuteNonQuery();
+
+            command.CommandText = "DELETE FROM Collections WHERE Id = @id";
+            command.ExecuteNonQuery();
+        }
+
+        public List<string> GetCollectionItems(string collectionId)
+        {
+            var items = new List<string>();
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "SELECT WallpaperFolderPath FROM CollectionItems WHERE CollectionId = @id ORDER BY AddedDate DESC";
+            command.Parameters.AddWithValue("@id", collectionId);
+            using var reader = command.ExecuteReader();
+            while (reader.Read()) {
+                items.Add(reader.GetString(0));
+            }
+            return items;
+        }
+
+        public void AddToCollection(string collectionId, string folderPath)
+        {
+            using var command = m_connection.CreateCommand();
+            command.CommandText = @"
+                INSERT OR IGNORE INTO CollectionItems (CollectionId, WallpaperFolderPath, AddedDate)
+                VALUES (@collectionId, @folderPath, @addedDate)";
+            command.Parameters.AddWithValue("@collectionId", collectionId);
+            command.Parameters.AddWithValue("@folderPath", folderPath);
+            command.Parameters.AddWithValue("@addedDate", DateTime.Now.ToString("O"));
+            command.ExecuteNonQuery();
+        }
+
+        public void RemoveFromCollection(string collectionId, string folderPath)
+        {
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "DELETE FROM CollectionItems WHERE CollectionId = @collectionId AND WallpaperFolderPath = @folderPath";
+            command.Parameters.AddWithValue("@collectionId", collectionId);
+            command.Parameters.AddWithValue("@folderPath", folderPath);
+            command.ExecuteNonQuery();
         }
 
         // 保存扫描记录

@@ -8,4 +8,5 @@
     <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
     <local:IntEqualConverter x:Key="EqualToZeroConverter" Target="0" />
     <local:IntEqualConverter x:Key="EqualToOneConverter" Target="1" />
+    <local:IntEqualConverter x:Key="EqualToTwoConverter" Target="2" />
 </ResourceDictionary>

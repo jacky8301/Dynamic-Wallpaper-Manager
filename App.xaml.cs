@@ -44,6 +44,7 @@ namespace WallpaperEngine {
                     .AddSingleton<WallpaperDetailViewModel>()
                     .AddSingleton<PreviewViewModel>()
                     .AddSingleton<MainViewModel>()
+                    .AddSingleton<CollectionViewModel>()
                     .BuildServiceProvider()
             );
         }

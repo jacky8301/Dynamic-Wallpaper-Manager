@@ -111,6 +111,9 @@
                                 <RadioButton Content="我的收藏" GroupName="MainTab"
                                              IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToOneConverter}}"
                                              Style="{StaticResource TabRadioButtonStyle}" />
+                                <RadioButton Content="壁纸合集" GroupName="MainTab"
+                                             IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToTwoConverter}}"
+                                             Style="{StaticResource TabRadioButtonStyle}" />
                             </StackPanel>
                         </Border>
                         <!--  扫描状态显示  -->
@@ -139,10 +142,22 @@
                         </Border>
                         <!--  内容区域  -->
                         <Grid Grid.Row="2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="3*" />
-                                <ColumnDefinition Width="1*" />
-                            </Grid.ColumnDefinitions>
+                            <!-- Tab 0/1: 壁纸列表 + 详情 -->
+                            <Grid>
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CurrentTab, Converter={StaticResource EqualToTwoConverter}}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="3*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
                             <!--  壁纸网格  -->
                             <ListBox
                                 Grid.Column="0"
@@ -246,6 +261,14 @@
                                                         Style="{StaticResource WallpaperMenuItemStyle}" />
                                                     <!--  分隔线  -->
                                                     <Separator />
+                                                    <!--  添加到合集菜单项  -->
+                                                    <MenuItem
+                                                        Command="{Binding DataContext.AddToCollectionCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}"
+                                                        Header="📂 添加到合集"
+                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
+                                                    <!--  分隔线  -->
+                                                    <Separator />
                                                     <!--  删除菜单项  -->
                                                     <MenuItem
                                                         Command="{Binding DataContext.DeleteWallpaperCommand, Source={x:Reference mainWindow}}"
@@ -305,6 +328,20 @@
                                 BorderThickness="1,0,0,0">
                                 <views:WallpaperDetailView />
                             </Border>
+                            </Grid>
+                            <!-- Tab 2: 壁纸合集 -->
+                            <views:CollectionView x:Name="CollectionViewPanel">
+                                <views:CollectionView.Style>
+                                    <Style TargetType="views:CollectionView">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.CurrentTab, ElementName=mainWindow, Converter={StaticResource EqualToTwoConverter}}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </views:CollectionView.Style>
+                            </views:CollectionView>
                         </Grid>
                     </Grid>
                 </Grid>

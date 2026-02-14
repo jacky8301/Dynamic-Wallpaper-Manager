@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
+using MaterialDesignThemes.Wpf;
 using Serilog;
 using System.Diagnostics;
 using System.IO;
@@ -172,6 +173,40 @@ namespace WallpaperEngine.ViewModels {
             if (result == true) {
                 Settings = _settingsService.LoadSettings();
                 OnPropertyChanged(nameof(Settings));
+            }
+        }
+
+        [RelayCommand]
+        private async Task AddToCollection(object parameter)
+        {
+            if (parameter is not WallpaperItem wallpaper) return;
+
+            var collections = _dbManager.GetAllCollections();
+            if (collections.Count == 0) {
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = "还没有合集，请先在「壁纸合集」页面创建一个合集。",
+                    Title = "提示",
+                    ShowCancelButton = false,
+                    DialogType = DialogType.Information
+                });
+                return;
+            }
+
+            var view = new SelectCollectionDialog();
+            view.DataContext = new SelectCollectionDialogViewModel(collections);
+
+            var result = await DialogHost.Show(view, "MainRootDialog");
+            if (result is MaterialDialogResult dialogResult && dialogResult.Confirmed && dialogResult.Data is WallpaperCollection selected) {
+                try {
+                    _dbManager.AddToCollection(selected.Id, wallpaper.FolderPath);
+                    // 刷新合集页面（如果当前正在查看该合集）
+                    var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
+                    if (collectionVm?.SelectedCollection?.Id == selected.Id) {
+                        collectionVm.LoadCollectionWallpapers();
+                    }
+                } catch (Exception ex) {
+                    Log.Warning($"添加壁纸到合集失败: {ex.Message}");
+                }
             }
         }
     }
