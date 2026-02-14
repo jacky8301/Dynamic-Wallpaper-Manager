@@ -53,7 +53,9 @@ namespace WallpaperEngine.Services {
                     var wallpaperFolders = Directory.GetDirectories(rootFolderPath);
                     int total = wallpaperFolders.Length;
                     int processed = 0;
-                    int validCount = 0;
+                    int newCount = 0;
+                    int updatedCount = 0;
+                    int skippedCount = 0;
 
                     progress?.Report(new ScanProgress { Status = $"找到 {total} 个壁纸文件夹，开始处理..." });
 
@@ -61,9 +63,17 @@ namespace WallpaperEngine.Services {
                         if (cancellationToken.IsCancellationRequested) return false;
 
                         try {
-                            var wallpaper = await ProcessWallpaper(folder, isIncremental);
-                            if (wallpaper != null) {
-                                validCount++;
+                            var resultType = await ProcessWallpaper(folder, isIncremental);
+                            switch (resultType) {
+                                case ScanResultType.New:
+                                    newCount++;
+                                    break;
+                                case ScanResultType.Updated:
+                                    updatedCount++;
+                                    break;
+                                case ScanResultType.Skipped:
+                                    skippedCount++;
+                                    break;
                             }
                             processed++;
 
@@ -72,14 +82,22 @@ namespace WallpaperEngine.Services {
                                 ProcessedCount = processed,
                                 TotalCount = total,
                                 CurrentFolder = folder,
-                                Status = $"正在处理: {Path.GetFileName(folder)}"
+                                Status = $"正在处理: {Path.GetFileName(folder)}",
+                                NewCount = newCount,
+                                UpdatedCount = updatedCount,
+                                SkippedCount = skippedCount
                             });
                         } catch (Exception ex) {
                             Log.Warning($"处理壁纸文件夹失败 {folder}: {ex.Message}");
                         }
                     }
 
-                    progress?.Report(new ScanProgress { Status = $"扫描完成，成功处理 {validCount} 个壁纸" });
+                    progress?.Report(new ScanProgress {
+                        Status = $"扫描完成，新增 {newCount}，更新 {updatedCount}，跳过 {skippedCount}",
+                        NewCount = newCount,
+                        UpdatedCount = updatedCount,
+                        SkippedCount = skippedCount
+                    });
                     return true;
                 }, cancellationToken);
             } catch (OperationCanceledException) {
@@ -91,18 +109,20 @@ namespace WallpaperEngine.Services {
             }
         }
 
-        public async Task<WallpaperItem> ProcessWallpaper(string folderPath, bool isIncremental)
+        public async Task<ScanResultType> ProcessWallpaper(string folderPath, bool isIncremental)
         {
             try {
                 if (!Path.Exists(folderPath)) {
                     _dbManager.DeleteWallpaperByPath(folderPath);
-                    return null;
+                    return ScanResultType.Skipped;
                 }
 
                 var existingWallpaper = _dbManager.GetWallpaperByFolderPath(folderPath);
                 if (existingWallpaper != null && isIncremental) {
-                    return existingWallpaper;
+                    return ScanResultType.Skipped;
                 }
+
+                bool isNew = existingWallpaper == null;
 
                 var wallpaperItem = new WallpaperItem {
                     FolderPath = folderPath,
@@ -120,16 +140,16 @@ namespace WallpaperEngine.Services {
                 var project = JsonConvert.DeserializeObject<WallpaperProject>(jsonContent);
 
                 if (project == null) {
-                    return wallpaperItem;
+                    return ScanResultType.Skipped;
                 }
 
                 wallpaperItem.Project = project;
                 wallpaperItem.Category = GetCategory(project);
                 _dbManager.SaveWallpaper(wallpaperItem);
-                return wallpaperItem;
+                return isNew ? ScanResultType.New : ScanResultType.Updated;
             } catch (Exception ex) {
                 Log.Fatal($"Error processing folder {folderPath}: {ex.Message}");
-                return null;
+                return ScanResultType.Skipped;
             }
         }
 

@@ -91,6 +91,9 @@ namespace WallpaperEngine.ViewModels {
             ScanProgress = progress.Percentage;
             ScannedCount = progress.ProcessedCount;
             TotalCount = progress.TotalCount;
+            NewFoundCount = progress.NewCount;
+            UpdatedCount = progress.UpdatedCount;
+            SkippedCount = progress.SkippedCount;
 
             if (progress.CurrentFolder != null) {
                 var folderName = Path.GetFileName(progress.CurrentFolder);
