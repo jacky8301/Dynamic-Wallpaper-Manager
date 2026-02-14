@@ -6,6 +6,9 @@ using WallpaperEngine.ViewModels;
 using Serilog;
 
 namespace WallpaperEngine.Services {
+    /// <summary>
+    /// 壁纸扫描器，扫描指定文件夹中的壁纸目录，读取 project.json 并根据标签自动分类，支持增量扫描
+    /// </summary>
     public class WallpaperScanner {
         private readonly DatabaseManager _dbManager;
         private CancellationTokenSource _cancellationTokenSource;
@@ -22,17 +25,32 @@ namespace WallpaperEngine.Services {
             { "动物", new[] { "animal", "动物", "pet" } }
         };
 
+        /// <summary>
+        /// 初始化壁纸扫描器
+        /// </summary>
+        /// <param name="dbManager">数据库管理器实例，用于持久化壁纸数据</param>
         public WallpaperScanner(DatabaseManager dbManager)
         {
             _dbManager = dbManager;
             _cancellationTokenSource = new CancellationTokenSource();
         }
 
+        /// <summary>
+        /// 取消正在进行的扫描操作
+        /// </summary>
         public void CancelScan()
         {
             _cancellationTokenSource.Cancel();
         }
 
+        /// <summary>
+        /// 异步扫描指定根目录下的所有壁纸文件夹，解析 project.json 并保存到数据库
+        /// </summary>
+        /// <param name="rootFolderPath">壁纸根目录路径</param>
+        /// <param name="isIncremental">是否为增量扫描，增量模式下跳过已存在且未变化的壁纸</param>
+        /// <param name="progress">扫描进度报告回调</param>
+        /// <returns>扫描正常完成返回 true，被取消返回 false</returns>
+        /// <exception cref="DirectoryNotFoundException">根目录不存在</exception>
         public async Task<bool> ScanWallpapersAsync(string rootFolderPath, bool isIncremental, IProgress<ScanProgress> progress = null)
         {
             if (!Directory.Exists(rootFolderPath)) {
@@ -111,6 +129,12 @@ namespace WallpaperEngine.Services {
             }
         }
 
+        /// <summary>
+        /// 处理单个壁纸文件夹，读取 project.json 并推断分类后保存到数据库
+        /// </summary>
+        /// <param name="folderPath">壁纸文件夹路径</param>
+        /// <param name="isIncremental">是否为增量模式</param>
+        /// <returns>处理结果类型：新增、更新或跳过</returns>
         public async Task<ScanResultType> ProcessWallpaper(string folderPath, bool isIncremental)
         {
             try {
@@ -160,6 +184,11 @@ namespace WallpaperEngine.Services {
             }
         }
 
+        /// <summary>
+        /// 根据壁纸项目的标签自动推断分类，匹配预定义的标签-分类映射表
+        /// </summary>
+        /// <param name="project">壁纸项目信息</param>
+        /// <returns>推断出的分类名称，无法匹配时返回"未分类"</returns>
         private static string GetCategory(WallpaperProject project)
         {
             if (project.Tags == null || project.Tags.Count == 0) {

@@ -3,6 +3,9 @@ using System.Windows.Data;
 
 namespace WallpaperEngine.Converters
 {
+    /// <summary>
+    /// 布尔值取反转换器，将 true 转为 false，false 转为 true
+    /// </summary>
     [ValueConversion(typeof(bool), typeof(bool))]
     public class InverseBooleanConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

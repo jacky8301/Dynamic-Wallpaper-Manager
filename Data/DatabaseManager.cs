@@ -5,15 +5,26 @@ using System.IO;
 using WallpaperEngine.Models;
 
 namespace WallpaperEngine.Data {
+    /// <summary>
+    /// 数据库管理器，使用 SQLite 存储和管理壁纸、收藏、合集、分类及扫描历史等数据
+    /// </summary>
     public sealed class DatabaseManager : IDisposable {
         private SqliteConnection m_connection;
         private readonly string m_dbPath;
+
+        /// <summary>
+        /// 初始化数据库管理器，连接或创建指定路径的 SQLite 数据库
+        /// </summary>
+        /// <param name="databasePath">数据库文件路径，默认为 wallpapers.db</param>
         public DatabaseManager(string databasePath = "wallpapers.db")
         {
             m_dbPath = databasePath;
             InitializeDatabase();
         }
 
+        /// <summary>
+        /// 扫描信息记录，包含扫描路径、时间及统计数据
+        /// </summary>
         public class ScanInfo {
             public string ScanPath { get; set; } = string.Empty;
             public DateTime LastScanTime { get; set; } = DateTime.MinValue;
@@ -21,6 +32,11 @@ namespace WallpaperEngine.Data {
             public int NewFound { get; set; }
         }
 
+        /// <summary>
+        /// 从数据库读取器中解析并构建壁纸项对象，自动处理收藏状态的 JOIN 列判断
+        /// </summary>
+        /// <param name="reader">数据库数据读取器</param>
+        /// <returns>解析后的壁纸项对象</returns>
         private WallpaperItem ReadWallpaperItem(DbDataReader reader)
         {
             // 判断是否有 Favorites 表的 JOIN 列
@@ -73,7 +89,11 @@ namespace WallpaperEngine.Data {
             };
         }
 
-        // 根据文件夹路径获取已存在的壁纸记录
+        /// <summary>
+        /// 根据文件夹路径获取已存在的壁纸记录
+        /// </summary>
+        /// <param name="folderPath">壁纸所在文件夹的完整路径</param>
+        /// <returns>匹配的壁纸项，未找到时返回 null</returns>
         public WallpaperItem GetWallpaperByFolderPath(string folderPath)
         {
             using var command = m_connection.CreateCommand();
@@ -92,7 +112,11 @@ namespace WallpaperEngine.Data {
             return null; // 没找到
         }
 
-        // 专门用于切换收藏状态的方法
+        /// <summary>
+        /// 切换壁纸的收藏状态，收藏时插入记录，取消收藏时删除记录
+        /// </summary>
+        /// <param name="folderPath">壁纸文件夹路径</param>
+        /// <param name="isFavorite">true 表示收藏，false 表示取消收藏</param>
         public void ToggleFavorite(string folderPath, bool isFavorite)
         {
             using var command = m_connection.CreateCommand();
@@ -110,6 +134,9 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// 初始化数据库，创建所有必要的表、索引，并执行数据迁移
+        /// </summary>
         private void InitializeDatabase()
         {
             var connectionString = $"Data Source={m_dbPath}";
@@ -213,7 +240,10 @@ namespace WallpaperEngine.Data {
             )";
             command.ExecuteNonQuery();
         }
-        // 插入或更新壁纸记录
+        /// <summary>
+        /// 保存壁纸记录到数据库，若已存在则更新（INSERT OR REPLACE）
+        /// </summary>
+        /// <param name="wallpaper">要保存的壁纸项</param>
         public void SaveWallpaper(WallpaperItem wallpaper)
         {
             using var command = m_connection.CreateCommand();
@@ -267,6 +297,13 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// 根据关键词、分类和收藏状态搜索壁纸，支持标题、描述和标签的模糊匹配
+        /// </summary>
+        /// <param name="searchTerm">搜索关键词</param>
+        /// <param name="category">分类筛选，为空则不限分类</param>
+        /// <param name="favoritesOnly">是否仅返回已收藏的壁纸</param>
+        /// <returns>匹配的壁纸列表，最多返回 1000 条</returns>
         public List<WallpaperItem> SearchWallpapers(string searchTerm, string category = "", bool favoritesOnly = false)
         {
             var wallpapers = new List<WallpaperItem>();
@@ -301,6 +338,10 @@ namespace WallpaperEngine.Data {
             return wallpapers;
         }
 
+        /// <summary>
+        /// 根据壁纸 ID 删除壁纸记录及其关联的收藏记录
+        /// </summary>
+        /// <param name="wallpaperId">壁纸 ID</param>
         public void DeleteWallpaper(string wallpaperId)
         {
             using var command = m_connection.CreateCommand();
@@ -312,6 +353,10 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// 根据文件夹路径删除壁纸记录及其关联的收藏记录
+        /// </summary>
+        /// <param name="folderPath">壁纸文件夹路径</param>
         public void DeleteWallpaperByPath(string folderPath)
         {
             using var command = m_connection.CreateCommand();
@@ -323,6 +368,9 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// 释放数据库连接资源
+        /// </summary>
         public void Dispose()
         {
             m_connection?.Close();
@@ -331,6 +379,10 @@ namespace WallpaperEngine.Data {
 
         // ===== 合集管理 =====
 
+        /// <summary>
+        /// 获取所有壁纸合集，按创建时间倒序排列
+        /// </summary>
+        /// <returns>合集列表</returns>
         public List<WallpaperCollection> GetAllCollections()
         {
             var collections = new List<WallpaperCollection>();
@@ -347,6 +399,11 @@ namespace WallpaperEngine.Data {
             return collections;
         }
 
+        /// <summary>
+        /// 创建新的壁纸合集
+        /// </summary>
+        /// <param name="name">合集名称</param>
+        /// <returns>创建的合集对象</returns>
         public WallpaperCollection AddCollection(string name)
         {
             var collection = new WallpaperCollection {
@@ -365,6 +422,11 @@ namespace WallpaperEngine.Data {
             return collection;
         }
 
+        /// <summary>
+        /// 重命名指定合集
+        /// </summary>
+        /// <param name="id">合集 ID</param>
+        /// <param name="newName">新名称</param>
         public void RenameCollection(string id, string newName)
         {
             using var command = m_connection.CreateCommand();
@@ -374,6 +436,10 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// 删除指定合集及其所有关联项
+        /// </summary>
+        /// <param name="id">合集 ID</param>
         public void DeleteCollection(string id)
         {
             using var command = m_connection.CreateCommand();
@@ -385,6 +451,11 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// 获取指定合集中的所有壁纸文件夹路径，按添加时间倒序排列
+        /// </summary>
+        /// <param name="collectionId">合集 ID</param>
+        /// <returns>壁纸文件夹路径列表</returns>
         public List<string> GetCollectionItems(string collectionId)
         {
             var items = new List<string>();
@@ -398,6 +469,12 @@ namespace WallpaperEngine.Data {
             return items;
         }
 
+        /// <summary>
+        /// 检查壁纸是否已在指定合集中
+        /// </summary>
+        /// <param name="collectionId">合集 ID</param>
+        /// <param name="folderPath">壁纸文件夹路径</param>
+        /// <returns>已存在返回 true，否则返回 false</returns>
         public bool IsInCollection(string collectionId, string folderPath)
         {
             using var command = m_connection.CreateCommand();
@@ -407,6 +484,11 @@ namespace WallpaperEngine.Data {
             return Convert.ToInt64(command.ExecuteScalar()) > 0;
         }
 
+        /// <summary>
+        /// 将壁纸添加到指定合集，若已存在则忽略
+        /// </summary>
+        /// <param name="collectionId">合集 ID</param>
+        /// <param name="folderPath">壁纸文件夹路径</param>
         public void AddToCollection(string collectionId, string folderPath)
         {
             using var command = m_connection.CreateCommand();
@@ -419,6 +501,11 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
+        /// <summary>
+        /// 从指定合集中移除壁纸
+        /// </summary>
+        /// <param name="collectionId">合集 ID</param>
+        /// <param name="folderPath">壁纸文件夹路径</param>
         public void RemoveFromCollection(string collectionId, string folderPath)
         {
             using var command = m_connection.CreateCommand();
@@ -428,7 +515,13 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
-        // 保存扫描记录
+        /// <summary>
+        /// 保存一次扫描操作的记录到扫描历史表
+        /// </summary>
+        /// <param name="scanPath">扫描路径</param>
+        /// <param name="newFound">新发现的壁纸数量</param>
+        /// <param name="updated">已更新的壁纸数量</param>
+        /// <param name="skipped">跳过的壁纸数量</param>
         public void SaveScanRecord(string scanPath, int newFound, int updated, int skipped)
         {
             using var command = m_connection.CreateCommand();
@@ -448,7 +541,13 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
-        // 检查壁纸是否需要更新
+        /// <summary>
+        /// 检查壁纸是否需要更新，通过比较文件修改时间和大小判断
+        /// </summary>
+        /// <param name="folderPath">壁纸文件夹路径</param>
+        /// <param name="lastModified">文件最后修改时间</param>
+        /// <param name="fileSize">文件大小</param>
+        /// <returns>需要更新返回 true，否则返回 false</returns>
         public bool NeedsUpdate(string folderPath, DateTime lastModified, long fileSize)
         {
             using var command = m_connection.CreateCommand();
@@ -468,7 +567,11 @@ namespace WallpaperEngine.Data {
             return dbLastModified != lastModified || dbFileSize != fileSize;
         }
 
-        // 获取扫描历史
+        /// <summary>
+        /// 获取扫描历史记录，可按扫描路径筛选
+        /// </summary>
+        /// <param name="scanPath">扫描路径筛选条件，为 null 时返回所有记录</param>
+        /// <returns>扫描历史列表</returns>
         public List<ScanInfo> GetScanHistory(string scanPath = null)
         {
             var history = new List<ScanInfo>();
@@ -503,6 +606,9 @@ namespace WallpaperEngine.Data {
             return history;
         }
 
+        /// <summary>
+        /// 清空所有扫描历史记录
+        /// </summary>
         public void ClearScanHistory()
         {
             using var command = m_connection.CreateCommand();
@@ -510,7 +616,10 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
-        // 更新壁纸信息
+        /// <summary>
+        /// 更新已有壁纸的详细信息（标题、描述、标签、分类等）
+        /// </summary>
+        /// <param name="wallpaper">包含更新数据的壁纸项</param>
         public void UpdateWallpaper(WallpaperItem wallpaper)
         {
             using var command = m_connection.CreateCommand();
@@ -543,7 +652,11 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
-        // 获取壁纸文件统计信息
+        /// <summary>
+        /// 获取壁纸的文件统计信息（文件数量和总大小）
+        /// </summary>
+        /// <param name="wallpaperId">壁纸 ID</param>
+        /// <returns>文件数量和总大小的元组</returns>
         public (int FileCount, long TotalSize) GetWallpaperFileStats(string wallpaperId)
         {
             using var command = m_connection.CreateCommand();
@@ -557,7 +670,10 @@ namespace WallpaperEngine.Data {
             return (0, 0);
         }
 
-        // 获取所有自定义分类
+        /// <summary>
+        /// 获取所有自定义分类名称，按名称排序
+        /// </summary>
+        /// <returns>分类名称列表</returns>
         public List<string> GetCustomCategories()
         {
             var categories = new List<string>();
@@ -570,7 +686,10 @@ namespace WallpaperEngine.Data {
             return categories;
         }
 
-        // 添加自定义分类
+        /// <summary>
+        /// 添加自定义分类，若已存在则忽略
+        /// </summary>
+        /// <param name="name">分类名称</param>
         public void AddCategory(string name)
         {
             using var command = m_connection.CreateCommand();
@@ -579,7 +698,10 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
         }
 
-        // 删除自定义分类，将该分类下的壁纸重置为"未分类"
+        /// <summary>
+        /// 删除自定义分类，并将该分类下的所有壁纸重置为"未分类"
+        /// </summary>
+        /// <param name="name">要删除的分类名称</param>
         public void DeleteCategory(string name)
         {
             using var transaction = m_connection.BeginTransaction();
@@ -601,7 +723,11 @@ namespace WallpaperEngine.Data {
             }
         }
 
-        // 重命名分类，同时更新所有壁纸的分类名
+        /// <summary>
+        /// 重命名分类，同时更新所有使用该分类的壁纸记录
+        /// </summary>
+        /// <param name="oldName">原分类名称</param>
+        /// <param name="newName">新分类名称</param>
         public void RenameCategory(string oldName, string newName)
         {
             using var transaction = m_connection.BeginTransaction();

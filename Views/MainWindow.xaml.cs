@@ -6,6 +6,9 @@ using System.Windows.Media.Animation;
 using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views {
+    /// <summary>
+    /// 应用程序主窗口，包含加载遮罩层、系统托盘图标、标题栏拖拽及壁纸加载等功能
+    /// </summary>
     public partial class MainWindow : System.Windows.Window {
         public MainWindow()
         {

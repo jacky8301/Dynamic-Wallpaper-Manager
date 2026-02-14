@@ -2,6 +2,9 @@
 using System.Windows.Data;
 
 namespace WallpaperEngine.Converters {
+    /// <summary>
+    /// 多值转换器，根据收藏状态和鼠标悬停状态返回对应的星形图标（实心/空心）
+    /// </summary>
     public class FavoriteIconConverter : IMultiValueConverter {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {

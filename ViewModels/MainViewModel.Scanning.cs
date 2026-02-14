@@ -7,19 +7,32 @@ using WallpaperEngine.Models;
 using WallpaperEngine.Services;
 
 namespace WallpaperEngine.ViewModels {
+    /// <summary>
+    /// 主视图模型的扫描部分，包含全量扫描、增量扫描、进度更新、错误处理和扫描历史管理
+    /// </summary>
     public partial class MainViewModel {
+        /// <summary>
+        /// 全量扫描壁纸命令，扫描指定文件夹中的所有壁纸
+        /// </summary>
         [RelayCommand]
         private async Task FullScanWallpapers()
         {
            await ScanWallpapers(false);
         }
 
+        /// <summary>
+        /// 增量扫描壁纸命令，仅扫描新增或变更的壁纸
+        /// </summary>
         [RelayCommand]
         private async Task IncrementalScanWallpapers()
         {
             await ScanWallpapers(true);
         }
 
+        /// <summary>
+        /// 执行壁纸扫描，增量扫描时优先使用上次扫描路径，否则弹出文件夹选择对话框
+        /// </summary>
+        /// <param name="isIncrement">是否为增量扫描</param>
         private async Task ScanWallpapers(bool isIncrement)
         {
             if (IsScanning) {
@@ -58,6 +71,11 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 执行实际的壁纸扫描操作，更新进度并在完成后保存扫描记录
+        /// </summary>
+        /// <param name="folderPath">要扫描的文件夹路径</param>
+        /// <param name="isIncrement">是否为增量扫描</param>
         private async Task DoScanWallpapers(string folderPath, bool isIncrement)
         {
             IsScanning = true;
@@ -86,6 +104,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 更新扫描进度信息到UI属性
+        /// </summary>
+        /// <param name="progress">扫描进度数据</param>
         private void UpdateProgress(ScanProgress progress)
         {
             ScanProgress = progress.Percentage;
@@ -105,6 +127,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 处理扫描过程中的异常，根据异常类型显示对应的错误消息
+        /// </summary>
+        /// <param name="ex">捕获的异常</param>
         private async Task HandleScanError(Exception ex)
         {
             ScanStatus = "扫描过程中发生错误";
@@ -126,6 +152,9 @@ namespace WallpaperEngine.ViewModels {
             });
         }
 
+        /// <summary>
+        /// 取消扫描命令，弹出确认对话框后取消当前扫描任务
+        /// </summary>
         [RelayCommand]
         private async Task CancelScan()
         {
@@ -135,6 +164,9 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 检查并更新上次扫描时间的显示文本
+        /// </summary>
         private void CheckLastScanTime()
         {
             if (Properties.Settings.Default.LastScanTime != DateTime.MinValue) {
@@ -142,12 +174,19 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 获取上次使用的扫描文件夹路径，默认返回"我的图片"目录
+        /// </summary>
+        /// <returns>上次使用的文件夹路径</returns>
         private string GetLastUsedFolder()
         {
             return Properties.Settings.Default.LastScanFolder ??
                    Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
         }
 
+        /// <summary>
+        /// 加载扫描历史记录命令，从数据库读取并更新历史列表
+        /// </summary>
         [RelayCommand]
         private void LoadScanHistory()
         {
@@ -158,6 +197,9 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 清除扫描历史记录命令，弹出确认对话框后清除所有记录
+        /// </summary>
         [RelayCommand]
         private async Task ClearScanHistory()
         {

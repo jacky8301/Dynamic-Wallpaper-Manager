@@ -11,6 +11,9 @@ using WallpaperEngine.Services;
 using System.Threading.Tasks;
 
 namespace WallpaperEngine.Views {
+    /// <summary>
+    /// 壁纸预览窗口，支持视频播放和图片预览，包含播放控制和进度条功能
+    /// </summary>
     public partial class PreviewWindow : Window {
         private readonly WallpaperItem _wallpaper;
         private readonly Window _parentWindow;

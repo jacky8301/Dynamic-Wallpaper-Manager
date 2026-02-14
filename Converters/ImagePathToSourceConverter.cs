@@ -8,6 +8,9 @@ using System.Windows.Media.Imaging;
 using WallpaperEngine.Services;
 
 namespace WallpaperEngine.Converters {
+    /// <summary>
+    /// 将图片文件路径转换为 BitmapImage 对象，支持内存缓存和磁盘缓存以提升加载性能
+    /// </summary>
     public class ImagePathToSourceConverter : IValueConverter {
         static string _defaultPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "preview.jpg");
         

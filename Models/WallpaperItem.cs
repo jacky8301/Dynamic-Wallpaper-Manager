@@ -4,34 +4,105 @@ using System.IO;
 using Serilog;
 
 namespace WallpaperEngine.Models {
+    /// <summary>
+    /// 壁纸项模型，表示一个壁纸资源及其相关元数据
+    /// </summary>
     public partial class WallpaperItem : ObservableObject {
+        /// <summary>
+        /// 壁纸的唯一标识符
+        /// </summary>
         public string Id { get; set; } = Guid.NewGuid().ToString();
+
+        /// <summary>
+        /// 壁纸所在文件夹的完整路径
+        /// </summary>
         public string FolderPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 壁纸文件夹名称（从路径中提取）
+        /// </summary>
         public string FolderName => Path.GetFileName(FolderPath);
+
+        /// <summary>
+        /// 壁纸项目配置信息，对应 project.json
+        /// </summary>
         public WallpaperProject Project { get; set; } = new WallpaperProject();
+
+        /// <summary>
+        /// 壁纸分类
+        /// </summary>
         public string Category { get; set; } = "未分类";
+
+        /// <summary>
+        /// 壁纸添加日期
+        /// </summary>
         public DateTime AddedDate { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// 预览图的完整路径
+        /// </summary>
         public string PreviewImagePath => Path.Combine(FolderPath, Project.Preview);
+
+        /// <summary>
+        /// 壁纸主要内容文件的完整路径
+        /// </summary>
         public string ContentPath => Path.Combine(FolderPath, Project.File);
+
+        /// <summary>
+        /// 是否被选中
+        /// </summary>
         [ObservableProperty]
         private bool _isSelected;
+
+        /// <summary>
+        /// 最后更新时间（ISO 8601 格式字符串）
+        /// </summary>
         public string LastUpdated { get; set; } = DateTime.Now.ToString("O");
-        // 一个便利属性，用于判断是否为新添加的壁纸（非数据库中存在）
+
+        /// <summary>
+        /// 是否已收藏
+        /// </summary>
         [ObservableProperty]
         private bool _isFavorite;
+
+        /// <summary>
+        /// 收藏日期
+        /// </summary>
         [ObservableProperty]
         private DateTime _favoritedDate;
+
+        /// <summary>
+        /// 是否为新添加的壁纸（非数据库中已存在的）
+        /// </summary>
         public bool IsNewlyAdded { get; set; } = false;
+
+        /// <summary>
+        /// 最后扫描时间
+        /// </summary>
         [ObservableProperty]
         private DateTime _lastScanned;
+
+        /// <summary>
+        /// 文件夹最后修改时间
+        /// </summary>
         [ObservableProperty]
         private DateTime _folderLastModified;
+
+        /// <summary>
+        /// 是否标记为待删除
+        /// </summary>
         [ObservableProperty]
         private bool _isMarkedForDeletion;
+
+        /// <summary>
+        /// 删除状态描述信息
+        /// </summary>
         [ObservableProperty]
         private string _deletionStatus;
 
-        // 检查壁纸文件是否存在
+        /// <summary>
+        /// 检查壁纸文件夹是否存在
+        /// </summary>
         public bool FilesExist {
             get {
                 if (string.IsNullOrEmpty(FolderPath)) return false;
@@ -39,7 +110,10 @@ namespace WallpaperEngine.Models {
             }
         }
 
-        // 获取壁纸文件夹中的文件列表
+        /// <summary>
+        /// 获取壁纸文件夹中所有文件的路径列表（递归搜索）
+        /// </summary>
+        /// <returns>文件路径列表，若文件夹不存在则返回空列表</returns>
         public List<string> GetContainedFiles()
         {
             if (!Directory.Exists(FolderPath))
@@ -48,7 +122,10 @@ namespace WallpaperEngine.Models {
             return Directory.GetFiles(FolderPath, "*.*", SearchOption.AllDirectories).ToList();
         }
 
-        // 计算文件夹大小
+        /// <summary>
+        /// 计算壁纸文件夹的总大小（字节）
+        /// </summary>
+        /// <returns>文件夹总大小（字节），若文件夹不存在或计算失败则返回 0</returns>
         public long GetFolderSize()
         {
             if (!Directory.Exists(FolderPath)) return 0;
@@ -62,36 +139,77 @@ namespace WallpaperEngine.Models {
             }
         }
 
-        // 壁纸详情编辑
+        /// <summary>
+        /// 壁纸文件夹中的文件详细信息列表
+        /// </summary>
         [ObservableProperty]
         private ObservableCollection<WallpaperFileInfo> _fileInfoList = new();
 
+        /// <summary>
+        /// 壁纸文件夹中的文件名列表
+        /// </summary>
         [ObservableProperty]
         private ObservableCollection<string> _fileNameList = new();
 
+        /// <summary>
+        /// 当前识别的主要内容文件名
+        /// </summary>
         [ObservableProperty]
         private string _contentFileName = string.Empty;
 
+        /// <summary>
+        /// 是否处于编辑模式
+        /// </summary>
         [ObservableProperty]
         private bool _isEditing;
 
+        /// <summary>
+        /// 编辑前的备份数据，用于取消编辑时恢复
+        /// </summary>
         [ObservableProperty]
         private WallpaperItem _editBackup;
 
-        // 文件信息类
+        /// <summary>
+        /// 壁纸文件信息类，描述壁纸文件夹中单个文件的详细信息
+        /// </summary>
         public class WallpaperFileInfo : ObservableObject {
+            /// <summary>
+            /// 文件名（不含路径）
+            /// </summary>
             public string FileName { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 文件的完整路径
+            /// </summary>
             public string FullPath { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 文件大小（字节）
+            /// </summary>
             public long FileSize { get; set; }
+
+            /// <summary>
+            /// 文件最后修改时间
+            /// </summary>
             public DateTime LastModified { get; set; }
+
+            /// <summary>
+            /// 文件扩展名（如 .jpg、.mp4）
+            /// </summary>
             public string FileType { get; set; } = string.Empty;
+
+            /// <summary>
+            /// 是否为图片文件（支持 jpg、jpeg、png、bmp、webp 格式）
+            /// </summary>
             public bool IsImageFile => FileType.ToLower() switch {
                 ".jpg" or ".jpeg" or ".png" or ".bmp" or ".webp" => true,
                 _ => false
             };
         }
 
-        // 加载文件列表的方法
+        /// <summary>
+        /// 异步加载壁纸文件夹中的文件列表，并更新到 UI 线程
+        /// </summary>
         public async Task LoadFileListAsync()
         {
             if (string.IsNullOrEmpty(FolderPath) || !Directory.Exists(FolderPath))
@@ -131,7 +249,9 @@ namespace WallpaperEngine.Models {
             });
         }
 
-        // 识别主要内容文件
+        /// <summary>
+        /// 识别壁纸文件夹中的主要内容文件，优先使用 project.json 中指定的文件，其次选择最大的图片文件
+        /// </summary>
         private void IdentifyContentFile()
         {
             if (FileInfoList.Count == 0) return;

@@ -10,7 +10,14 @@ using WallpaperEngine.Services;
 using WallpaperEngine.Views;
 
 namespace WallpaperEngine.ViewModels {
+    /// <summary>
+    /// 主视图模型的操作命令部分，包含壁纸预览、应用、收藏、目录跳转、合集管理、分类管理等命令
+    /// </summary>
     public partial class MainViewModel {
+        /// <summary>
+        /// 预览壁纸命令，支持传入壁纸对象或壁纸ID
+        /// </summary>
+        /// <param name="parameter">壁纸对象或壁纸ID字符串</param>
         [RelayCommand]
         private void PreviewWallpaper(object parameter)
         {
@@ -28,6 +35,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 根据壁纸类型选择预览方式（Web/Scene类型使用引擎预览，其他类型使用内置预览窗口）
+        /// </summary>
+        /// <param name="wallpaper">要预览的壁纸项</param>
         private void OpenPreviewWindowNew(WallpaperItem wallpaper)
         {
             var type = wallpaper.Project?.Type;
@@ -38,6 +49,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 打开内置预览窗口显示壁纸
+        /// </summary>
+        /// <param name="wallpaper">要预览的壁纸项</param>
         private async Task OpenPreviewWindow(WallpaperItem wallpaper)
         {
             if (wallpaper?.Project == null) {
@@ -73,6 +88,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 应用壁纸命令，通过Wallpaper Engine将壁纸设置为桌面壁纸
+        /// </summary>
+        /// <param name="parameter">壁纸对象</param>
         [RelayCommand]
         private void ApplyWallpaper(object parameter)
         {
@@ -94,6 +113,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 切换壁纸收藏状态命令，同时同步收藏状态到合集视图
+        /// </summary>
+        /// <param name="parameter">壁纸对象</param>
         [RelayCommand]
         private void ToggleFavorite(object parameter)
         {
@@ -125,6 +148,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 跳转到壁纸所在目录命令，在文件资源管理器中打开
+        /// </summary>
+        /// <param name="parameter">壁纸对象</param>
         [RelayCommand]
         private async Task GoToWallpaperDirectory(object parameter)
         {
@@ -134,6 +161,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 打开壁纸所在文件夹
+        /// </summary>
+        /// <param name="wallpaper">壁纸项</param>
         private async Task OpenWallpaperDirectory(WallpaperItem wallpaper)
         {
             try {
@@ -152,6 +183,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 选择壁纸命令，更新当前选中状态
+        /// </summary>
+        /// <param name="parameter">壁纸对象</param>
         [RelayCommand]
         private void SelectWallpaper(object parameter)
         {
@@ -160,6 +195,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 更新壁纸选中状态，取消其他壁纸的选中并设置新的选中项
+        /// </summary>
+        /// <param name="selectedWallpaper">要选中的壁纸</param>
         private void UpdateSelection(WallpaperItem selectedWallpaper)
         {
             foreach (var wallpaper in Wallpapers.Where(w => w.IsSelected)) {
@@ -171,6 +210,9 @@ namespace WallpaperEngine.ViewModels {
             _dataContextService.CurrentWallpaper = selectedWallpaper;
         }
 
+        /// <summary>
+        /// 打开设置窗口命令
+        /// </summary>
         [RelayCommand]
         private void OpenSettings()
         {
@@ -187,6 +229,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 将壁纸添加到合集命令，弹出合集选择对话框
+        /// </summary>
+        /// <param name="parameter">壁纸对象</param>
         [RelayCommand]
         private async Task AddToCollection(object parameter)
         {
@@ -230,8 +276,13 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>受保护的分类名称集合，不允许重命名或删除</summary>
         private static readonly HashSet<string> ProtectedCategories = new() { "所有分类", "未分类" };
 
+        /// <summary>
+        /// 重命名分类命令，同步更新数据库、内存中的壁纸和详情页分类列表
+        /// </summary>
+        /// <param name="category">要重命名的分类名称</param>
         [RelayCommand]
         private async Task RenameCategory(string category)
         {
@@ -268,6 +319,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 删除分类命令，将该分类下的壁纸重置为"未分类"
+        /// </summary>
+        /// <param name="category">要删除的分类名称</param>
         [RelayCommand]
         private async Task DeleteCategory(string category)
         {

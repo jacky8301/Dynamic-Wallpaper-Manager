@@ -14,6 +14,9 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace WallpaperEngine.Views {
+    /// <summary>
+    /// 确认对话框用户控件，用于显示确认/取消操作的提示信息
+    /// </summary>
     public partial class ConfirmationDialog : System.Windows.Controls.UserControl {
         public ConfirmationDialog()
         {

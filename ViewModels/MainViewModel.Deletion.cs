@@ -6,7 +6,14 @@ using WallpaperEngine.Models;
 using WallpaperEngine.Services;
 
 namespace WallpaperEngine.ViewModels {
+    /// <summary>
+    /// 主视图模型的删除部分，包含壁纸删除确认、执行和错误处理逻辑
+    /// </summary>
     public partial class MainViewModel {
+        /// <summary>
+        /// 删除壁纸命令，弹出确认对话框后执行删除
+        /// </summary>
+        /// <param name="parameter">壁纸对象</param>
         [RelayCommand]
         private async Task DeleteWallpaper(object parameter)
         {
@@ -15,6 +22,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 显示删除确认对话框，包含壁纸详细信息
+        /// </summary>
+        /// <param name="wallpaper">待删除的壁纸项</param>
         private async Task ShowDeletionConfirmation(WallpaperItem wallpaper)
         {
             ItemPendingDeletion = wallpaper;
@@ -41,6 +52,11 @@ namespace WallpaperEngine.ViewModels {
             ItemPendingDeletion = null;
         }
 
+        /// <summary>
+        /// 构建删除确认消息，包含文件位置、数量和大小等信息
+        /// </summary>
+        /// <param name="wallpaper">待删除的壁纸项</param>
+        /// <returns>格式化的确认消息文本</returns>
         private string BuildDeletionConfirmationMessage(WallpaperItem wallpaper)
         {
             var message = new StringBuilder();
@@ -76,6 +92,10 @@ namespace WallpaperEngine.ViewModels {
             return message.ToString();
         }
 
+        /// <summary>
+        /// 执行壁纸删除操作，删除文件系统中的文件和数据库记录
+        /// </summary>
+        /// <param name="wallpaper">待删除的壁纸项</param>
         private async Task ExecuteDeletion(WallpaperItem wallpaper)
         {
             try {
@@ -107,6 +127,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 显示错误消息对话框
+        /// </summary>
+        /// <param name="message">错误消息内容</param>
         private async Task ShowErrorMessage(string message)
         {
             await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
@@ -118,6 +142,10 @@ namespace WallpaperEngine.ViewModels {
             });
         }
 
+        /// <summary>
+        /// 显示删除成功通知
+        /// </summary>
+        /// <param name="wallpaper">已删除的壁纸项</param>
         private void ShowDeletionSuccess(WallpaperItem wallpaper)
         {
             ShowNotification($"壁纸 '{wallpaper.Project.Title}' 已成功删除");

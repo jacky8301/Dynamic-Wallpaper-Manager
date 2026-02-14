@@ -13,7 +13,9 @@ using WallpaperEngine.ViewModels;
 using Application = System.Windows.Application;
 
 namespace WallpaperEngine {
-    /// Interaction logic for App.xaml
+    /// <summary>
+    /// 应用程序入口点，负责依赖注入配置、Serilog 日志初始化、单实例管理及生命周期控制
+    /// </summary>
     public partial class App : Application {
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -48,6 +50,9 @@ namespace WallpaperEngine {
                     .BuildServiceProvider()
             );
         }
+        /// <summary>
+        /// 应用程序启动时执行，配置日志、初始化单实例管理器并开始监听
+        /// </summary>
         protected override void OnStartup(StartupEventArgs e)
         {
             // 配置 Serilog
@@ -77,6 +82,9 @@ namespace WallpaperEngine {
             base.OnStartup(e);
         }
 
+        /// <summary>
+        /// 当从其他实例接收到启动参数时，在 UI 线程上激活主窗口并处理参数
+        /// </summary>
         private void OnArgumentsReceived(object? sender, string?[] args)
         {
             // 在UI线程上激活主窗口
@@ -93,6 +101,9 @@ namespace WallpaperEngine {
             });
         }
 
+        /// <summary>
+        /// 激活并显示主窗口，将其从最小化状态恢复并置于前台
+        /// </summary>
         private void ActivateMainWindow()
         {
             if (MainWindow != null) {
@@ -107,6 +118,10 @@ namespace WallpaperEngine {
             }
         }
 
+        /// <summary>
+        /// 处理从其他实例传递过来的命令行参数
+        /// </summary>
+        /// <param name="args">命令行参数数组</param>
         private void ProcessCommandLineArgs(string[] args)
         {
             // 处理命令行参数的逻辑
@@ -117,6 +132,9 @@ namespace WallpaperEngine {
             // }
         }
 
+        /// <summary>
+        /// 应用程序退出时执行，关闭日志并释放单实例管理器资源
+        /// </summary>
         protected override void OnExit(ExitEventArgs e)
         {
             Log.Information("Application shutting down");

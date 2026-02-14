@@ -3,7 +3,15 @@ using WallpaperEngine.Models;
 using WallpaperEngine.Services;
 
 namespace WallpaperEngine.ViewModels {
+    /// <summary>
+    /// 主视图模型的筛选部分，包含壁纸搜索、分类筛选和收藏筛选逻辑
+    /// </summary>
     public partial class MainViewModel {
+        /// <summary>
+        /// 壁纸筛选谓词，根据搜索文本、分类和收藏状态过滤壁纸
+        /// </summary>
+        /// <param name="obj">待筛选的壁纸对象</param>
+        /// <returns>是否满足筛选条件</returns>
         private bool FilterWallpapers(object obj)
         {
             if (obj is not WallpaperItem wallpaper) return false;
@@ -19,20 +27,30 @@ namespace WallpaperEngine.ViewModels {
             return matchesSearch && matchesCategory && matchesFavorites;
         }
 
+        /// <summary>搜索文本变更时刷新壁纸视图</summary>
         partial void OnSearchTextChanged(string value) => WallpapersView.Refresh();
+        /// <summary>选中分类变更时刷新壁纸视图</summary>
         partial void OnSelectedCategoryChanged(string value) => WallpapersView.Refresh();
+        /// <summary>收藏筛选状态变更时刷新壁纸视图</summary>
         partial void OnShowFavoritesOnlyChanged(bool value) => WallpapersView.Refresh();
+        /// <summary>标签页切换时同步收藏筛选状态</summary>
         partial void OnCurrentTabChanged(int value)
         {
             ShowFavoritesOnly = value == 1;
         }
 
+        /// <summary>
+        /// 搜索壁纸命令，重新从数据库加载壁纸列表
+        /// </summary>
         [RelayCommand]
         private async Task SearchWallpapers()
         {
             await LoadWallpapersAsync();
         }
 
+        /// <summary>
+        /// 清除搜索命令，重置搜索文本、分类和标签页，重新加载壁纸
+        /// </summary>
         [RelayCommand]
         private async Task ClearSearch()
         {

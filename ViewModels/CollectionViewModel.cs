@@ -10,24 +10,37 @@ using WallpaperEngine.Models;
 using WallpaperEngine.Services;
 
 namespace WallpaperEngine.ViewModels {
+    /// <summary>
+    /// 壁纸合集视图模型，管理合集的增删改查以及合集内壁纸的操作
+    /// </summary>
     public partial class CollectionViewModel : ObservableObject {
         private readonly DatabaseManager _dbManager;
 
+        /// <summary>合集列表</summary>
         [ObservableProperty]
         private ObservableCollection<WallpaperCollection> _collections = new();
 
+        /// <summary>当前选中的合集</summary>
         [ObservableProperty]
         private WallpaperCollection? _selectedCollection;
 
+        /// <summary>当前合集中的壁纸列表</summary>
         [ObservableProperty]
         private ObservableCollection<WallpaperItem> _collectionWallpapers = new();
 
+        /// <summary>
+        /// 初始化合集视图模型，加载合集列表
+        /// </summary>
+        /// <param name="dbManager">数据库管理器</param>
         public CollectionViewModel(DatabaseManager dbManager)
         {
             _dbManager = dbManager;
             LoadCollections();
         }
 
+        /// <summary>
+        /// 从数据库加载所有合集到列表
+        /// </summary>
         public void LoadCollections()
         {
             try {
@@ -41,11 +54,15 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>选中合集变更时加载对应的壁纸列表</summary>
         partial void OnSelectedCollectionChanged(WallpaperCollection? value)
         {
             LoadCollectionWallpapers();
         }
 
+        /// <summary>
+        /// 加载当前选中合集的壁纸列表
+        /// </summary>
         public void LoadCollectionWallpapers()
         {
             CollectionWallpapers.Clear();
@@ -64,6 +81,9 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 创建合集命令，弹出输入对话框创建新合集
+        /// </summary>
         [RelayCommand]
         private async Task CreateCollection()
         {
@@ -79,6 +99,9 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 重命名合集命令，弹出输入对话框修改合集名称
+        /// </summary>
         [RelayCommand]
         private async Task RenameCollection()
         {
@@ -95,6 +118,9 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 删除合集命令，弹出确认对话框后删除合集（不删除壁纸本身）
+        /// </summary>
         [RelayCommand]
         private async Task DeleteCollection()
         {
@@ -115,6 +141,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 从当前合集中移除壁纸命令
+        /// </summary>
+        /// <param name="wallpaper">要移除的壁纸项</param>
         [RelayCommand]
         private void RemoveFromCollection(WallpaperItem wallpaper)
         {
@@ -128,6 +158,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 预览壁纸命令，委托给主视图模型执行
+        /// </summary>
+        /// <param name="wallpaper">要预览的壁纸项</param>
         [RelayCommand]
         private void PreviewWallpaper(WallpaperItem wallpaper)
         {
@@ -136,6 +170,10 @@ namespace WallpaperEngine.ViewModels {
             mainVm?.PreviewWallpaperCommand.Execute(wallpaper);
         }
 
+        /// <summary>
+        /// 应用壁纸命令，委托给主视图模型执行
+        /// </summary>
+        /// <param name="wallpaper">要应用的壁纸项</param>
         [RelayCommand]
         private void ApplyWallpaper(WallpaperItem wallpaper)
         {
@@ -144,6 +182,10 @@ namespace WallpaperEngine.ViewModels {
             mainVm?.ApplyWallpaperCommand.Execute(wallpaper);
         }
 
+        /// <summary>
+        /// 切换壁纸收藏状态命令，同步主视图和合集视图中的收藏状态
+        /// </summary>
+        /// <param name="wallpaper">要切换收藏的壁纸项</param>
         [RelayCommand]
         private void ToggleFavorite(WallpaperItem wallpaper)
         {
@@ -164,6 +206,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 打开壁纸所在目录命令，在文件资源管理器中打开
+        /// </summary>
+        /// <param name="wallpaper">壁纸项</param>
         [RelayCommand]
         private async Task GoToWallpaperDirectory(WallpaperItem wallpaper)
         {

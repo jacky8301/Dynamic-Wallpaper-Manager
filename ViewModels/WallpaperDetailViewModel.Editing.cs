@@ -4,17 +4,25 @@ using System.Text;
 using WallpaperEngine.Models;
 
 namespace WallpaperEngine.ViewModels {
+    /// <summary>
+    /// 壁纸详情视图模型的编辑部分，包含开始编辑、保存、取消和数据持久化逻辑
+    /// </summary>
     public partial class WallpaperDetailViewModel {
+        /// <summary>编辑模式变更时通知保存命令更新可执行状态</summary>
         partial void OnIsEditModeChanged(bool value)
         {
             SaveEditCommand.NotifyCanExecuteChanged();
         }
 
+        /// <summary>当前壁纸变更时通知保存命令更新可执行状态</summary>
         partial void OnCurrentWallpaperChanged(WallpaperItem? value)
         {
             SaveEditCommand.NotifyCanExecuteChanged();
         }
 
+        /// <summary>
+        /// 进入编辑模式，创建当前壁纸数据的备份
+        /// </summary>
         private void StartEdit()
         {
             if (CurrentWallpaper == null) return;
@@ -27,6 +35,9 @@ namespace WallpaperEngine.ViewModels {
             CurrentWallpaper.IsEditing = true;
         }
 
+        /// <summary>
+        /// 保存编辑内容，将修改写入project.json文件和数据库
+        /// </summary>
         private async Task SaveEdit()
         {
             if (CurrentWallpaper == null) return;
@@ -69,11 +80,18 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 判断是否可以执行保存操作
+        /// </summary>
+        /// <returns>当前壁纸不为空且处于编辑模式时返回true</returns>
         private bool CanSaveEdit()
         {
             return CurrentWallpaper != null && IsEditMode;
         }
 
+        /// <summary>
+        /// 取消编辑，从备份恢复原始数据并退出编辑模式
+        /// </summary>
         private void CancelEdit()
         {
             if (CurrentWallpaper == null) return;
@@ -93,7 +111,9 @@ namespace WallpaperEngine.ViewModels {
             EditStatus = "编辑已取消";
         }
 
-        // 保存到project.json文件
+        /// <summary>
+        /// 将壁纸项目数据序列化并保存到project.json文件
+        /// </summary>
         private async Task SaveToProjectJsonAsync()
         {
             var projectJsonPath = Path.Combine(CurrentWallpaper.FolderPath, "project.json");
@@ -111,7 +131,9 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
-        // 更新数据库
+        /// <summary>
+        /// 异步更新数据库中的壁纸记录
+        /// </summary>
         private async Task UpdateDatabaseAsync()
         {
             await Task.Run(() => {

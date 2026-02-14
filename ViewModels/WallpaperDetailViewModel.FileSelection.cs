@@ -1,5 +1,12 @@
 namespace WallpaperEngine.ViewModels {
+    /// <summary>
+    /// 壁纸详情视图模型的文件选择部分，包含预览图和内容文件的设置与验证逻辑
+    /// </summary>
     public partial class WallpaperDetailViewModel {
+        /// <summary>
+        /// 设置预览图文件名，并保存到project.json和数据库
+        /// </summary>
+        /// <param name="fileName">预览图文件名</param>
         private async Task SetPreviewFileName(string? fileName)
         {
             if (CurrentWallpaper == null || CurrentWallpaper.Project.Preview == fileName) {
@@ -17,6 +24,10 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 设置壁纸内容文件名，并保存到project.json和数据库
+        /// </summary>
+        /// <param name="fileName">内容文件名</param>
         private async Task SetContentFileName(string? fileName)
         {
             if (CurrentWallpaper == null ||
@@ -36,6 +47,11 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
+        /// <summary>
+        /// 判断是否可以设置预览图文件名
+        /// </summary>
+        /// <param name="fileName">文件名</param>
+        /// <returns>当前壁纸不为空且文件名有效时返回true</returns>
         private bool CanSetPreviewFileName(string? fileName)
         {
             if (CurrentWallpaper == null || fileName == null) {
@@ -44,6 +60,11 @@ namespace WallpaperEngine.ViewModels {
             return IsValidPreviewFileName(fileName);
         }
 
+        /// <summary>
+        /// 判断是否可以设置内容文件名
+        /// </summary>
+        /// <param name="fileName">文件名</param>
+        /// <returns>当前壁纸不为空且文件名有效时返回true</returns>
         private bool CanSetContentFileName(string? fileName)
         {
             if (CurrentWallpaper == null || fileName == null) {
@@ -52,6 +73,11 @@ namespace WallpaperEngine.ViewModels {
             return IsValidContentFileName(fileName);
         }
 
+        /// <summary>
+        /// 验证预览图文件名是否有效（排除project.json和thumbs.db）
+        /// </summary>
+        /// <param name="fileName">文件名</param>
+        /// <returns>文件名有效时返回true</returns>
         private bool IsValidPreviewFileName(string? fileName)
         {
             string lowerFileName = fileName?.ToLower() ?? string.Empty;
@@ -64,6 +90,11 @@ namespace WallpaperEngine.ViewModels {
             return true;
         }
 
+        /// <summary>
+        /// 验证内容文件名是否有效（排除project.json、预览图文件和thumbs.db）
+        /// </summary>
+        /// <param name="fileName">文件名</param>
+        /// <returns>文件名有效时返回true</returns>
         private bool IsValidContentFileName(string? fileName)
         {
             string lowerFileName = fileName?.ToLower() ?? string.Empty;

@@ -3,6 +3,9 @@ using System.Windows.Data;
 
 namespace WallpaperEngine.Converters
 {
+    /// <summary>
+    /// 将整数值与预设的 Target 值进行比较，相等时返回 true
+    /// </summary>
     [ValueConversion(typeof(int), typeof(bool))]
     public class IntEqualConverter : IValueConverter {
         public int Target { get; set; }

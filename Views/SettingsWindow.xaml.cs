@@ -4,6 +4,9 @@ using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views
 {
+    /// <summary>
+    /// 设置窗口，提供应用程序配置选项的编辑和保存功能
+    /// </summary>
     public partial class SettingsWindow : Window
     {
         public SettingsWindow()

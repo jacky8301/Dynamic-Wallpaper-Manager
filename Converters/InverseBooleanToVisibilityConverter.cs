@@ -3,6 +3,9 @@ using System.Windows;
 using System.Windows.Data;
 
 namespace WallpaperEngine.Converters {
+    /// <summary>
+    /// 布尔值取反后转换为可见性，true 时隐藏（Collapsed），false 时显示（Visible）
+    /// </summary>
     [ValueConversion(typeof(bool), typeof(Visibility))]
     public class InverseBooleanToVisibilityConverter : IValueConverter {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

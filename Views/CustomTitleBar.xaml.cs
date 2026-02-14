@@ -1,6 +1,9 @@
 ﻿using System.Windows;
 
 namespace WallpaperEngine.Views {
+    /// <summary>
+    /// 自定义标题栏用户控件，提供最小化、最大化和关闭按钮，支持标题文本绑定
+    /// </summary>
     public partial class CustomTitleBar : System.Windows.Controls.UserControl {
         // 定义依赖属性，用于绑定标题文本
         public string Title {

@@ -2,7 +2,15 @@ using Serilog;
 using System.IO;
 
 namespace WallpaperEngine.Services {
+    /// <summary>
+    /// 壁纸文件服务实现，处理壁纸文件夹的删除操作，包括只读文件的强制删除
+    /// </summary>
     public class WallpaperFileService : IWallpaperFileService {
+        /// <summary>
+        /// 删除指定壁纸文件夹及其所有内容，权限不足时自动尝试强制删除
+        /// </summary>
+        /// <param name="folderPath">壁纸文件夹路径</param>
+        /// <returns>删除成功返回 true，否则返回 false</returns>
         public bool DeleteWallpaperFiles(string folderPath)
         {
             if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath)) {
@@ -22,6 +30,11 @@ namespace WallpaperEngine.Services {
             }
         }
 
+        /// <summary>
+        /// 强制删除文件夹，先将所有文件属性设为 Normal 以移除只读标记，再递归删除
+        /// </summary>
+        /// <param name="folderPath">要强制删除的文件夹路径</param>
+        /// <returns>删除成功返回 true，否则返回 false</returns>
         public bool ForceDelete(string folderPath)
         {
             try {

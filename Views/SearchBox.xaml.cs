@@ -5,6 +5,9 @@ using WallpaperEngine.ViewModels;
 using TextBox = System.Windows.Controls.TextBox;
 
 namespace WallpaperEngine.Views {
+    /// <summary>
+    /// 搜索框用户控件，支持键盘回车搜索、搜索按钮和清除按钮操作
+    /// </summary>
     public partial class SearchBox : System.Windows.Controls.UserControl {
         private MainViewModel viewModel => Ioc.Default.GetService<MainViewModel>();
         public SearchBox()

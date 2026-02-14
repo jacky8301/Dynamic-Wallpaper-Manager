@@ -3,6 +3,9 @@ using System.Windows;
 using System.Windows.Data;
 
 namespace WallpaperEngine.Converters {
+    /// <summary>
+    /// 将分类名称转换为可见性，受保护的内置分类（"所有分类"、"未分类"）返回 Collapsed 以隐藏操作按钮
+    /// </summary>
     public class ProtectedCategoryToVisibilityConverter : IValueConverter {
         private static readonly HashSet<string> ProtectedCategories = new() { "所有分类", "未分类" };
 
