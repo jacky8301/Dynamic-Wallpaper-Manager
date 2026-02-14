@@ -56,7 +56,8 @@ namespace WallpaperEngine.Models {
             try {
                 return Directory.GetFiles(FolderPath, "*.*", SearchOption.AllDirectories)
                     .Sum(file => new FileInfo(file).Length);
-            } catch {
+            } catch (Exception ex) {
+                Log.Warning($"计算文件夹大小失败 {FolderPath}: {ex.Message}");
                 return 0;
             }
         }

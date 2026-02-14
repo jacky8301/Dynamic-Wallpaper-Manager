@@ -40,20 +40,23 @@ namespace WallpaperEngine.Views {
 
         private async void mainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // 从App类获取启动参数
-            string[] args = Environment.GetCommandLineArgs();
+            try {
+                // 从App类获取启动参数
+                string[] args = Environment.GetCommandLineArgs();
 
-            // 判断是否包含-autostart参数
-            bool isAutoStart = args.Contains("-autostart");
+                // 判断是否包含-autostart参数
+                bool isAutoStart = args.Contains("-autostart");
 
-            if (isAutoStart) {
-                this.Hide();
-                this.WindowState = WindowState.Minimized;
+                if (isAutoStart) {
+                    this.Hide();
+                    this.WindowState = WindowState.Minimized;
+                }
+                Log.Debug("LoadWallpapersAsync started");
+                await ViewModel.LoadWallpapersAsync();
+                Log.Debug("LoadWallpapersAsync finish");
+            } catch (Exception ex) {
+                Log.Error(ex, "mainWindow_Loaded 发生未处理异常");
             }
-            Log.Debug("LoadWallpapersAsync started");
-            await ViewModel.LoadWallpapersAsync();
-            Log.Debug("LoadWallpapersAsync finish");
-            
         }
         // 隐藏加载层并显示主内容
         private void HideLoadingOverlay()

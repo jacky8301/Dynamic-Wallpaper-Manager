@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.Sqlite;
+using Serilog;
 using System.Data.Common;
 using System.IO;
 using WallpaperEngine.Models;
@@ -170,8 +171,8 @@ namespace WallpaperEngine.Data {
                     lastModified = fileInfo.LastWriteTime;
                     fileSize = fileInfo.Length;
                 }
-            } catch {
-                // 如果无法获取文件信息，使用当前时间
+            } catch (Exception ex) {
+                Log.Warning($"获取文件信息失败 {wallpaper.FolderPath}: {ex.Message}");
                 lastModified = DateTime.Now;
             }
 
@@ -183,7 +184,7 @@ namespace WallpaperEngine.Data {
             command.Parameters.AddWithValue("$fileName", wallpaper.Project.File);
             command.Parameters.AddWithValue("$previewFile", wallpaper.Project.Preview);
             command.Parameters.AddWithValue("$wallpaperType", wallpaper.Project.Type);
-            command.Parameters.AddWithValue("$tags", string.Join(",", wallpaper.Project.Tags));
+            command.Parameters.AddWithValue("$tags", string.Join(",", wallpaper.Project.Tags ?? new List<string>()));
             command.Parameters.AddWithValue("$isFavorite", wallpaper.IsFavorite ? 1 : 0);
             command.Parameters.AddWithValue("$category", wallpaper.Category);
             command.Parameters.AddWithValue("$addedDate", wallpaper.AddedDate.ToString("O"));

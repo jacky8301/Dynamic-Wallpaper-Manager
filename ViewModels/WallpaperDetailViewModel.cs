@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
@@ -61,7 +62,7 @@ namespace WallpaperEngine.ViewModels {
         {
             // 当服务中的状态改变时，更新自己的数据
             CurrentWallpaper = newWallpaper;
-            CurrentWallpaper?.LoadFileListAsync()?.ConfigureAwait(false);
+            _ = LoadFileListSafeAsync(newWallpaper);
             SelectedType = CurrentWallpaper?.Project?.Type;
             Description = CurrentWallpaper?.Project?.Description;
             Title = CurrentWallpaper?.Project?.Title;
@@ -108,6 +109,16 @@ namespace WallpaperEngine.ViewModels {
             target.Project.ContentRating = backup.Project.ContentRating;
             target.Project.Visibility = backup.Project.Visibility;
             target.IsFavorite = backup.IsFavorite;
+        }
+
+        private async Task LoadFileListSafeAsync(WallpaperItem? wallpaper)
+        {
+            if (wallpaper == null) return;
+            try {
+                await wallpaper.LoadFileListAsync();
+            } catch (Exception ex) {
+                Log.Warning($"加载文件列表失败: {ex.Message}");
+            }
         }
 
         private void ShowSaveSuccessMessage()

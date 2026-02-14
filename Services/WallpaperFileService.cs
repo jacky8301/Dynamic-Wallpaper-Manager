@@ -38,7 +38,8 @@ namespace WallpaperEngine.Services {
 
                 directory.Delete();
                 return true;
-            } catch {
+            } catch (Exception ex) {
+                Log.Warning($"强制删除失败 {folderPath}: {ex.Message}");
                 return false;
             }
         }

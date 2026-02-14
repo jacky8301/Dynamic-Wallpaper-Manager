@@ -10,7 +10,8 @@ namespace WallpaperEngine.Services {
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) { return null; }
             try {
                 return LoadImageWithUri(filePath);
-            } catch {
+            } catch (Exception ex) {
+                Log.Warning($"加载图片失败 {filePath}: {ex.Message}");
                 return null;
             }
         }
@@ -38,7 +39,8 @@ namespace WallpaperEngine.Services {
             try {
                 byte[] imageData = File.ReadAllBytes(filePath);
                 return LoadImageToBytes(imageData);
-            } catch {
+            } catch (Exception ex) {
+                Log.Warning($"加载图片失败 {filePath}: {ex.Message}");
                 return null;
             }
         }

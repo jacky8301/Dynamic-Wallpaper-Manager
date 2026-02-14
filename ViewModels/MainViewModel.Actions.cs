@@ -29,7 +29,8 @@ namespace WallpaperEngine.ViewModels {
 
         private void OpenPreviewWindowNew(WallpaperItem wallpaper)
         {
-            if (wallpaper.Project.Type.ToLower() == "web" || wallpaper.Project.Type.ToLower() == "scene") {
+            var type = wallpaper.Project?.Type;
+            if (type != null && (type.Equals("web", StringComparison.OrdinalIgnoreCase) || type.Equals("scene", StringComparison.OrdinalIgnoreCase))) {
                 _previewService.PreviewWallpaper(wallpaper);
             } else {
                 OpenPreviewWindow(wallpaper);
@@ -85,7 +86,7 @@ namespace WallpaperEngine.ViewModels {
                         Arguments = arguments,
                         UseShellExecute = false
                     };
-                    Process.Start(startInfo);
+                    Process.Start(startInfo)?.Dispose();
                 } else {
                     // 处理错误
                 }
@@ -125,7 +126,7 @@ namespace WallpaperEngine.ViewModels {
         {
             try {
                 if (Directory.Exists(wallpaper.FolderPath)) {
-                    Process.Start("explorer.exe", wallpaper.FolderPath);
+                    Process.Start("explorer.exe", wallpaper.FolderPath)?.Dispose();
                 } else {
                     await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                         Message = $"壁纸目录不存在：{wallpaper.FolderPath}",

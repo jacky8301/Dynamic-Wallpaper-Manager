@@ -128,8 +128,10 @@ namespace WallpaperEngine.ViewModels {
                 var wallpapers = await Task.Run(() => LoadWallpapers());
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
                     Wallpapers.Clear();
-                    foreach (var wallpaper in wallpapers) {
-                        Wallpapers.Add(wallpaper);
+                    if (wallpapers != null) {
+                        foreach (var wallpaper in wallpapers) {
+                            Wallpapers.Add(wallpaper);
+                        }
                     }
                 });
                 OnEventLoadWallpapersCompleted();
