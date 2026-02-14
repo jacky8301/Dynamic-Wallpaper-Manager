@@ -286,6 +286,7 @@
             <tb:TaskbarIcon
                 x:Name="TrayIcon"
                 IconSource="/Assets/app.ico"
+                TrayMouseDoubleClick="TrayIcon_TrayMouseDoubleClick"
                 ToolTipText="Dynamic Wallpaper Manager">
                 <tb:TaskbarIcon.ContextMenu>
                     <ContextMenu>

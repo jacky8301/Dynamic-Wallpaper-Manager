@@ -77,6 +77,11 @@ namespace WallpaperEngine.Views {
             // 开始动画
             LoadingOverlay.BeginAnimation(UIElement.OpacityProperty, fadeOutAnimation);
         }
+        // 双击托盘图标：显示窗口
+        private void TrayIcon_TrayMouseDoubleClick(object sender, RoutedEventArgs e)
+        {
+            ShowMainWindow();
+        }
         // 右键菜单项：显示窗口
         private void ShowWindow_Click(object sender, RoutedEventArgs e)
         {
