@@ -111,30 +111,67 @@
 
                         <!--  视频控制面板  -->
                         <Border
-                            Height="50"
                             VerticalAlignment="Bottom"
                             Background="#CC000000">
-                            <StackPanel
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Orientation="Horizontal">
-                                <Button
-                                    x:Name="PlayPauseButton"
-                                    Click="PlayPause_Click"
-                                    Content="▶"
-                                    Style="{StaticResource ControlButtonStyle}" />
-                                <Button
-                                    Click="Stop_Click"
-                                    Content="⏹"
-                                    Style="{StaticResource ControlButtonStyle}" />
-                                <Slider
-                                    x:Name="VolumeSlider"
-                                    Width="80"
+                            <StackPanel>
+                                <!--  进度条  -->
+                                <Grid Margin="10,6,10,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        x:Name="CurrentTimeText"
+                                        Grid.Column="0"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Foreground="#CCCCCC"
+                                        Text="00:00" />
+                                    <Slider
+                                        x:Name="ProgressSlider"
+                                        Grid.Column="1"
+                                        Margin="8,0"
+                                        VerticalAlignment="Center"
+                                        IsMoveToPointEnabled="True"
+                                        Maximum="1"
+                                        Minimum="0"
+                                        Thumb.DragStarted="ProgressSlider_DragStarted"
+                                        Thumb.DragCompleted="ProgressSlider_DragCompleted"
+                                        ValueChanged="ProgressSlider_ValueChanged"
+                                        Value="0" />
+                                    <TextBlock
+                                        x:Name="TotalTimeText"
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
+                                        Foreground="#CCCCCC"
+                                        Text="00:00" />
+                                </Grid>
+                                <!--  控制按钮  -->
+                                <StackPanel
+                                    Margin="0,2,0,6"
+                                    HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
-                                    Maximum="1"
-                                    Minimum="0"
-                                    ValueChanged="VolumeSlider_ValueChanged"
-                                    Value="0.5" />
+                                    Orientation="Horizontal">
+                                    <Button
+                                        x:Name="PlayPauseButton"
+                                        Click="PlayPause_Click"
+                                        Content="▶"
+                                        Style="{StaticResource ControlButtonStyle}" />
+                                    <Button
+                                        Click="Stop_Click"
+                                        Content="⏹"
+                                        Style="{StaticResource ControlButtonStyle}" />
+                                    <Slider
+                                        x:Name="VolumeSlider"
+                                        Width="80"
+                                        VerticalAlignment="Center"
+                                        Maximum="1"
+                                        Minimum="0"
+                                        ValueChanged="VolumeSlider_ValueChanged"
+                                        Value="0.5" />
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </Grid>
