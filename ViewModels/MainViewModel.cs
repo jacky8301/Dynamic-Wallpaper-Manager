@@ -100,7 +100,7 @@ namespace WallpaperEngine.ViewModels {
             CheckLastScanTime();
             LoadScanHistory();
 
-            _settingsService = new SettingsService();
+            _settingsService = Ioc.Default.GetService<ISettingsService>();
             _settings = _settingsService.LoadSettings();
             _previewService = new PreviewService(_settingsService);
             _dataContextService = dataContextService;
