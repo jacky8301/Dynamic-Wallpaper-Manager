@@ -1,42 +1,32 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.IO;
-using System.Windows.Input;
 
 namespace WallpaperEngine.ViewModels {
-    public class SettingsViewModel : ObservableObject {
+    public partial class SettingsViewModel : ObservableObject {
         private readonly ApplicationSettings _settings;
         private readonly ISettingsService _settingsService;
+
+        [ObservableProperty]
+        private string _pathStatus = "未设置";
 
         public SettingsViewModel(ISettingsService settingsService)
         {
             _settingsService = settingsService;
             _settings = _settingsService.LoadSettings();
-
-            // 初始化命令
-            BrowsePathCommand = new RelayCommand(BrowsePath);
-            SaveCommand = new RelayCommand(SaveSettings);
-            CancelCommand = new RelayCommand(Cancel);
+            ValidatePath();
         }
 
         public string WallpaperEnginePath {
             get => _settings.WallpaperEnginePath;
             set {
-                _settings.WallpaperEnginePath = value;
-                OnPropertyChanged();
-                ValidatePath();
+                if (SetProperty(_settings.WallpaperEnginePath, value, _settings, (s, v) => s.WallpaperEnginePath = v)) {
+                    ValidatePath();
+                }
             }
         }
-        private string _pathStatus = "未设置";
-        public string PathStatus {
-            get => _pathStatus;
-            set => SetProperty(ref _pathStatus, value);
-        }
 
-        public ICommand BrowsePathCommand { get; }
-        public ICommand SaveCommand { get; }
-        public ICommand CancelCommand { get; }
-
+        [RelayCommand]
         private void BrowsePath()
         {
             var openFileDialog = new OpenFileDialog {
@@ -47,6 +37,11 @@ namespace WallpaperEngine.ViewModels {
             if (openFileDialog.ShowDialog() == DialogResult.OK) {
                 WallpaperEnginePath = openFileDialog.FileName;
             }
+        }
+
+        public void SaveSettings()
+        {
+            _settingsService.SaveSettings(_settings);
         }
 
         private void ValidatePath()
@@ -64,15 +59,6 @@ namespace WallpaperEngine.ViewModels {
                 return;
             }
             PathStatus = "路径有效";
-        }
-
-        public void SaveSettings()
-        {
-            _settingsService.SaveSettings(_settings);
-        }
-
-        private void Cancel()
-        {
         }
     }
 }
