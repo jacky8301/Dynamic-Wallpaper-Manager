@@ -119,6 +119,7 @@ namespace WallpaperEngine.Data {
         /// <param name="isFavorite">true 表示收藏，false 表示取消收藏</param>
         public void ToggleFavorite(string folderPath, bool isFavorite)
         {
+            Log.Information("切换收藏状态: {FolderPath}, 收藏: {IsFavorite}", folderPath, isFavorite);
             using var command = m_connection.CreateCommand();
             if (isFavorite) {
                 command.CommandText = @"
@@ -139,6 +140,7 @@ namespace WallpaperEngine.Data {
         /// </summary>
         private void InitializeDatabase()
         {
+            Log.Information("正在初始化数据库: {DbPath}", m_dbPath);
             var connectionString = $"Data Source={m_dbPath}";
             m_connection = new SqliteConnection(connectionString);
             m_connection.Open();
@@ -239,6 +241,7 @@ namespace WallpaperEngine.Data {
                 PRIMARY KEY (CollectionId, WallpaperFolderPath)
             )";
             command.ExecuteNonQuery();
+            Log.Information("数据库初始化完成");
         }
         /// <summary>
         /// 保存壁纸记录到数据库，若已存在则更新（INSERT OR REPLACE）
@@ -246,6 +249,7 @@ namespace WallpaperEngine.Data {
         /// <param name="wallpaper">要保存的壁纸项</param>
         public void SaveWallpaper(WallpaperItem wallpaper)
         {
+            Log.Debug("保存壁纸记录: {FolderPath}", wallpaper.FolderPath);
             using var command = m_connection.CreateCommand();
             command.CommandText = @"
                 INSERT OR REPLACE INTO Wallpapers 
@@ -306,6 +310,7 @@ namespace WallpaperEngine.Data {
         /// <returns>匹配的壁纸列表，最多返回 1000 条</returns>
         public List<WallpaperItem> SearchWallpapers(string searchTerm, string category = "", bool favoritesOnly = false)
         {
+            Log.Debug("搜索壁纸, 关键词: {SearchTerm}, 分类: {Category}, 仅收藏: {FavoritesOnly}", searchTerm, category, favoritesOnly);
             var wallpapers = new List<WallpaperItem>();
             using var command = m_connection.CreateCommand();
 
@@ -344,6 +349,7 @@ namespace WallpaperEngine.Data {
         /// <param name="wallpaperId">壁纸 ID</param>
         public void DeleteWallpaper(string wallpaperId)
         {
+            Log.Information("删除壁纸记录: {Id}", wallpaperId);
             using var command = m_connection.CreateCommand();
             command.CommandText = "DELETE FROM Favorites WHERE FolderPath IN (SELECT FolderPath FROM Wallpapers WHERE Id = $id)";
             command.Parameters.AddWithValue("$id", wallpaperId);
@@ -373,6 +379,7 @@ namespace WallpaperEngine.Data {
         /// </summary>
         public void Dispose()
         {
+            Log.Debug("关闭数据库连接");
             m_connection?.Close();
             m_connection?.Dispose();
         }
@@ -406,6 +413,7 @@ namespace WallpaperEngine.Data {
         /// <returns>创建的合集对象</returns>
         public WallpaperCollection AddCollection(string name)
         {
+            Log.Information("创建合集: {Name}", name);
             var collection = new WallpaperCollection {
                 Id = Guid.NewGuid().ToString(),
                 Name = name,
@@ -442,6 +450,7 @@ namespace WallpaperEngine.Data {
         /// <param name="id">合集 ID</param>
         public void DeleteCollection(string id)
         {
+            Log.Information("删除合集: {Id}", id);
             using var command = m_connection.CreateCommand();
             command.CommandText = "DELETE FROM CollectionItems WHERE CollectionId = @id";
             command.Parameters.AddWithValue("@id", id);
@@ -491,6 +500,7 @@ namespace WallpaperEngine.Data {
         /// <param name="folderPath">壁纸文件夹路径</param>
         public void AddToCollection(string collectionId, string folderPath)
         {
+            Log.Debug("添加壁纸到合集: {CollectionId}, {FolderPath}", collectionId, folderPath);
             using var command = m_connection.CreateCommand();
             command.CommandText = @"
                 INSERT OR IGNORE INTO CollectionItems (CollectionId, WallpaperFolderPath, AddedDate)
@@ -524,6 +534,7 @@ namespace WallpaperEngine.Data {
         /// <param name="skipped">跳过的壁纸数量</param>
         public void SaveScanRecord(string scanPath, int newFound, int updated, int skipped)
         {
+            Log.Information("保存扫描记录: {ScanPath}", scanPath);
             using var command = m_connection.CreateCommand();
             command.CommandText = @"
             INSERT INTO ScanHistory
@@ -622,6 +633,7 @@ namespace WallpaperEngine.Data {
         /// <param name="wallpaper">包含更新数据的壁纸项</param>
         public void UpdateWallpaper(WallpaperItem wallpaper)
         {
+            Log.Debug("更新壁纸记录: {Id}", wallpaper.Id);
             using var command = m_connection.CreateCommand();
             command.CommandText = @"
             UPDATE Wallpapers 
@@ -692,6 +704,7 @@ namespace WallpaperEngine.Data {
         /// <param name="name">分类名称</param>
         public void AddCategory(string name)
         {
+            Log.Information("添加分类: {Name}", name);
             using var command = m_connection.CreateCommand();
             command.CommandText = "INSERT OR IGNORE INTO Categories (Name) VALUES (@name)";
             command.Parameters.AddWithValue("@name", name);
@@ -704,6 +717,7 @@ namespace WallpaperEngine.Data {
         /// <param name="name">要删除的分类名称</param>
         public void DeleteCategory(string name)
         {
+            Log.Information("删除分类: {Name}", name);
             using var transaction = m_connection.BeginTransaction();
             try {
                 using var updateCmd = m_connection.CreateCommand();
@@ -730,6 +744,7 @@ namespace WallpaperEngine.Data {
         /// <param name="newName">新分类名称</param>
         public void RenameCategory(string oldName, string newName)
         {
+            Log.Information("重命名分类: {OldName} -> {NewName}", oldName, newName);
             using var transaction = m_connection.BeginTransaction();
             try {
                 using var updateCmd = m_connection.CreateCommand();

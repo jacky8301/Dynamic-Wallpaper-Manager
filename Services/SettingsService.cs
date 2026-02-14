@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Serilog;
 using System.Diagnostics;
 using System.IO;
 
@@ -27,6 +28,7 @@ namespace WallpaperEngine.Services {
         /// <returns>应用程序设置对象</returns>
         public ApplicationSettings LoadSettings()
         {
+            Log.Debug("加载应用设置: {Path}", _settingsFilePath);
             try {
                 if (File.Exists(_settingsFilePath)) {
                     var json = File.ReadAllText(_settingsFilePath);
@@ -34,7 +36,7 @@ namespace WallpaperEngine.Services {
                     return appSettings;
                 }
             } catch (Exception ex) {
-                Debug.WriteLine($"加载设置失败: {ex.Message}");
+                Log.Warning("加载设置失败: {Error}", ex.Message);
             }
 
             return new ApplicationSettings();
@@ -46,11 +48,12 @@ namespace WallpaperEngine.Services {
         /// <param name="settings">要保存的设置对象</param>
         public void SaveSettings(ApplicationSettings settings)
         {
+            Log.Information("保存应用设置: {Path}", _settingsFilePath);
             try {
                 var json = JsonConvert.SerializeObject(settings, Formatting.Indented);
                 File.WriteAllText(_settingsFilePath, json);
             } catch (Exception ex) {
-                Debug.WriteLine($"保存设置失败: {ex.Message}");
+                Log.Error("保存设置失败: {Error}", ex.Message);
                 throw;
             }
         }

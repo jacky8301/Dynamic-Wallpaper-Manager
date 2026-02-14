@@ -78,6 +78,7 @@ namespace WallpaperEngine.ViewModels {
         /// <param name="isIncrement">是否为增量扫描</param>
         private async Task DoScanWallpapers(string folderPath, bool isIncrement)
         {
+            Log.Information("开始{ScanType}扫描: {FolderPath}", isIncrement ? "增量" : "全量", folderPath);
             IsScanning = true;
             ScanStatus = "正在准备扫描...";
             CurrentScanFolder = folderPath;
@@ -99,6 +100,7 @@ namespace WallpaperEngine.ViewModels {
                 ShowFavoritesOnly = false;
                 SearchText = string.Empty;
                 _dbManager.SaveScanRecord(CurrentScanFolder, NewFoundCount, UpdatedCount, SkippedCount);
+                Log.Information("扫描完成, 新增: {NewCount}, 更新: {UpdatedCount}, 跳过: {SkippedCount}", NewFoundCount, UpdatedCount, SkippedCount);
                 LoadScanHistory();
                 await LoadWallpapersAsync();
             }
@@ -160,6 +162,7 @@ namespace WallpaperEngine.ViewModels {
         {
             bool confirmed = await MaterialDialogService.ShowConfirmationAsync("确定要取消当前扫描吗？", "取消扫描");
             if (confirmed) {
+                Log.Information("用户取消扫描");
                 _scanner.CancelScan();
             }
         }

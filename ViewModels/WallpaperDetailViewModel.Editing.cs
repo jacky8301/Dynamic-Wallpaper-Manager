@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Serilog;
 using System.IO;
 using System.Text;
 using WallpaperEngine.Models;
@@ -29,6 +30,7 @@ namespace WallpaperEngine.ViewModels {
 
             IsEditMode = true;
             EditStatus = "编辑模式";
+            Log.Debug("开始编辑壁纸: {Title}", CurrentWallpaper.Project.Title);
 
             // 创建编辑备份
             _originalItem = CreateBackup(CurrentWallpaper);
@@ -72,9 +74,11 @@ namespace WallpaperEngine.ViewModels {
                 IsEditMode = false;
                 CurrentWallpaper.IsEditing = false;
                 EditStatus = "保存成功";
+                Log.Information("壁纸详情保存成功: {Title}", CurrentWallpaper.Project.Title);
                 // 显示成功消息
                 ShowSaveSuccessMessage();
             } catch (Exception ex) {
+                Log.Error("壁纸详情保存失败: {Error}", ex.Message);
                 EditStatus = "保存失败";
                 ShowErrorMessage($"保存失败: {ex.Message}");
             }
@@ -106,6 +110,7 @@ namespace WallpaperEngine.ViewModels {
                 SyncTagsFromProject();
             }
 
+            Log.Debug("取消编辑壁纸");
             IsEditMode = false;
             CurrentWallpaper.IsEditing = false;
             EditStatus = "编辑已取消";

@@ -90,6 +90,7 @@ namespace WallpaperEngine {
             // 在UI线程上激活主窗口
             Dispatcher.Invoke(() =>
             {
+                Log.Information("收到启动参数: {ArgCount} 个", args?.Length ?? 0);
                 ActivateMainWindow();
 
                 // 处理接收到的参数
@@ -106,6 +107,7 @@ namespace WallpaperEngine {
         /// </summary>
         private void ActivateMainWindow()
         {
+            Log.Debug("激活主窗口");
             if (MainWindow != null) {
                 if (MainWindow.WindowState == WindowState.Minimized) {
                     MainWindow.WindowState = WindowState.Normal;

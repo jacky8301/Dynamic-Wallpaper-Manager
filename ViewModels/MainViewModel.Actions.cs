@@ -23,6 +23,7 @@ namespace WallpaperEngine.ViewModels {
         {
             if (parameter is WallpaperItem wallpaper) {
                 SelectedWallpaper = wallpaper;
+                Log.Information("预览壁纸: {Title}", wallpaper.Project.Title);
                 _dataContextService.CurrentWallpaper = wallpaper;
                 OpenPreviewWindowNew(wallpaper);
             } else if (parameter is string wallpaperId) {
@@ -96,6 +97,7 @@ namespace WallpaperEngine.ViewModels {
         private void ApplyWallpaper(object parameter)
         {
             if (parameter is WallpaperItem wallpaper) {
+                Log.Information("应用壁纸: {Title}", wallpaper.Project.Title);
                 string toolPath = Settings.WallpaperEnginePath;
                 string projectJsonPath = Path.Combine(wallpaper.FolderPath, "project.json");
 
@@ -156,6 +158,7 @@ namespace WallpaperEngine.ViewModels {
         private async Task GoToWallpaperDirectory(object parameter)
         {
             if (parameter is WallpaperItem wallpaper) {
+                Log.Debug("打开壁纸目录: {FolderPath}", wallpaper.FolderPath);
                 SelectedWallpaper = wallpaper;
                 await OpenWallpaperDirectory(wallpaper);
             }

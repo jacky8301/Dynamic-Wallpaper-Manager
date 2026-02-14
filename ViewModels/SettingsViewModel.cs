@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
 using System.IO;
 
 namespace WallpaperEngine.ViewModels {
@@ -58,6 +59,7 @@ namespace WallpaperEngine.ViewModels {
         /// </summary>
         public void SaveSettings()
         {
+            Log.Information("保存应用设置");
             _settingsService.SaveSettings(_settings);
         }
 
@@ -79,6 +81,7 @@ namespace WallpaperEngine.ViewModels {
                 return;
             }
             PathStatus = "路径有效";
+            Log.Debug("Wallpaper Engine 路径验证通过: {Path}", WallpaperEnginePath);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using Serilog;
 using WallpaperEngine.Models;
 
 namespace WallpaperEngine.Services {
@@ -46,7 +47,7 @@ namespace WallpaperEngine.Services {
 
             options ??= new PreviewOptions();
 
-            // 检查Wallpaper Engine路径
+            Log.Information("启动壁纸预览: {FolderPath}", wallpaper.FolderPath);
             if (string.IsNullOrEmpty(_settings.WallpaperEnginePath) ||
                 !File.Exists(_settings.WallpaperEnginePath)) {
                 throw new InvalidOperationException("Wallpaper Engine路径未设置或不存在");
@@ -79,6 +80,7 @@ namespace WallpaperEngine.Services {
 
                 return _currentPreviewProcess != null && !_currentPreviewProcess.HasExited;
             } catch (Exception ex) {
+                Log.Error("启动预览失败: {Error}", ex.Message);
                 throw new Exception($"启动预览失败: {ex.Message}", ex);
             }
         }
@@ -110,6 +112,7 @@ namespace WallpaperEngine.Services {
         public void StopPreview()
         {
             try {
+                Log.Debug("停止壁纸预览");
                 if (_currentPreviewProcess != null && !_currentPreviewProcess.HasExited) {
                     // 尝试优雅关闭
                     _currentPreviewProcess.CloseMainWindow();
@@ -119,7 +122,7 @@ namespace WallpaperEngine.Services {
                     }
                 }
             } catch (Exception ex) {
-                Debug.WriteLine($"停止预览进程时出错: {ex.Message}");
+                Log.Warning("停止预览进程时出错: {Error}", ex.Message);
             } finally {
                 _currentPreviewProcess?.Dispose();
                 _currentPreviewProcess = null;

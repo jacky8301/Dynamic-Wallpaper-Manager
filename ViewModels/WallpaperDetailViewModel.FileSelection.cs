@@ -1,3 +1,5 @@
+using Serilog;
+
 namespace WallpaperEngine.ViewModels {
     /// <summary>
     /// 壁纸详情视图模型的文件选择部分，包含预览图和内容文件的设置与验证逻辑
@@ -14,6 +16,7 @@ namespace WallpaperEngine.ViewModels {
             }
             CurrentWallpaper.Project.Preview = fileName;
             PreviewFileName = fileName;
+            Log.Information("设置预览图文件: {FileName}", fileName);
             try {
                 // 保存到project.json
                 await SaveToProjectJsonAsync();
@@ -38,6 +41,7 @@ namespace WallpaperEngine.ViewModels {
             try {
                 ContentFileName = fileName;
                 CurrentWallpaper.Project.File = fileName;
+                Log.Information("设置内容文件: {FileName}", fileName);
                 // 保存到project.json
                 await SaveToProjectJsonAsync();
                 // 更新数据库

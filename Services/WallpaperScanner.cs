@@ -40,6 +40,7 @@ namespace WallpaperEngine.Services {
         /// </summary>
         public void CancelScan()
         {
+            Log.Information("取消壁纸扫描");
             _cancellationTokenSource.Cancel();
         }
 
@@ -53,6 +54,8 @@ namespace WallpaperEngine.Services {
         /// <exception cref="DirectoryNotFoundException">根目录不存在</exception>
         public async Task<bool> ScanWallpapersAsync(string rootFolderPath, bool isIncremental, IProgress<ScanProgress> progress = null)
         {
+            Log.Information("开始扫描壁纸, 路径: {RootPath}, 增量: {IsIncremental}", rootFolderPath, isIncremental);
+
             if (!Directory.Exists(rootFolderPath)) {
                 throw new DirectoryNotFoundException($"目录不存在: {rootFolderPath}");
             }

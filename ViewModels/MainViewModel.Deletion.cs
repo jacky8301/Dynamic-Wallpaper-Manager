@@ -18,6 +18,7 @@ namespace WallpaperEngine.ViewModels {
         private async Task DeleteWallpaper(object parameter)
         {
             if (parameter is WallpaperItem wallpaper) {
+                Log.Information("请求删除壁纸: {Title}", wallpaper.Project.Title);
                 await ShowDeletionConfirmation(wallpaper);
             }
         }
@@ -111,6 +112,7 @@ namespace WallpaperEngine.ViewModels {
                 });
 
                 if (success) {
+                    Log.Information("壁纸删除成功: {Title}", wallpaper.Project.Title);
                     Wallpapers.Remove(wallpaper);
                     if (SelectedWallpaper == wallpaper) {
                         SelectedWallpaper = null;
@@ -122,6 +124,7 @@ namespace WallpaperEngine.ViewModels {
                     await ShowErrorMessage($"删除壁纸 '{wallpaper.Project.Title}' 失败");
                 }
             } catch (Exception ex) {
+                Log.Error("壁纸删除失败: {Title}, 错误: {Error}", wallpaper.Project.Title, ex.Message);
                 wallpaper.DeletionStatus = "删除错误";
                 await ShowErrorMessage($"删除过程中发生错误: {ex.Message}");
             }

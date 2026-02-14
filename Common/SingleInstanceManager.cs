@@ -2,6 +2,7 @@
 using System.IO;
 using System.IO.Pipes;
 using System.Text;
+using Serilog;
 
 namespace WallpaperEngine.Common {
     /// <summary>
@@ -27,6 +28,7 @@ namespace WallpaperEngine.Common {
         {
             _pipeName = $"SingleInstance_{uniqueAppId}";
             _mutex = new Mutex(true, uniqueAppId, out _isFirstInstance);
+            Log.Debug("单实例检查: {IsFirst}", _isFirstInstance);
         }
 
         /// <summary>
@@ -67,6 +69,7 @@ namespace WallpaperEngine.Common {
                         string message = await reader.ReadToEndAsync();
                         if (!string.IsNullOrEmpty(message)) {
                             string[] args = message.Split('|');
+                            Log.Information("收到来自其他实例的参数: {Args}", string.Join(", ", args));
                             ArgumentsReceived?.Invoke(this, args);
                         }
                     }
@@ -75,7 +78,7 @@ namespace WallpaperEngine.Common {
                 } catch (OperationCanceledException) {
                     break;
                 } catch (Exception ex) {
-                    System.Diagnostics.Debug.WriteLine($"管道监听错误: {ex.Message}");
+                    Log.Warning("管道监听错误: {Error}", ex.Message);
                 }
             }
         }
@@ -88,6 +91,7 @@ namespace WallpaperEngine.Common {
         /// <returns>发送成功返回 true，失败返回 false</returns>
         public static bool SendArgsToFirstInstance(string uniqueAppId, string[] args)
         {
+            Log.Debug("向第一个实例发送参数");
             try {
                 using (var pipeClient = new NamedPipeClientStream(
                     ".",
@@ -102,6 +106,7 @@ namespace WallpaperEngine.Common {
                     return true;
                 }
             } catch {
+                Log.Warning("发送参数到第一个实例失败");
                 return false;
             }
         }
