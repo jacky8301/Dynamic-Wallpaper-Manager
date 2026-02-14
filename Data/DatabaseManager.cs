@@ -5,10 +5,8 @@ using WallpaperEngine.Models;
 
 namespace WallpaperEngine.Data {
     public sealed class DatabaseManager : IDisposable {
-        //private static readonly Lazy<DatabaseManager> lazy = new(() => new DatabaseManager(),isThreadSafe:true);
         private SqliteConnection m_connection;
         private readonly string m_dbPath;
-        //public static DatabaseManager Instance { get { return lazy.Value; } }
         public DatabaseManager(string databasePath = "wallpapers.db")
         {
             m_dbPath = databasePath;
@@ -22,42 +20,47 @@ namespace WallpaperEngine.Data {
             public int NewFound { get; set; }
         }
 
+        private WallpaperItem ReadWallpaperItem(DbDataReader reader)
+        {
+            return new WallpaperItem {
+                Id = reader["Id"].ToString(),
+                FolderPath = reader["FolderPath"].ToString(),
+                Project = new WallpaperProject {
+                    Title = reader["Title"].ToString(),
+                    Description = reader["Description"].ToString(),
+                    File = reader["FileName"].ToString(),
+                    Preview = reader["PreviewFile"].ToString(),
+                    Type = reader["WallpaperType"].ToString(),
+                    Tags = reader["Tags"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                    ContentRating = reader["ContentRating"].ToString(),
+                    Visibility = reader["Visibility"].ToString()
+                },
+                Category = reader["Category"].ToString(),
+                AddedDate = DateTime.Parse(reader["AddedDate"].ToString()),
+                IsFavorite = Convert.ToInt32(reader["IsFavorite"]) == 1,
+                FavoritedDate = string.IsNullOrEmpty(reader["FavoritedDate"]?.ToString())
+                            ? DateTime.MinValue
+                            : DateTime.Parse(reader["FavoritedDate"].ToString()),
+                LastUpdated = reader["LastUpdated"]?.ToString(),
+                LastScanned = string.IsNullOrEmpty(reader["LastScanned"]?.ToString())
+                        ? DateTime.MinValue
+                        : DateTime.Parse(reader["LastScanned"].ToString()),
+                FolderLastModified = string.IsNullOrEmpty(reader["FolderLastModified"]?.ToString())
+                        ? DateTime.MinValue
+                        : DateTime.Parse(reader["FolderLastModified"].ToString())
+            };
+        }
+
         // 根据文件夹路径获取已存在的壁纸记录
         public WallpaperItem GetWallpaperByFolderPath(string folderPath)
         {
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = "SELECT * FROM Wallpapers WHERE FolderPath = @folderPath";
             command.Parameters.AddWithValue("@folderPath", folderPath);
 
             using (var reader = command.ExecuteReader()) {
                 if (reader.Read()) {
-                    // 将数据库记录转换为 WallpaperItem 对象
-                    return new WallpaperItem {
-                        Id = reader["Id"].ToString(),
-                        FolderPath = reader["FolderPath"].ToString(),
-                        Project = new WallpaperProject {
-                            Title = reader["Title"].ToString(),
-                            Description = reader["Description"].ToString(),
-                            File = reader["FileName"].ToString(),
-                            Preview = reader["PreviewFile"].ToString(),
-                            Type = reader["WallpaperType"].ToString(),
-                            Tags = reader["Tags"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
-                            ContentRating = reader["ContentRating"].ToString(),
-                            Visibility = reader["Visibility"].ToString()
-                        },
-                        Category = reader["Category"].ToString(),
-                        AddedDate = DateTime.Parse(reader["AddedDate"].ToString()),
-                        IsFavorite = Convert.ToInt32(reader["IsFavorite"]) == 1,
-                        FavoritedDate = string.IsNullOrEmpty(reader["FavoritedDate"]?.ToString())
-                                    ? DateTime.MinValue
-                                    : DateTime.Parse(reader["FavoritedDate"].ToString()),
-                        LastScanned = string.IsNullOrEmpty(reader["LastScanned"]?.ToString())
-                                ? DateTime.MinValue
-                                : DateTime.Parse(reader["LastScanned"].ToString()),
-                        FolderLastModified = string.IsNullOrEmpty(reader["FolderLastModified"]?.ToString())
-                                ? DateTime.MinValue
-                                : DateTime.Parse(reader["FolderLastModified"].ToString())
-                    };
+                    return ReadWallpaperItem(reader);
                 }
             }
             return null; // 没找到
@@ -66,16 +69,18 @@ namespace WallpaperEngine.Data {
         // 专门用于切换收藏状态的方法
         public void ToggleFavorite(string wallpaperId, bool isFavorite)
         {
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = @"
-            UPDATE Wallpapers 
-            SET IsFavorite = @isFavorite, 
-                FavoritedDate = @favoritedDate 
+            UPDATE Wallpapers
+            SET IsFavorite = @isFavorite,
+                FavoritedDate = @favoritedDate,
+                LastUpdated = @lastUpdated
             WHERE Id = @id";
 
             command.Parameters.AddWithValue("@id", wallpaperId);
             command.Parameters.AddWithValue("@isFavorite", isFavorite ? 1 : 0);
             command.Parameters.AddWithValue("@favoritedDate", isFavorite ? DateTime.Now.ToString("O") : (object)DBNull.Value);
+            command.Parameters.AddWithValue("@lastUpdated", DateTime.Now.ToString("O"));
 
             command.ExecuteNonQuery();
         }
@@ -87,7 +92,7 @@ namespace WallpaperEngine.Data {
             m_connection.Open();
 
             // 创建壁纸表
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = @"
                 CREATE TABLE IF NOT EXISTS Wallpapers (
                     Id TEXT PRIMARY KEY,
@@ -144,7 +149,7 @@ namespace WallpaperEngine.Data {
         // 插入或更新壁纸记录
         public void SaveWallpaper(WallpaperItem wallpaper)
         {
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = @"
                 INSERT OR REPLACE INTO Wallpapers 
                 (Id, FolderPath, FolderName, Title, Description, FileName, PreviewFile, 
@@ -164,8 +169,6 @@ namespace WallpaperEngine.Data {
                     var fileInfo = new FileInfo(mainFile);
                     lastModified = fileInfo.LastWriteTime;
                     fileSize = fileInfo.Length;
-                    // 太慢，不计算哈希了
-                    //fileHash = CalculateFileHash(mainFile);
                 }
             } catch {
                 // 如果无法获取文件信息，使用当前时间
@@ -200,7 +203,7 @@ namespace WallpaperEngine.Data {
         public List<WallpaperItem> SearchWallpapers(string searchTerm, string category = "", bool favoritesOnly = false)
         {
             var wallpapers = new List<WallpaperItem>();
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
 
             string whereClause = "WHERE 1=1";
             if (!string.IsNullOrEmpty(searchTerm)) {
@@ -223,33 +226,7 @@ namespace WallpaperEngine.Data {
 
             using var reader = command.ExecuteReader();
             while (reader.Read()) {
-                wallpapers.Add(new WallpaperItem {
-                    Id = reader["Id"].ToString(),
-                    FolderPath = reader["FolderPath"].ToString(),
-                    Project = new WallpaperProject {
-                        Title = reader["Title"].ToString(),
-                        Description = reader["Description"].ToString(),
-                        File = reader["FileName"].ToString(),
-                        Preview = reader["PreviewFile"].ToString(),
-                        Type = reader["WallpaperType"].ToString(),
-                        Tags = reader["Tags"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
-                        ContentRating = reader["ContentRating"].ToString(),
-                        Visibility = reader["Visibility"].ToString()
-                    },
-                    IsFavorite = Convert.ToInt32(reader["IsFavorite"]) == 1,
-                    FavoritedDate = string.IsNullOrEmpty(reader["FavoritedDate"]?.ToString())
-                                    ? DateTime.MinValue
-                                    : DateTime.Parse(reader["FavoritedDate"].ToString()),
-                    Category = reader["Category"].ToString(),
-                    AddedDate = DateTime.Parse(reader["AddedDate"].ToString()),
-                    LastUpdated = reader["LastUpdated"].ToString(),
-                    LastScanned = string.IsNullOrEmpty(reader["LastScanned"]?.ToString())
-                                ? DateTime.MinValue
-                                : DateTime.Parse(reader["LastScanned"].ToString()),
-                    FolderLastModified = string.IsNullOrEmpty(reader["FolderLastModified"]?.ToString())
-                                ? DateTime.MinValue
-                                : DateTime.Parse(reader["FolderLastModified"].ToString())
-                });
+                wallpapers.Add(ReadWallpaperItem(reader));
             }
 
             return wallpapers;
@@ -257,7 +234,7 @@ namespace WallpaperEngine.Data {
 
         public void DeleteWallpaper(string wallpaperId)
         {
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
             command.Parameters.AddWithValue("$id", wallpaperId);
             command.ExecuteNonQuery();
@@ -265,7 +242,7 @@ namespace WallpaperEngine.Data {
 
         public void DeleteWallpaperByPath(string folderPath)
         {
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = "DELETE FROM Wallpapers WHERE FolderPath = @path";
             command.Parameters.AddWithValue("@path", folderPath);
             command.ExecuteNonQuery();
@@ -277,42 +254,22 @@ namespace WallpaperEngine.Data {
             m_connection?.Dispose();
         }
 
-        // 新增：专门更新收藏状态的方法
-        public void UpdateFavoriteStatus(string wallpaperId, bool isFavorite)
-        {
-            var command = m_connection.CreateCommand();
-            command.CommandText = @"
-            UPDATE Wallpapers 
-            SET IsFavorite = @isFavorite, 
-                FavoritedDate = @favoritedDate,
-                LastUpdated = @lastUpdated
-            WHERE Id = @id";
-
-            command.Parameters.AddWithValue("@id", wallpaperId);
-            command.Parameters.AddWithValue("@isFavorite", isFavorite ? 1 : 0);
-            command.Parameters.AddWithValue("@favoritedDate", isFavorite ? DateTime.Now.ToString("O") : (object)DBNull.Value);
-            command.Parameters.AddWithValue("@lastUpdated", DateTime.Now.ToString("O"));
-
-            command.ExecuteNonQuery();
-        }
-
         // 保存扫描记录
-        public void SaveScanRecord(string scanPath, int totalFolders, int newFound,
-                                   long durationMs, string status = "Success")
+        public void SaveScanRecord(string scanPath, int newFound, int updated, int skipped)
         {
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = @"
-            INSERT INTO ScanHistory 
+            INSERT INTO ScanHistory
             (ScanPath, LastScanTime, TotalFolders, NewFound, DurationMs, Status)
-            VALUES 
-            (@scanPath, @lastScanTime, @totalFolders, @newFound, @durationMs, @status)";
+            VALUES
+            (@scanPath, @lastScanTime, @newFound, @updated, @skipped, @status)";
 
             command.Parameters.AddWithValue("@scanPath", scanPath);
             command.Parameters.AddWithValue("@lastScanTime", DateTime.Now.ToString("O"));
-            command.Parameters.AddWithValue("@totalFolders", totalFolders);
             command.Parameters.AddWithValue("@newFound", newFound);
-            command.Parameters.AddWithValue("@durationMs", durationMs);
-            command.Parameters.AddWithValue("@status", status);
+            command.Parameters.AddWithValue("@updated", updated);
+            command.Parameters.AddWithValue("@skipped", skipped);
+            command.Parameters.AddWithValue("@status", "Success");
 
             command.ExecuteNonQuery();
         }
@@ -320,7 +277,7 @@ namespace WallpaperEngine.Data {
         // 检查壁纸是否需要更新
         public bool NeedsUpdate(string folderPath, DateTime lastModified, long fileSize)
         {
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = @"
             SELECT FolderLastModified, FileSize FROM Wallpapers 
             WHERE FolderPath = @folderPath";
@@ -337,38 +294,11 @@ namespace WallpaperEngine.Data {
             return dbLastModified != lastModified || dbFileSize != fileSize;
         }
 
-        // 获取文件夹最后修改时间
-        public DateTime? GetFolderLastModified(string folderPath)
-        {
-            var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT $FolderLastModified FROM Wallpapers WHERE FolderPath = @folderPath";
-            command.Parameters.AddWithValue("@folderPath", folderPath);
-
-            using var reader = command.ExecuteReader();
-            if (reader.Read()) {
-                return DateTime.Parse(reader["FolderLastModified"].ToString());
-            }
-            return null;
-        }
-
-        // 计算文件哈希（用于检测内容变化）
-        private string CalculateFileHash(string filePath)
-        {
-            try {
-                using var md5 = System.Security.Cryptography.MD5.Create();
-                using var stream = File.OpenRead(filePath);
-                var hash = md5.ComputeHash(stream);
-                return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-            } catch {
-                return string.Empty;
-            }
-        }
-
         // 获取扫描历史
         public List<ScanInfo> GetScanHistory(string scanPath = null)
         {
             var history = new List<ScanInfo>();
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
 
             if (string.IsNullOrEmpty(scanPath)) {
                 command.CommandText = @"
@@ -401,7 +331,7 @@ namespace WallpaperEngine.Data {
 
         public void ClearScanHistory()
         {
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = "DELETE FROM ScanHistory";
             command.ExecuteNonQuery();
         }
@@ -409,7 +339,7 @@ namespace WallpaperEngine.Data {
         // 更新壁纸信息
         public void UpdateWallpaper(WallpaperItem wallpaper)
         {
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = @"
             UPDATE Wallpapers 
             SET Title = @title,
@@ -440,7 +370,7 @@ namespace WallpaperEngine.Data {
         // 获取壁纸文件统计信息
         public (int FileCount, long TotalSize) GetWallpaperFileStats(string wallpaperId)
         {
-            var command = m_connection.CreateCommand();
+            using var command = m_connection.CreateCommand();
             command.CommandText = "SELECT FileCount, TotalSize FROM WallpaperStats WHERE WallpaperId = @id";
             command.Parameters.AddWithValue("@id", wallpaperId);
 
