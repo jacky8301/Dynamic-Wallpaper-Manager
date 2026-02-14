@@ -38,4 +38,46 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!--  智能标题样式：查看模式下为大号TextBlock，编辑模式下为TextBox  -->
+    <Style x:Key="SmartTitleField" TargetType="ContentControl">
+        <Setter Property="Margin" Value="0,4" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <Grid>
+                        <!--  查看模式  -->
+                        <TextBlock
+                            x:Name="ViewText"
+                            FontSize="20"
+                            FontWeight="Bold"
+                            Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content, Mode=TwoWay}"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap"
+                            Visibility="Collapsed" />
+
+                        <!--  编辑模式  -->
+                        <TextBox
+                            x:Name="EditTextBox"
+                            Padding="8,6"
+                            FontSize="20"
+                            FontWeight="Bold"
+                            Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                            Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Content, Mode=TwoWay}"
+                            TextWrapping="Wrap"
+                            Visibility="Collapsed" />
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsEditMode}" Value="False">
+                            <Setter TargetName="ViewText" Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsEditMode}" Value="True">
+                            <Setter TargetName="EditTextBox" Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 </ResourceDictionary>

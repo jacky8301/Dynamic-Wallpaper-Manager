@@ -54,23 +54,13 @@
             Margin="0,8,0,0"
             VerticalScrollBarVisibility="Auto">
             <StackPanel>
+                <!--  标题  -->
+                <ContentControl
+                    Margin="0,0,0,8"
+                    Content="{Binding Title, Mode=TwoWay}"
+                    Style="{StaticResource SmartTitleField}" />
+
                 <!--  基本信息  -->
-                <Grid Margin="0,0,0,4">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock
-                        VerticalAlignment="Top"
-                        FontWeight="Bold"
-                        Text="标题:" />
-                    <ContentControl
-                        Grid.Column="1"
-                        Margin="6,0,0,0"
-                        VerticalAlignment="Top"
-                        Content="{Binding Title, Mode=TwoWay}"
-                        Style="{StaticResource SmartTextField}" />
-                </Grid>
                 <Grid Margin="0,0,0,6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -80,12 +70,18 @@
                         VerticalAlignment="Top"
                         FontWeight="Bold"
                         Text="描述:" />
-                    <ContentControl
+                    <ScrollViewer
                         Grid.Column="1"
                         Margin="6,0,0,0"
+                        MaxHeight="80"
                         VerticalAlignment="Top"
-                        Content="{Binding Description, Mode=TwoWay}"
-                        Style="{StaticResource SmartTextField}" />
+                        VerticalScrollBarVisibility="Auto">
+                        <ContentControl
+                            Margin="0"
+                            VerticalAlignment="Top"
+                            Content="{Binding Description, Mode=TwoWay}"
+                            Style="{StaticResource SmartTextField}" />
+                    </ScrollViewer>
                 </Grid>
 
                 <!--  分类信息  -->
@@ -102,19 +98,27 @@
                         SelectedItem="{Binding SelectedType, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignDataGridComboBox}" />
                 </StackPanel>
-                <StackPanel Margin="0,0,0,6" Orientation="Horizontal">
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
                     <TextBlock
                         VerticalAlignment="Center"
                         FontWeight="Bold"
                         Text="分类:" />
                     <ComboBox
+                        Grid.Column="1"
                         Margin="6,0,0,0"
+                        VerticalAlignment="Center"
                         FontSize="14"
                         IsEnabled="{Binding IsEditMode}"
                         ItemsSource="{Binding CategoryList}"
                         SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
                         Style="{StaticResource MaterialDesignDataGridComboBox}" />
                     <Button
+                        Grid.Column="2"
                         Width="24"
                         Height="24"
                         Margin="4,0,0,0"
@@ -126,7 +130,7 @@
                         IsEnabled="{Binding IsEditMode}"
                         Style="{StaticResource MaterialDesignIconButton}"
                         ToolTip="新增分类" />
-                </StackPanel>
+                </Grid>
 
                 <!--  标签  -->
                 <StackPanel Margin="0,0,0,2" Orientation="Horizontal">
@@ -199,7 +203,7 @@
                 </Border>
 
                 <!--  文件信息  -->
-                <StackPanel Margin="0,0,0,2" Orientation="Horizontal">
+                <StackPanel Margin="0,0,0,6" Orientation="Horizontal">
                     <TextBlock
                         VerticalAlignment="Center"
                         FontWeight="Bold"
@@ -211,7 +215,7 @@
                         FontSize="12"
                         Style="{StaticResource SmartTextField}" />
                 </StackPanel>
-                <StackPanel Margin="0,0,0,2" Orientation="Horizontal">
+                <StackPanel Margin="0,0,0,6" Orientation="Horizontal">
                     <TextBlock
                         VerticalAlignment="Center"
                         FontWeight="Bold"
