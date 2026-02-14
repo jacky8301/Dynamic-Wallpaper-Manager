@@ -39,6 +39,7 @@ namespace WallpaperEngine {
                     .AddSingleton<DatabaseManager>(new DatabaseManager(wallpaperDbPath))
                     .AddSingleton<ISettingsService, SettingsService>()
                     .AddSingleton<IDataContextService, DataContextService>()
+                    .AddSingleton<IWallpaperFileService, WallpaperFileService>()
                     .AddSingleton<SettingsViewModel>()
                     .AddSingleton<WallpaperDetailViewModel>()
                     .AddSingleton<PreviewViewModel>()

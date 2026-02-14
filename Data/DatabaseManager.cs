@@ -399,6 +399,13 @@ namespace WallpaperEngine.Data {
             return history;
         }
 
+        public void ClearScanHistory()
+        {
+            var command = m_connection.CreateCommand();
+            command.CommandText = "DELETE FROM ScanHistory";
+            command.ExecuteNonQuery();
+        }
+
         // 更新壁纸信息
         public void UpdateWallpaper(WallpaperItem wallpaper)
         {
