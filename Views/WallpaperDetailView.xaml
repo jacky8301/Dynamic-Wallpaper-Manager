@@ -306,6 +306,8 @@
                         Height="30"
                         Margin="5"
                         Padding="12,0"
+                        Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        CommandParameter="{Binding CurrentWallpaper}"
                         Content="⭐ 收藏"
                         Style="{StaticResource MaterialDesignOutlinedButton}" />
                     <Button
@@ -313,6 +315,8 @@
                         Height="30"
                         Margin="5"
                         Padding="12,0"
+                        Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        CommandParameter="{Binding CurrentWallpaper}"
                         Content="👁️ 预览"
                         Style="{StaticResource MaterialDesignOutlinedButton}" />
                     <Button
@@ -320,6 +324,8 @@
                         Margin="5"
                         Padding="12,0"
                         Background="{StaticResource SecondaryBrush}"
+                        Command="{Binding DataContext.ApplyWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        CommandParameter="{Binding CurrentWallpaper}"
                         Content="🚀 应用"
                         Foreground="White"
                         Style="{StaticResource MaterialDesignRaisedButton}" />
@@ -327,6 +333,8 @@
                         Height="30"
                         Margin="5"
                         Padding="12,0"
+                        Command="{Binding DataContext.DeleteWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        CommandParameter="{Binding CurrentWallpaper}"
                         Content="🗑️ 删除"
                         Foreground="{StaticResource AccentBrush}"
                         Style="{StaticResource MaterialDesignOutlinedButton}" />
