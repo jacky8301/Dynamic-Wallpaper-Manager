@@ -30,8 +30,6 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/Styles/WallpaperMenuItemStyle.xaml" />
-                <ResourceDictionary Source="/Styles/WallpaperItemContextMenuStyle.xaml" />
                 <ResourceDictionary Source="/Styles/WallpaperItemStyle.xaml" />
                 <ResourceDictionary Source="/Styles/FavoriteButtonStyle.xaml" />
                 <ResourceDictionary Source="/Converters/CommonConverters.xaml" />
@@ -228,54 +226,37 @@
                                             Style="{StaticResource SelectableBorderStyle}">
                                             <!--  右键菜单定义  -->
                                             <Border.ContextMenu>
-                                                <ContextMenu Style="{StaticResource WallpaperItemContextMenuStyle}">
-                                                    <!--  预览菜单项  -->
+                                                <ContextMenu>
                                                     <MenuItem
-                                                        Command="{Binding DataContext.PreviewWallpaperCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}"
                                                         Header="👁️ 预览壁纸"
-                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
-                                                    <!--  分隔线  -->
+                                                        Command="{Binding DataContext.PreviewWallpaperCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}" />
                                                     <Separator />
-                                                    <!--  应用菜单项  -->
                                                     <MenuItem
-                                                        Command="{Binding DataContext.ApplyWallpaperCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}"
                                                         Header="🚀 应用壁纸"
-                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
-                                                    <!--  分隔线  -->
+                                                        Command="{Binding DataContext.ApplyWallpaperCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}" />
                                                     <Separator />
-                                                    <!--  转到目录菜单项  -->
                                                     <MenuItem
-                                                        Command="{Binding DataContext.GoToWallpaperDirectoryCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}"
-                                                        Header="📁 转到壁纸目录"
-                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
-                                                    <!--  分隔线  -->
-                                                    <Separator />
-                                                    <!--  收藏菜单项  -->
-                                                    <MenuItem
+                                                        Header="{Binding IsFavorite, Converter={StaticResource FavoriteTextConverter}}"
                                                         Command="{Binding DataContext.ToggleFavoriteCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}"
-                                                        Header="⭐️ 收藏壁纸"
-                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
-                                                    <!--  分隔线  -->
+                                                        CommandParameter="{Binding}" />
                                                     <Separator />
-                                                    <!--  添加到合集菜单项  -->
                                                     <MenuItem
-                                                        Command="{Binding DataContext.AddToCollectionCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}"
+                                                        Header="📁 转到壁纸目录"
+                                                        Command="{Binding DataContext.GoToWallpaperDirectoryCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}" />
+                                                    <Separator />
+                                                    <MenuItem
                                                         Header="📂 添加到合集"
-                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
-                                                    <!--  分隔线  -->
+                                                        Command="{Binding DataContext.AddToCollectionCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}" />
                                                     <Separator />
-                                                    <!--  删除菜单项  -->
                                                     <MenuItem
-                                                        Command="{Binding DataContext.DeleteWallpaperCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}"
-                                                        Foreground="Red"
                                                         Header="🗑️ 删除壁纸"
-                                                        Style="{StaticResource WallpaperMenuItemStyle}" />
+                                                        Foreground="Red"
+                                                        Command="{Binding DataContext.DeleteWallpaperCommand, Source={x:Reference mainWindow}}"
+                                                        CommandParameter="{Binding}" />
                                                 </ContextMenu>
                                             </Border.ContextMenu>
                                             <Border.InputBindings>

@@ -198,6 +198,15 @@ namespace WallpaperEngine.ViewModels {
             var result = await DialogHost.Show(view, "MainRootDialog");
             if (result is MaterialDialogResult dialogResult && dialogResult.Confirmed && dialogResult.Data is WallpaperCollection selected) {
                 try {
+                    if (_dbManager.IsInCollection(selected.Id, wallpaper.FolderPath)) {
+                        await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                            Message = $"该壁纸已存在于合集「{selected.Name}」中。",
+                            Title = "提示",
+                            ShowCancelButton = false,
+                            DialogType = DialogType.Information
+                        });
+                        return;
+                    }
                     _dbManager.AddToCollection(selected.Id, wallpaper.FolderPath);
                     // 刷新合集页面（如果当前正在查看该合集）
                     var collectionVm = Ioc.Default.GetService<CollectionViewModel>();

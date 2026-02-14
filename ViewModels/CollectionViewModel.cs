@@ -1,7 +1,10 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
@@ -122,6 +125,57 @@ namespace WallpaperEngine.ViewModels {
                 CollectionWallpapers.Remove(wallpaper);
             } catch (Exception ex) {
                 Log.Error($"从合集移除壁纸失败: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private void PreviewWallpaper(WallpaperItem wallpaper)
+        {
+            if (wallpaper == null) return;
+            var mainVm = Ioc.Default.GetService<MainViewModel>();
+            mainVm?.PreviewWallpaperCommand.Execute(wallpaper);
+        }
+
+        [RelayCommand]
+        private void ApplyWallpaper(WallpaperItem wallpaper)
+        {
+            if (wallpaper == null) return;
+            var mainVm = Ioc.Default.GetService<MainViewModel>();
+            mainVm?.ApplyWallpaperCommand.Execute(wallpaper);
+        }
+
+        [RelayCommand]
+        private void ToggleFavorite(WallpaperItem wallpaper)
+        {
+            if (wallpaper == null) return;
+            var mainVm = Ioc.Default.GetService<MainViewModel>();
+            if (mainVm == null) return;
+
+            // 找到主视图中对应的壁纸实例，保持状态同步
+            var mainWallpaper = mainVm.Wallpapers.FirstOrDefault(w => w.FolderPath == wallpaper.FolderPath);
+            if (mainWallpaper != null) {
+                mainVm.ToggleFavoriteCommand.Execute(mainWallpaper);
+                // 同步状态到合集中的实例
+                wallpaper.IsFavorite = mainWallpaper.IsFavorite;
+                wallpaper.FavoritedDate = mainWallpaper.FavoritedDate;
+            } else {
+                // 主视图中没有对应实例，直接操作
+                mainVm.ToggleFavoriteCommand.Execute(wallpaper);
+            }
+        }
+
+        [RelayCommand]
+        private async Task GoToWallpaperDirectory(WallpaperItem wallpaper)
+        {
+            if (wallpaper == null) return;
+            try {
+                if (Directory.Exists(wallpaper.FolderPath)) {
+                    Process.Start("explorer.exe", wallpaper.FolderPath)?.Dispose();
+                } else {
+                    await MaterialDialogService.ShowErrorAsync($"壁纸目录不存在：{wallpaper.FolderPath}", "错误");
+                }
+            } catch (Exception ex) {
+                await MaterialDialogService.ShowErrorAsync($"打开目录失败：{ex.Message}", "错误");
             }
         }
     }

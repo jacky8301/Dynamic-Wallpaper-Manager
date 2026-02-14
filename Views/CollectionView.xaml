@@ -47,17 +47,18 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border Padding="12,10" Background="Transparent">
+                            <Border Padding="12,10" Background="Transparent"
+                                    Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
                                 <Border.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem
                                             Header="✏️ 重命名"
-                                            Command="{Binding DataContext.RenameCollectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                            Command="{Binding PlacementTarget.Tag.RenameCollectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                         <Separator />
                                         <MenuItem
                                             Header="🗑️ 删除合集"
                                             Foreground="Red"
-                                            Command="{Binding DataContext.DeleteCollectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                            Command="{Binding PlacementTarget.Tag.DeleteCollectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
                                 <TextBlock
@@ -144,7 +145,37 @@
                             BorderBrush="#E0E0E0"
                             BorderThickness="1"
                             CornerRadius="4"
-                            ClipToBounds="True">
+                            ClipToBounds="True"
+                            Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                            <Border.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem
+                                        Header="👁️ 预览壁纸"
+                                        Command="{Binding PlacementTarget.Tag.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                    <Separator />
+                                    <MenuItem
+                                        Header="🚀 应用壁纸"
+                                        Command="{Binding PlacementTarget.Tag.ApplyWallpaperCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                    <Separator />
+                                    <MenuItem
+                                        Header="{Binding IsFavorite, Converter={StaticResource FavoriteTextConverter}}"
+                                        Command="{Binding PlacementTarget.Tag.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                    <Separator />
+                                    <MenuItem
+                                        Header="📁 转到壁纸目录"
+                                        Command="{Binding PlacementTarget.Tag.GoToWallpaperDirectoryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                    <Separator />
+                                    <MenuItem
+                                        Header="🗑️ 从合集移除"
+                                        Foreground="Red"
+                                        Command="{Binding PlacementTarget.Tag.RemoveFromCollectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                </ContextMenu>
+                            </Border.ContextMenu>
                             <Grid>
                                 <Image
                                     Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}, IsAsync=True}"

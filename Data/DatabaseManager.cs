@@ -398,6 +398,15 @@ namespace WallpaperEngine.Data {
             return items;
         }
 
+        public bool IsInCollection(string collectionId, string folderPath)
+        {
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(1) FROM CollectionItems WHERE CollectionId = @collectionId AND WallpaperFolderPath = @folderPath";
+            command.Parameters.AddWithValue("@collectionId", collectionId);
+            command.Parameters.AddWithValue("@folderPath", folderPath);
+            return Convert.ToInt64(command.ExecuteScalar()) > 0;
+        }
+
         public void AddToCollection(string collectionId, string folderPath)
         {
             using var command = m_connection.CreateCommand();
