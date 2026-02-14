@@ -111,6 +111,17 @@ namespace WallpaperEngine.ViewModels {
                 if (ShowFavoritesOnly && !wallpaper.IsFavorite) {
                     WallpapersView.Refresh();
                 }
+
+                // 同步收藏状态到合集视图中的壁纸实例
+                var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
+                if (collectionVm != null) {
+                    var collectionWallpaper = collectionVm.CollectionWallpapers
+                        .FirstOrDefault(w => w.FolderPath == wallpaper.FolderPath);
+                    if (collectionWallpaper != null) {
+                        collectionWallpaper.IsFavorite = wallpaper.IsFavorite;
+                        collectionWallpaper.FavoritedDate = wallpaper.FavoritedDate;
+                    }
+                }
             }
         }
 
