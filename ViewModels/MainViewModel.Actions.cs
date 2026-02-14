@@ -101,7 +101,7 @@ namespace WallpaperEngine.ViewModels {
                 wallpaper.FavoritedDate = wallpaper.IsFavorite ? DateTime.Now : DateTime.MinValue;
 
                 try {
-                    _dbManager.ToggleFavorite(wallpaper.Id, wallpaper.IsFavorite);
+                    _dbManager.ToggleFavorite(wallpaper.FolderPath, wallpaper.IsFavorite);
                 } catch (Exception ex) {
                     Log.Warning($"更新收藏状态失败: {ex.Message}");
                     wallpaper.IsFavorite = !wallpaper.IsFavorite;

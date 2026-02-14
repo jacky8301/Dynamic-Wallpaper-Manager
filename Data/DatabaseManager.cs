@@ -23,6 +23,29 @@ namespace WallpaperEngine.Data {
 
         private WallpaperItem ReadWallpaperItem(DbDataReader reader)
         {
+            // 判断是否有 Favorites 表的 JOIN 列
+            bool hasFavoriteJoin = false;
+            for (int i = 0; i < reader.FieldCount; i++) {
+                if (reader.GetName(i) == "FavFolderPath") {
+                    hasFavoriteJoin = true;
+                    break;
+                }
+            }
+
+            bool isFavorite;
+            DateTime favoritedDate;
+            if (hasFavoriteJoin) {
+                isFavorite = reader["FavFolderPath"] != DBNull.Value;
+                favoritedDate = reader["FavFavoritedDate"] != DBNull.Value
+                    ? DateTime.Parse(reader["FavFavoritedDate"].ToString())
+                    : DateTime.MinValue;
+            } else {
+                isFavorite = Convert.ToInt32(reader["IsFavorite"]) == 1;
+                favoritedDate = string.IsNullOrEmpty(reader["FavoritedDate"]?.ToString())
+                    ? DateTime.MinValue
+                    : DateTime.Parse(reader["FavoritedDate"].ToString());
+            }
+
             return new WallpaperItem {
                 Id = reader["Id"].ToString(),
                 FolderPath = reader["FolderPath"].ToString(),
@@ -38,10 +61,8 @@ namespace WallpaperEngine.Data {
                 },
                 Category = reader["Category"].ToString(),
                 AddedDate = DateTime.Parse(reader["AddedDate"].ToString()),
-                IsFavorite = Convert.ToInt32(reader["IsFavorite"]) == 1,
-                FavoritedDate = string.IsNullOrEmpty(reader["FavoritedDate"]?.ToString())
-                            ? DateTime.MinValue
-                            : DateTime.Parse(reader["FavoritedDate"].ToString()),
+                IsFavorite = isFavorite,
+                FavoritedDate = favoritedDate,
                 LastUpdated = reader["LastUpdated"]?.ToString(),
                 LastScanned = string.IsNullOrEmpty(reader["LastScanned"]?.ToString())
                         ? DateTime.MinValue
@@ -56,7 +77,11 @@ namespace WallpaperEngine.Data {
         public WallpaperItem GetWallpaperByFolderPath(string folderPath)
         {
             using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT * FROM Wallpapers WHERE FolderPath = @folderPath";
+            command.CommandText = @"
+                SELECT w.*, f.FolderPath AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
+                FROM Wallpapers w
+                LEFT JOIN Favorites f ON w.FolderPath = f.FolderPath
+                WHERE w.FolderPath = @folderPath";
             command.Parameters.AddWithValue("@folderPath", folderPath);
 
             using (var reader = command.ExecuteReader()) {
@@ -68,21 +93,20 @@ namespace WallpaperEngine.Data {
         }
 
         // 专门用于切换收藏状态的方法
-        public void ToggleFavorite(string wallpaperId, bool isFavorite)
+        public void ToggleFavorite(string folderPath, bool isFavorite)
         {
             using var command = m_connection.CreateCommand();
-            command.CommandText = @"
-            UPDATE Wallpapers
-            SET IsFavorite = @isFavorite,
-                FavoritedDate = @favoritedDate,
-                LastUpdated = @lastUpdated
-            WHERE Id = @id";
-
-            command.Parameters.AddWithValue("@id", wallpaperId);
-            command.Parameters.AddWithValue("@isFavorite", isFavorite ? 1 : 0);
-            command.Parameters.AddWithValue("@favoritedDate", isFavorite ? DateTime.Now.ToString("O") : (object)DBNull.Value);
-            command.Parameters.AddWithValue("@lastUpdated", DateTime.Now.ToString("O"));
-
+            if (isFavorite) {
+                command.CommandText = @"
+                INSERT OR IGNORE INTO Favorites (FolderPath, FavoritedDate)
+                VALUES (@folderPath, @favoritedDate)";
+                command.Parameters.AddWithValue("@folderPath", folderPath);
+                command.Parameters.AddWithValue("@favoritedDate", DateTime.Now.ToString("O"));
+            } else {
+                command.CommandText = @"
+                DELETE FROM Favorites WHERE FolderPath = @folderPath";
+                command.Parameters.AddWithValue("@folderPath", folderPath);
+            }
             command.ExecuteNonQuery();
         }
 
@@ -146,6 +170,22 @@ namespace WallpaperEngine.Data {
             CREATE INDEX IF NOT EXISTS IX_ScanHistory_Time ON ScanHistory(LastScanTime DESC);
             CREATE INDEX IF NOT EXISTS IX_Wallpapers_LastModified ON Wallpapers(FolderLastModified DESC)";
             command.ExecuteNonQuery();
+
+            // 创建收藏表
+            command.CommandText = @"
+            CREATE TABLE IF NOT EXISTS Favorites (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                FolderPath TEXT NOT NULL UNIQUE,
+                FavoritedDate TEXT NOT NULL
+            )";
+            command.ExecuteNonQuery();
+
+            // 迁移旧数据：将 Wallpapers 表中 IsFavorite=1 的记录迁移到 Favorites 表
+            command.CommandText = @"
+            INSERT OR IGNORE INTO Favorites (FolderPath, FavoritedDate)
+            SELECT FolderPath, COALESCE(FavoritedDate, datetime('now'))
+            FROM Wallpapers WHERE IsFavorite = 1";
+            command.ExecuteNonQuery();
         }
         // 插入或更新壁纸记录
         public void SaveWallpaper(WallpaperItem wallpaper)
@@ -208,21 +248,23 @@ namespace WallpaperEngine.Data {
 
             string whereClause = "WHERE 1=1";
             if (!string.IsNullOrEmpty(searchTerm)) {
-                whereClause += " AND (Title LIKE @search OR Description LIKE @search OR Tags LIKE @search)";
+                whereClause += " AND (w.Title LIKE @search OR w.Description LIKE @search OR w.Tags LIKE @search)";
                 command.Parameters.AddWithValue("@search", $"%{searchTerm}%");
             }
             if (!string.IsNullOrEmpty(category)) {
-                whereClause += " AND Category = @category";
+                whereClause += " AND w.Category = @category";
                 command.Parameters.AddWithValue("@category", category);
             }
             if (favoritesOnly) {
-                whereClause += " AND IsFavorite = 1";
+                whereClause += " AND f.FolderPath IS NOT NULL";
             }
 
             command.CommandText = $@"
-                SELECT * FROM Wallpapers 
+                SELECT w.*, f.FolderPath AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
+                FROM Wallpapers w
+                LEFT JOIN Favorites f ON w.FolderPath = f.FolderPath
                 {whereClause}
-                ORDER BY IsFavorite DESC, AddedDate DESC
+                ORDER BY (CASE WHEN f.FolderPath IS NOT NULL THEN 1 ELSE 0 END) DESC, w.AddedDate DESC
                 LIMIT 1000";
 
             using var reader = command.ExecuteReader();
@@ -236,16 +278,22 @@ namespace WallpaperEngine.Data {
         public void DeleteWallpaper(string wallpaperId)
         {
             using var command = m_connection.CreateCommand();
-            command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
+            command.CommandText = "DELETE FROM Favorites WHERE FolderPath IN (SELECT FolderPath FROM Wallpapers WHERE Id = $id)";
             command.Parameters.AddWithValue("$id", wallpaperId);
+            command.ExecuteNonQuery();
+
+            command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
             command.ExecuteNonQuery();
         }
 
         public void DeleteWallpaperByPath(string folderPath)
         {
             using var command = m_connection.CreateCommand();
-            command.CommandText = "DELETE FROM Wallpapers WHERE FolderPath = @path";
+            command.CommandText = "DELETE FROM Favorites WHERE FolderPath = @path";
             command.Parameters.AddWithValue("@path", folderPath);
+            command.ExecuteNonQuery();
+
+            command.CommandText = "DELETE FROM Wallpapers WHERE FolderPath = @path";
             command.ExecuteNonQuery();
         }
 
