@@ -39,6 +39,9 @@ namespace WallpaperEngine.ViewModels {
                 if (SelectedType != null && CurrentWallpaper.Project.Type != SelectedType) {
                     CurrentWallpaper.Project.Type = SelectedType.ToLower();
                 }
+                if (SelectedCategory != null && CurrentWallpaper.Category != SelectedCategory) {
+                    CurrentWallpaper.Category = SelectedCategory;
+                }
 
                 if (Description != null && CurrentWallpaper.Project.Description != Description) {
                     CurrentWallpaper.Project.Description = Description;
@@ -74,6 +77,10 @@ namespace WallpaperEngine.ViewModels {
             // 恢复原始数据
             if (_originalItem != null) {
                 RestoreFromBackup(CurrentWallpaper, _originalItem);
+                SelectedType = CurrentWallpaper.Project.Type;
+                SelectedCategory = CurrentWallpaper.Category;
+                Description = CurrentWallpaper.Project.Description;
+                Title = CurrentWallpaper.Project.Title;
             }
 
             IsEditMode = false;

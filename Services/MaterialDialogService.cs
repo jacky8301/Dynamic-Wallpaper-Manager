@@ -15,6 +15,16 @@ namespace WallpaperEngine.Services {
             var result = await DialogHost.Show(view, parameters.DialogHost);
             return result as MaterialDialogResult ?? new MaterialDialogResult { Confirmed = false };
         }
+
+        // 输入对话框
+        public static async Task<MaterialDialogResult> ShowInputAsync(string title, string message, string placeholder = "", string dialogHost = "MainRootDialog")
+        {
+            var view = new InputDialog();
+            view.DataContext = new InputDialogViewModel(title, message, placeholder, dialogHost);
+
+            var result = await DialogHost.Show(view, dialogHost);
+            return result as MaterialDialogResult ?? new MaterialDialogResult { Confirmed = false };
+        }
         // 快速调用方法
         public static async Task<bool> ShowConfirmationAsync(string message, string title = "确认")
         {

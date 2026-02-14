@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
+using System.Collections.ObjectModel;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
@@ -27,6 +28,8 @@ namespace WallpaperEngine.ViewModels {
         private string _previewFileName;
         [ObservableProperty]
         private string _contentFileName;
+        [ObservableProperty]
+        private string _selectedCategory;
 
         // 类型列表数据源
         public List<string> WallpaperTypes { get; } = new List<string>
@@ -37,11 +40,21 @@ namespace WallpaperEngine.ViewModels {
             "application"
         };
 
+        // 分类列表数据源
+        public ObservableCollection<string> CategoryList { get; } = new ObservableCollection<string>
+        {
+            "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
+        };
+
         public IRelayCommand StartEditCommand { get; }
         public IAsyncRelayCommand SaveEditCommand { get; }
         public IRelayCommand CancelEditCommand { get; }
         public IAsyncRelayCommand<string?> SetPreviewFileNameCommand { get; }
         public IAsyncRelayCommand<string?> SetContentFileNameCommand { get; }
+        public IAsyncRelayCommand AddCategoryCommand { get; }
+
+        // 新增分类事件，通知 MainViewModel 同步
+        public event EventHandler<string>? CategoryAdded;
 
         public WallpaperDetailViewModel(IDataContextService dataContextService)
         {
@@ -56,6 +69,10 @@ namespace WallpaperEngine.ViewModels {
             CancelEditCommand = new RelayCommand(CancelEdit);
             SetPreviewFileNameCommand = new AsyncRelayCommand<string?>(SetPreviewFileName, CanSetPreviewFileName);
             SetContentFileNameCommand = new AsyncRelayCommand<string?>(SetContentFileName, CanSetContentFileName);
+            AddCategoryCommand = new AsyncRelayCommand(AddCategory);
+
+            // 加载自定义分类
+            LoadCustomCategories();
         }
 
         private void OnCurrentWallpaperChanged(object? sender, WallpaperItem? newWallpaper)
@@ -64,6 +81,7 @@ namespace WallpaperEngine.ViewModels {
             CurrentWallpaper = newWallpaper;
             _ = LoadFileListSafeAsync(newWallpaper);
             SelectedType = CurrentWallpaper?.Project?.Type;
+            SelectedCategory = CurrentWallpaper?.Category;
             Description = CurrentWallpaper?.Project?.Description;
             Title = CurrentWallpaper?.Project?.Title;
             PreviewFileName = CurrentWallpaper?.Project?.Preview;
@@ -93,7 +111,8 @@ namespace WallpaperEngine.ViewModels {
                     ContentRating = source.Project.ContentRating,
                     Visibility = source.Project.Visibility
                 },
-                IsFavorite = source.IsFavorite
+                IsFavorite = source.IsFavorite,
+                Category = source.Category
             };
         }
 
@@ -109,6 +128,37 @@ namespace WallpaperEngine.ViewModels {
             target.Project.ContentRating = backup.Project.ContentRating;
             target.Project.Visibility = backup.Project.Visibility;
             target.IsFavorite = backup.IsFavorite;
+            target.Category = backup.Category;
+        }
+
+        private void LoadCustomCategories()
+        {
+            try {
+                var customCategories = _dbManager.GetCustomCategories();
+                foreach (var category in customCategories) {
+                    if (!CategoryList.Contains(category)) {
+                        CategoryList.Add(category);
+                    }
+                }
+            } catch (Exception ex) {
+                Log.Warning($"加载自定义分类失败: {ex.Message}");
+            }
+        }
+
+        private async Task AddCategory()
+        {
+            var result = await MaterialDialogService.ShowInputAsync("新增分类", "请输入分类名称:", "分类名称");
+            if (!result.Confirmed || result.Data is not string name || string.IsNullOrWhiteSpace(name)) return;
+
+            if (CategoryList.Contains(name)) {
+                await MaterialDialogService.ShowErrorAsync("该分类已存在", "提示");
+                return;
+            }
+
+            _dbManager.AddCategory(name);
+            CategoryList.Add(name);
+            SelectedCategory = name;
+            CategoryAdded?.Invoke(this, name);
         }
 
         private async Task LoadFileListSafeAsync(WallpaperItem? wallpaper)

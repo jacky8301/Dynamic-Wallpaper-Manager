@@ -186,6 +186,13 @@ namespace WallpaperEngine.Data {
             SELECT FolderPath, COALESCE(FavoritedDate, datetime('now'))
             FROM Wallpapers WHERE IsFavorite = 1";
             command.ExecuteNonQuery();
+
+            // 创建自定义分类表
+            command.CommandText = @"
+            CREATE TABLE IF NOT EXISTS Categories (
+                Name TEXT PRIMARY KEY
+            )";
+            command.ExecuteNonQuery();
         }
         // 插入或更新壁纸记录
         public void SaveWallpaper(WallpaperItem wallpaper)
@@ -399,6 +406,7 @@ namespace WallpaperEngine.Data {
                 Tags = @tags,
                 ContentRating = @contentRating,
                 Visibility = @visibility,
+                Category = @category,
                 LastUpdated = @lastUpdated
             WHERE Id = @id";
 
@@ -411,6 +419,7 @@ namespace WallpaperEngine.Data {
             command.Parameters.AddWithValue("@tags", string.Join(",", wallpaper.Project.Tags ?? new List<string>()));
             command.Parameters.AddWithValue("@contentRating", wallpaper.Project.ContentRating);
             command.Parameters.AddWithValue("@visibility", wallpaper.Project.Visibility);
+            command.Parameters.AddWithValue("@category", wallpaper.Category ?? "未分类");
             command.Parameters.AddWithValue("@lastUpdated", DateTime.Now.ToString("O"));
 
             command.ExecuteNonQuery();
@@ -428,6 +437,28 @@ namespace WallpaperEngine.Data {
                 return (reader.GetInt32(0), reader.GetInt64(1));
             }
             return (0, 0);
+        }
+
+        // 获取所有自定义分类
+        public List<string> GetCustomCategories()
+        {
+            var categories = new List<string>();
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "SELECT Name FROM Categories ORDER BY Name";
+            using var reader = command.ExecuteReader();
+            while (reader.Read()) {
+                categories.Add(reader.GetString(0));
+            }
+            return categories;
+        }
+
+        // 添加自定义分类
+        public void AddCategory(string name)
+        {
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "INSERT OR IGNORE INTO Categories (Name) VALUES (@name)";
+            command.Parameters.AddWithValue("@name", name);
+            command.ExecuteNonQuery();
         }
     }
 }

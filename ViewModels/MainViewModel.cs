@@ -79,7 +79,7 @@ namespace WallpaperEngine.ViewModels {
 
         public ICollectionView WallpapersView { get; }
 
-        public List<string> Categories { get; } = new List<string>
+        public ObservableCollection<string> Categories { get; } = new ObservableCollection<string>
         {
             "所有分类", "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
         };
@@ -105,6 +105,36 @@ namespace WallpaperEngine.ViewModels {
             _previewService = new PreviewService(_settingsService);
             _dataContextService = dataContextService;
             _wallpaperFileService = wallpaperFileService;
+
+            // 加载自定义分类
+            LoadCustomCategories();
+
+            // 订阅详情页新增分类事件
+            var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
+            if (detailVm != null) {
+                detailVm.CategoryAdded += OnCategoryAdded;
+            }
+        }
+
+        private void LoadCustomCategories()
+        {
+            try {
+                var customCategories = _dbManager.GetCustomCategories();
+                foreach (var category in customCategories) {
+                    if (!Categories.Contains(category)) {
+                        Categories.Add(category);
+                    }
+                }
+            } catch (Exception ex) {
+                Log.Warning($"加载自定义分类失败: {ex.Message}");
+            }
+        }
+
+        public void OnCategoryAdded(object? sender, string category)
+        {
+            if (!Categories.Contains(category)) {
+                Categories.Add(category);
+            }
         }
 
         private void OnWallpapersCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
