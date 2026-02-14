@@ -120,24 +120,13 @@ namespace WallpaperEngine.ViewModels {
         {
             try {
                 var wallpapers = await Task.Run(() => LoadWallpapers());
-                await Task.Run(() => {
-                    foreach (var wallpaper in wallpapers) {
-                        if (!ImageCache._cache.ContainsKey(wallpaper.PreviewImagePath)) {
-                            var bitmap = ImageLoader.LoadImage(wallpaper.PreviewImagePath);
-                            ImageCache._cache[wallpaper.PreviewImagePath] = bitmap;
-                        }
-                    }
-                    OnEventLoadWallpapersCompleted();
-                });
-
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
-                    Log.Debug("Updating Wallpapers collection");
                     Wallpapers.Clear();
                     foreach (var wallpaper in wallpapers) {
                         Wallpapers.Add(wallpaper);
                     }
-                    Log.Debug("Wallpapers collection updated");
                 });
+                OnEventLoadWallpapersCompleted();
             } catch (Exception ex) {
                 Log.Fatal($"加载壁纸列表失败: {ex.Message}");
             }
