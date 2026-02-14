@@ -41,11 +41,15 @@ namespace WallpaperEngine.ViewModels {
                 }
                 if (SelectedCategory != null && CurrentWallpaper.Category != SelectedCategory) {
                     CurrentWallpaper.Category = SelectedCategory;
+                    CurrentWallpaper.Project.Category = SelectedCategory;
                 }
 
                 if (Description != null && CurrentWallpaper.Project.Description != Description) {
                     CurrentWallpaper.Project.Description = Description;
                 }
+
+                // 同步标签
+                CurrentWallpaper.Project.Tags = new List<string>(Tags);
 
                 // 保存到project.json
                 await SaveToProjectJsonAsync();
@@ -81,6 +85,7 @@ namespace WallpaperEngine.ViewModels {
                 SelectedCategory = CurrentWallpaper.Category;
                 Description = CurrentWallpaper.Project.Description;
                 Title = CurrentWallpaper.Project.Title;
+                SyncTagsFromProject();
             }
 
             IsEditMode = false;

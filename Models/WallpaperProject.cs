@@ -27,5 +27,8 @@ namespace WallpaperEngine.Models {
 
         [JsonProperty("contentrating")]
         public string ContentRating { get; set; } = "Everyone";
+
+        [JsonProperty("category")]
+        public string Category { get; set; } = "未分类";
     }
 }

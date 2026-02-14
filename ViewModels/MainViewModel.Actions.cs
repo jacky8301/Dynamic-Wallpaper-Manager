@@ -108,7 +108,7 @@ namespace WallpaperEngine.ViewModels {
                 }
 
                 if (ShowFavoritesOnly && !wallpaper.IsFavorite) {
-                    // 刷新视图
+                    WallpapersView.Refresh();
                 }
             }
         }

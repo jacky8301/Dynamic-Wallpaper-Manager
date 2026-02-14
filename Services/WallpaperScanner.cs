@@ -146,7 +146,12 @@ namespace WallpaperEngine.Services {
                 }
 
                 wallpaperItem.Project = project;
-                wallpaperItem.Category = GetCategory(project);
+                // 优先使用 project.json 中的分类，否则根据标签推断
+                if (string.IsNullOrEmpty(project.Category) || project.Category == "未分类") {
+                    var detectedCategory = GetCategory(project);
+                    project.Category = detectedCategory;
+                }
+                wallpaperItem.Category = project.Category;
                 _dbManager.SaveWallpaper(wallpaperItem);
                 return isNew ? ScanResultType.New : ScanResultType.Updated;
             } catch (Exception ex) {

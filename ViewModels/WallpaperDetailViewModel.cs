@@ -31,6 +31,9 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private string _selectedCategory;
 
+        // 标签编辑集合
+        public ObservableCollection<string> Tags { get; } = new ObservableCollection<string>();
+
         // 类型列表数据源
         public List<string> WallpaperTypes { get; } = new List<string>
         {
@@ -52,6 +55,8 @@ namespace WallpaperEngine.ViewModels {
         public IAsyncRelayCommand<string?> SetPreviewFileNameCommand { get; }
         public IAsyncRelayCommand<string?> SetContentFileNameCommand { get; }
         public IAsyncRelayCommand AddCategoryCommand { get; }
+        public IAsyncRelayCommand AddTagCommand { get; }
+        public IRelayCommand<string> RemoveTagCommand { get; }
 
         // 新增分类事件，通知 MainViewModel 同步
         public event EventHandler<string>? CategoryAdded;
@@ -70,6 +75,8 @@ namespace WallpaperEngine.ViewModels {
             SetPreviewFileNameCommand = new AsyncRelayCommand<string?>(SetPreviewFileName, CanSetPreviewFileName);
             SetContentFileNameCommand = new AsyncRelayCommand<string?>(SetContentFileName, CanSetContentFileName);
             AddCategoryCommand = new AsyncRelayCommand(AddCategory);
+            AddTagCommand = new AsyncRelayCommand(AddTag);
+            RemoveTagCommand = new RelayCommand<string>(RemoveTag);
 
             // 加载自定义分类
             LoadCustomCategories();
@@ -86,6 +93,7 @@ namespace WallpaperEngine.ViewModels {
             Title = CurrentWallpaper?.Project?.Title;
             PreviewFileName = CurrentWallpaper?.Project?.Preview;
             ContentFileName = CurrentWallpaper?.Project?.File;
+            SyncTagsFromProject();
         }
 
         public void Initialize(WallpaperItem? wallpaper = null)
@@ -109,7 +117,8 @@ namespace WallpaperEngine.ViewModels {
                     Type = source.Project.Type.ToLower(),
                     Tags = new List<string>(source.Project.Tags ?? new List<string>()),
                     ContentRating = source.Project.ContentRating,
-                    Visibility = source.Project.Visibility
+                    Visibility = source.Project.Visibility,
+                    Category = source.Project.Category
                 },
                 IsFavorite = source.IsFavorite,
                 Category = source.Category
@@ -127,8 +136,39 @@ namespace WallpaperEngine.ViewModels {
             target.Project.Tags = new List<string>(backup.Project.Tags ?? new List<string>());
             target.Project.ContentRating = backup.Project.ContentRating;
             target.Project.Visibility = backup.Project.Visibility;
+            target.Project.Category = backup.Project.Category;
             target.IsFavorite = backup.IsFavorite;
             target.Category = backup.Category;
+        }
+
+        private void SyncTagsFromProject()
+        {
+            Tags.Clear();
+            var projectTags = CurrentWallpaper?.Project?.Tags;
+            if (projectTags == null) return;
+            foreach (var tag in projectTags) {
+                Tags.Add(tag);
+            }
+        }
+
+        private async Task AddTag()
+        {
+            var result = await MaterialDialogService.ShowInputAsync("新增标签", "请输入标签名称:", "标签名称");
+            if (!result.Confirmed || result.Data is not string name || string.IsNullOrWhiteSpace(name)) return;
+
+            if (Tags.Contains(name)) {
+                await MaterialDialogService.ShowErrorAsync("该标签已存在", "提示");
+                return;
+            }
+
+            Tags.Add(name);
+        }
+
+        private void RemoveTag(string? tag)
+        {
+            if (tag != null) {
+                Tags.Remove(tag);
+            }
         }
 
         private void LoadCustomCategories()
@@ -157,7 +197,6 @@ namespace WallpaperEngine.ViewModels {
 
             _dbManager.AddCategory(name);
             CategoryList.Add(name);
-            SelectedCategory = name;
             CategoryAdded?.Invoke(this, name);
         }
 

@@ -154,13 +154,27 @@
                     <!--  标签卡片  -->
                     <Border Style="{StaticResource MaterialCard}">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource SectionHeader}" Text="标签" />
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Style="{StaticResource SectionHeader}" Text="标签" />
+                                <Button
+                                    Width="28"
+                                    Height="28"
+                                    Margin="8,0,0,0"
+                                    Padding="0"
+                                    VerticalAlignment="Center"
+                                    Command="{Binding AddTagCommand}"
+                                    Content="+"
+                                    FontSize="16"
+                                    IsEnabled="{Binding IsEditMode}"
+                                    Style="{StaticResource MaterialDesignIconButton}"
+                                    ToolTip="新增标签" />
+                            </StackPanel>
 
                             <Border
                                 Padding="12"
                                 Background="{StaticResource LightBackground}"
                                 CornerRadius="4">
-                                <ItemsControl ItemsSource="{Binding CurrentWallpaper.Project.Tags}">
+                                <ItemsControl ItemsSource="{Binding Tags}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <WrapPanel Orientation="Horizontal" />
@@ -173,11 +187,33 @@
                                                 Padding="8,4"
                                                 Background="{StaticResource SecondaryBrush}"
                                                 CornerRadius="12">
-                                                <TextBlock
-                                                    FontSize="11"
-                                                    FontWeight="SemiBold"
-                                                    Foreground="White"
-                                                    Text="{Binding}" />
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock
+                                                        VerticalAlignment="Center"
+                                                        FontSize="11"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="White"
+                                                        Text="{Binding}" />
+                                                    <Button
+                                                        Width="16"
+                                                        Height="16"
+                                                        Margin="4,0,0,0"
+                                                        Padding="0"
+                                                        VerticalAlignment="Center"
+                                                        Command="{Binding DataContext.RemoveTagCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Content="x"
+                                                        FontSize="10"
+                                                        Foreground="White"
+                                                        Visibility="{Binding DataContext.IsEditMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <Button.Style>
+                                                            <Style BasedOn="{StaticResource MaterialDesignIconButton}" TargetType="Button">
+                                                                <Setter Property="Background" Value="Transparent" />
+                                                                <Setter Property="BorderThickness" Value="0" />
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+                                                </StackPanel>
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
