@@ -182,7 +182,7 @@ namespace WallpaperEngine.ViewModels {
                     });
                 }
             } catch (Exception ex) {
-                await MaterialDialogService.ShowErrorAsync($"打开目录失败：{ex.Message}","错误");
+                await MaterialDialogService.ShowErrorAsync($"打开目录失败：{ex.Message}", "错误");
             }
         }
 
@@ -233,7 +233,131 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
-        /// 将壁纸添加到合集命令，弹出合集选择对话框
+        /// 将壁纸添加到指定合集命令
+        /// </summary>
+        /// <param name="parameter">包含壁纸对象和合集ID的参数</param>
+        [RelayCommand]
+        private async Task AddToSpecificCollection(object parameter)
+        {
+            Log.Information($"=== AddToSpecificCollection called ===");
+            Log.Information($"  parameter type: {parameter?.GetType().Name ?? "null"}");
+
+            // 检查是否为DependencyProperty.UnsetValue
+            if (parameter == System.Windows.DependencyProperty.UnsetValue)
+            {
+                Log.Error($"AddToSpecificCollection: parameter is DependencyProperty.UnsetValue");
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = "参数未设置，请检查绑定",
+                    Title = "错误",
+                    ShowCancelButton = false,
+                    DialogType = DialogType.Error
+                });
+                return;
+            }
+
+            if (parameter is object[] argsArray)
+            {
+                Log.Information($"  parameter is object[] with length {argsArray.Length}");
+                for (int i = 0; i < argsArray.Length; i++)
+                {
+                    var arg = argsArray[i];
+                    string typeName = "null";
+                    string stringValue = "null";
+
+                    if (arg != null)
+                    {
+                        typeName = arg.GetType().Name;
+                        if (arg == System.Windows.DependencyProperty.UnsetValue)
+                        {
+                            typeName = "DependencyProperty.UnsetValue";
+                            stringValue = "UnsetValue";
+                        }
+                        else
+                        {
+                            stringValue = arg.ToString() ?? "null";
+                        }
+                    }
+                    Log.Information($"    args[{i}] type: {typeName}, value: {stringValue}");
+                }
+            }
+
+            if (parameter is not object[] args || args.Length != 2)
+            {
+                Log.Warning($"AddToSpecificCollection: Invalid parameter format, parameter is {parameter?.GetType().Name}");
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = "参数格式错误",
+                    Title = "错误",
+                    ShowCancelButton = false,
+                    DialogType = DialogType.Error
+                });
+                return;
+            }
+            if (args[0] is not WallpaperItem wallpaper || args[1] is not string collectionId)
+            {
+                Log.Warning($"AddToSpecificCollection: args[0] is WallpaperItem: {args[0] is WallpaperItem}, args[1] is string: {args[1] is string}");
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = "参数类型错误",
+                    Title = "错误",
+                    ShowCancelButton = false,
+                    DialogType = DialogType.Error
+                });
+                return;
+            }
+            Log.Debug($"AddToSpecificCollection: Adding wallpaper {wallpaper.Project?.Title} to collection {collectionId}");
+
+            try {
+                var collection = Collections.FirstOrDefault(c => c.Id == collectionId);
+                if (collection == null)
+                {
+                    Log.Warning($"AddToSpecificCollection: Collection not found with ID {collectionId}");
+                    await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                        Message = "合集不存在",
+                        Title = "错误",
+                        ShowCancelButton = false,
+                        DialogType = DialogType.Error
+                    });
+                    return;
+                }
+
+                if (_dbManager.IsInCollection(collectionId, wallpaper.FolderPath)) {
+                    await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                        Message = $"该壁纸已存在于合集「{collection.Name}」中。",
+                        Title = "提示",
+                        ShowCancelButton = false,
+                        DialogType = DialogType.Information
+                    });
+                    return;
+                }
+
+                _dbManager.AddToCollection(collectionId, wallpaper.FolderPath);
+                Log.Information($"成功将壁纸{wallpaper.Project?.Title} 添加到合集{collection.Name}");
+
+                // 显示成功提示
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = $"已将壁纸「{wallpaper.Project?.Title}」添加到合集「{collection.Name}」。",
+                    Title = "成功",
+                    ShowCancelButton = false,
+                    DialogType = DialogType.Information
+                });
+
+                // 刷新合集页面（如果当前正在查看该合集）
+                var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
+                if (collectionVm?.SelectedCollection?.Id == collectionId) {
+                    collectionVm.LoadCollectionWallpapers();
+                }
+            } catch (Exception ex) {
+                Log.Warning($"添加壁纸到合集失败: {ex.Message}");
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = $"添加壁纸到合集失败: {ex.Message}",
+                    Title = "错误",
+                    ShowCancelButton = false,
+                    DialogType = DialogType.Error
+                });
+            }
+        }
+
+        /// <summary>
+        /// 将壁纸添加到合集命令，弹出合集选择对话框（保留原功能，以备后用）
         /// </summary>
         /// <param name="parameter">壁纸对象</param>
         [RelayCommand]

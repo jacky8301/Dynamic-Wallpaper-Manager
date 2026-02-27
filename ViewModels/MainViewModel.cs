@@ -110,6 +110,9 @@ namespace WallpaperEngine.ViewModels {
             "所有分类", "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
         };
 
+        /// <summary>壁纸合集列表，用于右键菜单快速添加</summary>
+        public ObservableCollection<WallpaperCollection> Collections { get; } = new ObservableCollection<WallpaperCollection>();
+
         /// <summary>
         /// 初始化主视图模型，注入服务并加载初始数据
         /// </summary>
@@ -140,6 +143,9 @@ namespace WallpaperEngine.ViewModels {
             // 加载自定义分类
             LoadCustomCategories();
 
+            // 加载合集列表
+            LoadCollections();
+
             // 订阅详情页新增分类事件
             var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
             if (detailVm != null) {
@@ -162,6 +168,30 @@ namespace WallpaperEngine.ViewModels {
             } catch (Exception ex) {
                 Log.Warning($"加载自定义分类失败: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 从数据库加载合集列表
+        /// </summary>
+        private void LoadCollections()
+        {
+            try {
+                var collections = _dbManager.GetAllCollections();
+                Collections.Clear();
+                foreach (var collection in collections) {
+                    Collections.Add(collection);
+                }
+            } catch (Exception ex) {
+                Log.Warning($"加载合集列表失败: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 刷新合集列表，在合集视图添加新合集时调用
+        /// </summary>
+        public void RefreshCollections()
+        {
+            LoadCollections();
         }
 
         /// <summary>

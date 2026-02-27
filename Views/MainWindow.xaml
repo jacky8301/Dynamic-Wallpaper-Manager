@@ -223,6 +223,7 @@
                                             BorderBrush="#E0E0E0"
                                             BorderThickness="1"
                                             Cursor="Hand"
+                                            Tag="{Binding}"
                                             Style="{StaticResource SelectableBorderStyle}">
                                             <!--  右键菜单定义  -->
                                             <Border.ContextMenu>
@@ -247,10 +248,36 @@
                                                         Command="{Binding DataContext.GoToWallpaperDirectoryCommand, Source={x:Reference mainWindow}}"
                                                         CommandParameter="{Binding}" />
                                                     <Separator />
-                                                    <MenuItem
-                                                        Header="📂 添加到合集"
-                                                        Command="{Binding DataContext.AddToCollectionCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}" />
+                                                    <MenuItem Header="📂 添加到合集">
+                                                        <MenuItem.ItemsSource>
+                                                            <Binding Path="DataContext.Collections" Source="{x:Reference mainWindow}" />
+                                                        </MenuItem.ItemsSource>
+                                                        <MenuItem.ItemContainerStyle>
+                                                            <Style TargetType="MenuItem">
+                                                                <Setter Property="Header" Value="{Binding Name}" />
+                                                                <Setter Property="Command" Value="{Binding DataContext.AddToSpecificCollectionCommand, Source={x:Reference mainWindow}}" />
+                                                                <Setter Property="CommandParameter">
+                                                                    <Setter.Value>
+                                                                        <MultiBinding Converter="{StaticResource AddToCollectionConverter}">
+                                                                            <Binding Path="PlacementTarget.Tag" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                                                            <Binding Path="Id" />
+                                                                        </MultiBinding>
+                                                                    </Setter.Value>
+                                                                </Setter>
+                                                            </Style>
+                                                        </MenuItem.ItemContainerStyle>
+                                                        <MenuItem.Style>
+                                                            <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                                                <Setter Property="IsEnabled" Value="True" />
+                                                                <Setter Property="Header" Value="{Binding DataContext.Collections.Count, Source={x:Reference mainWindow}, Converter={StaticResource CollectionCountConverter}}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding DataContext.Collections.Count, Source={x:Reference mainWindow}}" Value="0">
+                                                                        <Setter Property="IsEnabled" Value="False" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </MenuItem.Style>
+                                                    </MenuItem>
                                                     <Separator />
                                                     <MenuItem
                                                         Header="🗑️ 删除壁纸"

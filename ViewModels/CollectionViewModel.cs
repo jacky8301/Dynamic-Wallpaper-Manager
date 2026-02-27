@@ -93,6 +93,9 @@ namespace WallpaperEngine.ViewModels {
                     var collection = _dbManager.AddCollection(name);
                     Collections.Insert(0, collection);
                     SelectedCollection = collection;
+                    // 同步刷新MainViewModel的合集列表
+                    var mainVm = Ioc.Default.GetService<MainViewModel>();
+                    mainVm?.RefreshCollections();
                 } catch (Exception ex) {
                     Log.Error($"创建合集失败: {ex.Message}");
                 }
@@ -112,6 +115,9 @@ namespace WallpaperEngine.ViewModels {
                 try {
                     _dbManager.RenameCollection(SelectedCollection.Id, newName);
                     SelectedCollection.Name = newName;
+                    // 同步刷新MainViewModel的合集列表
+                    var mainVm = Ioc.Default.GetService<MainViewModel>();
+                    mainVm?.RefreshCollections();
                 } catch (Exception ex) {
                     Log.Error($"重命名合集失败: {ex.Message}");
                 }
@@ -135,6 +141,9 @@ namespace WallpaperEngine.ViewModels {
                     _dbManager.DeleteCollection(SelectedCollection.Id);
                     Collections.Remove(SelectedCollection);
                     SelectedCollection = Collections.FirstOrDefault();
+                    // 同步刷新MainViewModel的合集列表
+                    var mainVm = Ioc.Default.GetService<MainViewModel>();
+                    mainVm?.RefreshCollections();
                 } catch (Exception ex) {
                     Log.Error($"删除合集失败: {ex.Message}");
                 }
