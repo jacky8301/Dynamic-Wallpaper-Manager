@@ -126,6 +126,21 @@ namespace WallpaperEngine.Views {
         {
             if (e.ChangedButton != MouseButton.Left) return;
 
+            // 检查是否点击了按钮（如收藏按钮），如果是则跳过处理
+            DependencyObject originalSource = e.OriginalSource as DependencyObject;
+            DependencyObject current = originalSource;
+            bool isButtonClick = false;
+            while (current != null)
+            {
+                if (current is System.Windows.Controls.Button)
+                {
+                    isButtonClick = true;
+                    break;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            if (isButtonClick) return;
+
             // 找到被点击的Border（壁纸项）
             DependencyObject source = e.OriginalSource as DependencyObject;
             while (source != null && !(source is Border))
@@ -147,6 +162,21 @@ namespace WallpaperEngine.Views {
         private void ListBox_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton != MouseButton.Right) return;
+
+            // 检查是否点击了按钮（如收藏按钮），如果是则跳过处理
+            DependencyObject originalSource = e.OriginalSource as DependencyObject;
+            DependencyObject current = originalSource;
+            bool isButtonClick = false;
+            while (current != null)
+            {
+                if (current is System.Windows.Controls.Button)
+                {
+                    isButtonClick = true;
+                    break;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            if (isButtonClick) return;
 
             // 找到被点击的Border（壁纸项）
             DependencyObject source = e.OriginalSource as DependencyObject;
