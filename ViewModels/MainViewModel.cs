@@ -38,6 +38,13 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private WallpaperItem? _selectedWallpaper;
 
+        /// <summary>多选时选中的壁纸列表</summary>
+        [ObservableProperty]
+        private ObservableCollection<WallpaperItem> _selectedWallpapers = new();
+
+        /// <summary>最后一次选中的壁纸（用于Shift多选范围）</summary>
+        private WallpaperItem? _lastSelectedItem;
+
         /// <summary>搜索文本</summary>
         [ObservableProperty]
         private string _searchText = string.Empty;
@@ -340,6 +347,12 @@ namespace WallpaperEngine.ViewModels {
             if (e.PropertyName == nameof(Wallpapers)) {
                 SelectedWallpaper = null;
             }
+        }
+
+        /// <summary>选中壁纸变更时同步到数据上下文服务</summary>
+        partial void OnSelectedWallpaperChanged(WallpaperItem? value)
+        {
+            _dataContextService.CurrentWallpaper = value;
         }
     }
 }

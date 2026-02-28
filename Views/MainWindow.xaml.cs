@@ -1,9 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.DependencyInjection;
 using Serilog;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using WallpaperEngine.ViewModels;
+using WallpaperEngine.Models;
 
 namespace WallpaperEngine.Views {
     /// <summary>
@@ -20,6 +23,14 @@ namespace WallpaperEngine.Views {
                 // 在壁纸加载完成后隐藏加载层
                 Dispatcher.Invoke(() => HideLoadingOverlay());
             };
+
+            // 手动添加ListBox事件处理器以避免XAML解析错误
+            if (WallpaperListBox != null)
+            {
+                WallpaperListBox.PreviewMouseDown += ListBox_PreviewMouseDown;
+                WallpaperListBox.PreviewMouseRightButtonDown += ListBox_PreviewMouseRightButtonDown;
+                WallpaperListBox.SelectionChanged += WallpaperListBox_SelectionChanged;
+            }
         }
         private MainViewModel ViewModel;
         // 允许通过拖动标题栏移动窗口
@@ -108,6 +119,69 @@ namespace WallpaperEngine.Views {
             TrayIcon.Dispose();
             // 关闭整个应用程序
             System.Windows.Application.Current.Shutdown();
+        }
+
+        // ListBox预览鼠标按下事件，处理Ctrl/Shift多选
+        private void ListBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Left) return;
+
+            // 找到被点击的Border（壁纸项）
+            DependencyObject source = e.OriginalSource as DependencyObject;
+            while (source != null && !(source is Border))
+            {
+                source = VisualTreeHelper.GetParent(source);
+            }
+            if (source is Border border && border.Tag is WallpaperEngine.Models.WallpaperItem wallpaper)
+            {
+                bool isCtrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+                bool isShiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+                ViewModel.HandleWallpaperSelection(wallpaper, isCtrlPressed, isShiftPressed);
+            }
+
+            // 始终阻止事件进一步传播，防止ListBox系统选择
+            e.Handled = true;
+        }
+
+        // ListBox预览鼠标右键按下事件，更新选中项
+        private void ListBox_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton != MouseButton.Right) return;
+
+            // 找到被点击的Border（壁纸项）
+            DependencyObject source = e.OriginalSource as DependencyObject;
+            while (source != null && !(source is Border))
+            {
+                source = VisualTreeHelper.GetParent(source);
+            }
+            if (source is Border border && border.Tag is WallpaperEngine.Models.WallpaperItem wallpaper)
+            {
+                // 如果右键点击的壁纸未被选中，则清空选择并选中它
+                if (!wallpaper.IsSelected)
+                {
+                    ViewModel.HandleWallpaperSelection(wallpaper, false, false);
+                }
+            }
+
+            // 始终阻止事件进一步传播，防止ListBox系统选择
+            e.Handled = true;
+        }
+
+        // 防止ListBox的系统选择干扰我们的自定义选择
+        private void WallpaperListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // 清空ListBox的系统选择，因为我们用自定义的IsSelected属性
+            if (WallpaperListBox != null)
+            {
+                WallpaperListBox.SelectedItem = null;
+                foreach (var item in e.AddedItems)
+                {
+                    if (item is System.Windows.Controls.ListBoxItem listBoxItem)
+                    {
+                        listBoxItem.IsSelected = false;
+                    }
+                }
+            }
         }
     }
 }

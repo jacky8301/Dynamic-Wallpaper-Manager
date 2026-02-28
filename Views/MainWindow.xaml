@@ -167,7 +167,9 @@
                                 VirtualizingPanel.ScrollUnit="Pixel"
                                 BorderThickness="0"
                                 Background="Transparent"
-                                HorizontalContentAlignment="Stretch">
+                                HorizontalContentAlignment="Stretch"
+                                SelectionMode="Single"
+                                x:Name="WallpaperListBox">
                                 <ListBox.ItemContainerStyle>
                                     <Style TargetType="ListBoxItem">
                                         <Setter Property="Padding" Value="0"/>
@@ -301,11 +303,6 @@
                                                     Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     CommandParameter="{Binding}"
                                                     Gesture="LeftDoubleClick" />
-                                                <!--  处理单击事件  -->
-                                                <MouseBinding
-                                                    Command="{Binding DataContext.SelectWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"
-                                                    Gesture="LeftClick" />
                                             </Border.InputBindings>
                                             <Grid>
                                                 <Image Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}, IsAsync=True}" Stretch="UniformToFill" />

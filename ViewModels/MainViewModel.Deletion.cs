@@ -17,6 +17,14 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private async Task DeleteWallpaper(object parameter)
         {
+            // 优先使用选中的壁纸列表
+            if (SelectedWallpapers.Count > 0)
+            {
+                await ShowMultiDeletionConfirmation(SelectedWallpapers.ToList());
+                return;
+            }
+
+            // 如果没有选中的壁纸，则使用传入的参数
             if (parameter is WallpaperItem wallpaper) {
                 Log.Information("请求删除壁纸: {Title}", wallpaper.Project.Title);
                 await ShowDeletionConfirmation(wallpaper);
@@ -51,6 +59,57 @@ namespace WallpaperEngine.ViewModels {
             }
 
             ItemPendingDeletion = null;
+        }
+
+        /// <summary>
+        /// 显示多选壁纸删除确认对话框
+        /// </summary>
+        /// <param name="wallpapers">待删除的壁纸列表</param>
+        private async Task ShowMultiDeletionConfirmation(List<WallpaperItem> wallpapers)
+        {
+            if (wallpapers == null || wallpapers.Count == 0) return;
+
+            var confirmationMessage = BuildMultiDeletionConfirmationMessage(wallpapers);
+
+            var result = await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    DialogHost = "MainRootDialog",
+                    Title = $"确认删除 {wallpapers.Count} 个壁纸",
+                    Message = confirmationMessage,
+                    ConfirmButtonText = "删除",
+                    CancelButtonText = "取消",
+                    DialogType = DialogType.Warning
+            });
+
+            if (result.Confirmed) {
+                foreach (var wallpaper in wallpapers)
+                {
+                    await ExecuteDeletion(wallpaper);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 构建多选删除确认消息
+        /// </summary>
+        /// <param name="wallpapers">待删除的壁纸列表</param>
+        /// <returns>格式化的确认消息文本</returns>
+        private string BuildMultiDeletionConfirmationMessage(List<WallpaperItem> wallpapers)
+        {
+            var message = new StringBuilder();
+            message.AppendLine($"确定要删除选中的 {wallpapers.Count} 个壁纸吗？");
+            message.AppendLine();
+            message.AppendLine("壁纸列表：");
+            foreach (var wallpaper in wallpapers.Take(10))
+            {
+                message.AppendLine($"• {wallpaper.Project.Title}");
+            }
+            if (wallpapers.Count > 10)
+            {
+                message.AppendLine($"• ... 以及 {wallpapers.Count - 10} 个其他壁纸");
+            }
+            message.AppendLine();
+            message.AppendLine("此操作无法撤销，所有文件将被永久删除！");
+            return message.ToString();
         }
 
         /// <summary>

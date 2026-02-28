@@ -4,6 +4,7 @@ using MaterialDesignThemes.Wpf;
 using Serilog;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
@@ -21,11 +22,27 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private async Task PreviewWallpaper(object parameter)
         {
-            if (parameter is WallpaperItem wallpaper) {
-                SelectedWallpaper = wallpaper;
-                Log.Information("预览壁纸: {Title}", wallpaper.Project.Title);
-                _dataContextService.CurrentWallpaper = wallpaper;
-                await OpenPreviewWindowNew(wallpaper);
+            // 优先使用选中的壁纸列表
+            if (SelectedWallpapers.Count > 0)
+            {
+                // 预览第一个选中的壁纸
+                var selectedWallpaper = SelectedWallpapers.FirstOrDefault();
+                if (selectedWallpaper != null)
+                {
+                    SelectedWallpaper = selectedWallpaper;
+                    Log.Information("预览壁纸: {Title}", selectedWallpaper.Project.Title);
+                    _dataContextService.CurrentWallpaper = selectedWallpaper;
+                    await OpenPreviewWindowNew(selectedWallpaper);
+                }
+                return;
+            }
+
+            // 如果没有选中的壁纸，则使用传入的参数
+            if (parameter is WallpaperItem wp) {
+                SelectedWallpaper = wp;
+                Log.Information("预览壁纸: {Title}", wp.Project.Title);
+                _dataContextService.CurrentWallpaper = wp;
+                await OpenPreviewWindowNew(wp);
             } else if (parameter is string wallpaperId) {
                 var myWallpaper = Wallpapers.FirstOrDefault(w => w.Id == wallpaperId);
                 if (myWallpaper != null) {
@@ -96,22 +113,43 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private void ApplyWallpaper(object parameter)
         {
-            if (parameter is WallpaperItem wallpaper) {
-                Log.Information("应用壁纸: {Title}", wallpaper.Project.Title);
-                string toolPath = Settings.WallpaperEnginePath;
-                string projectJsonPath = Path.Combine(wallpaper.FolderPath, "project.json");
-
-                if (File.Exists(toolPath) && File.Exists(projectJsonPath)) {
-                    string arguments = $"-control openWallpaper -file \"{projectJsonPath}\"";
-                    ProcessStartInfo startInfo = new ProcessStartInfo {
-                        FileName = toolPath,
-                        Arguments = arguments,
-                        UseShellExecute = false
-                    };
-                    Process.Start(startInfo)?.Dispose();
-                } else {
-                    // 处理错误
+            // 优先使用选中的壁纸列表
+            if (SelectedWallpapers.Count > 0)
+            {
+                // 应用第一个选中的壁纸
+                var selectedWallpaper = SelectedWallpapers.FirstOrDefault();
+                if (selectedWallpaper != null)
+                {
+                    ApplySingleWallpaper(selectedWallpaper);
                 }
+                return;
+            }
+
+            // 如果没有选中的壁纸，则使用传入的参数
+            if (parameter is WallpaperItem wp) {
+                ApplySingleWallpaper(wp);
+            }
+        }
+
+        /// <summary>
+        /// 应用单个壁纸
+        /// </summary>
+        private void ApplySingleWallpaper(WallpaperItem wallpaper)
+        {
+            Log.Information("应用壁纸: {Title}", wallpaper.Project.Title);
+            string toolPath = Settings.WallpaperEnginePath;
+            string projectJsonPath = Path.Combine(wallpaper.FolderPath, "project.json");
+
+            if (File.Exists(toolPath) && File.Exists(projectJsonPath)) {
+                string arguments = $"-control openWallpaper -file \"{projectJsonPath}\"";
+                ProcessStartInfo startInfo = new ProcessStartInfo {
+                    FileName = toolPath,
+                    Arguments = arguments,
+                    UseShellExecute = false
+                };
+                Process.Start(startInfo)?.Dispose();
+            } else {
+                // 处理错误
             }
         }
 
@@ -122,30 +160,53 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private void ToggleFavorite(object parameter)
         {
-            if (parameter is WallpaperItem wallpaper) {
-                wallpaper.IsFavorite = !wallpaper.IsFavorite;
-                wallpaper.FavoritedDate = wallpaper.IsFavorite ? DateTime.Now : DateTime.MinValue;
-
-                try {
-                    _dbManager.ToggleFavorite(wallpaper.FolderPath, wallpaper.IsFavorite);
-                } catch (Exception ex) {
-                    Log.Warning($"更新收藏状态失败: {ex.Message}");
-                    wallpaper.IsFavorite = !wallpaper.IsFavorite;
+            // 优先使用选中的壁纸列表
+            if (SelectedWallpapers.Count > 0)
+            {
+                foreach (var wallpaperItem in SelectedWallpapers.ToList())
+                {
+                    ToggleSingleFavorite(wallpaperItem);
                 }
-
-                if (ShowFavoritesOnly && !wallpaper.IsFavorite) {
+                // 如果当前仅显示收藏，刷新视图
+                if (ShowFavoritesOnly)
+                {
                     WallpapersView.Refresh();
                 }
+                return;
+            }
 
-                // 同步收藏状态到合集视图中的壁纸实例
-                var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
-                if (collectionVm != null) {
-                    var collectionWallpaper = collectionVm.CollectionWallpapers
-                        .FirstOrDefault(w => w.FolderPath == wallpaper.FolderPath);
-                    if (collectionWallpaper != null) {
-                        collectionWallpaper.IsFavorite = wallpaper.IsFavorite;
-                        collectionWallpaper.FavoritedDate = wallpaper.FavoritedDate;
-                    }
+            // 如果没有选中的壁纸，则使用传入的参数
+            if (parameter is WallpaperItem wp) {
+                ToggleSingleFavorite(wp);
+                if (ShowFavoritesOnly && !wp.IsFavorite) {
+                    WallpapersView.Refresh();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 切换单个壁纸的收藏状态
+        /// </summary>
+        private void ToggleSingleFavorite(WallpaperItem wallpaper)
+        {
+            wallpaper.IsFavorite = !wallpaper.IsFavorite;
+            wallpaper.FavoritedDate = wallpaper.IsFavorite ? DateTime.Now : DateTime.MinValue;
+
+            try {
+                _dbManager.ToggleFavorite(wallpaper.FolderPath, wallpaper.IsFavorite);
+            } catch (Exception ex) {
+                Log.Warning($"更新收藏状态失败: {ex.Message}");
+                wallpaper.IsFavorite = !wallpaper.IsFavorite;
+            }
+
+            // 同步收藏状态到合集视图中的壁纸实例
+            var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
+            if (collectionVm != null) {
+                var collectionWallpaper = collectionVm.CollectionWallpapers
+                    .FirstOrDefault(w => w.FolderPath == wallpaper.FolderPath);
+                if (collectionWallpaper != null) {
+                    collectionWallpaper.IsFavorite = wallpaper.IsFavorite;
+                    collectionWallpaper.FavoritedDate = wallpaper.FavoritedDate;
                 }
             }
         }
@@ -157,10 +218,25 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private async Task GoToWallpaperDirectory(object parameter)
         {
-            if (parameter is WallpaperItem wallpaper) {
-                Log.Debug("打开壁纸目录: {FolderPath}", wallpaper.FolderPath);
-                SelectedWallpaper = wallpaper;
-                await OpenWallpaperDirectory(wallpaper);
+            // 优先使用选中的壁纸列表
+            if (SelectedWallpapers.Count > 0)
+            {
+                // 打开第一个选中的壁纸目录
+                var selectedWallpaper = SelectedWallpapers.FirstOrDefault();
+                if (selectedWallpaper != null)
+                {
+                    Log.Debug("打开壁纸目录: {FolderPath}", selectedWallpaper.FolderPath);
+                    SelectedWallpaper = selectedWallpaper;
+                    await OpenWallpaperDirectory(selectedWallpaper);
+                }
+                return;
+            }
+
+            // 如果没有选中的壁纸，则使用传入的参数
+            if (parameter is WallpaperItem wp) {
+                Log.Debug("打开壁纸目录: {FolderPath}", wp.FolderPath);
+                SelectedWallpaper = wp;
+                await OpenWallpaperDirectory(wp);
             }
         }
 
@@ -292,9 +368,9 @@ namespace WallpaperEngine.ViewModels {
                 });
                 return;
             }
-            if (args[0] is not WallpaperItem wallpaper || args[1] is not string collectionId)
+            if (args[1] is not string collectionId)
             {
-                Log.Warning($"AddToSpecificCollection: args[0] is WallpaperItem: {args[0] is WallpaperItem}, args[1] is string: {args[1] is string}");
+                Log.Warning($"AddToSpecificCollection: args[1] is string: {args[1] is string}");
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                     Message = "参数类型错误",
                     Title = "错误",
@@ -303,7 +379,36 @@ namespace WallpaperEngine.ViewModels {
                 });
                 return;
             }
-            Log.Debug($"AddToSpecificCollection: Adding wallpaper {wallpaper.Project?.Title} to collection {collectionId}");
+
+            // 确定要添加的壁纸列表：优先使用选中的壁纸，如果没有则使用参数中的壁纸
+            List<WallpaperItem> wallpapersToAdd = new List<WallpaperItem>();
+            if (SelectedWallpapers.Count > 0)
+            {
+                wallpapersToAdd.AddRange(SelectedWallpapers);
+                Log.Information($"AddToSpecificCollection: Using {SelectedWallpapers.Count} selected wallpapers");
+            }
+            else if (args[0] is WallpaperItem wp)
+            {
+                wallpapersToAdd.Add(wp);
+                Log.Information($"AddToSpecificCollection: Using parameter wallpaper");
+            }
+            else
+            {
+                Log.Warning($"AddToSpecificCollection: args[0] is WallpaperItem: {args[0] is WallpaperItem}");
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = "参数类型错误",
+                    Title = "错误",
+                    ShowCancelButton = false,
+                    DialogType = DialogType.Error
+                });
+                return;
+            }
+
+            if (wallpapersToAdd.Count == 0)
+            {
+                Log.Warning($"AddToSpecificCollection: No wallpapers to add");
+                return;
+            }
 
             try {
                 var collection = Collections.FirstOrDefault(c => c.Id == collectionId);
@@ -319,26 +424,52 @@ namespace WallpaperEngine.ViewModels {
                     return;
                 }
 
-                if (_dbManager.IsInCollection(collectionId, wallpaper.FolderPath)) {
+                int addedCount = 0;
+                int alreadyInCollectionCount = 0;
+                foreach (var wp in wallpapersToAdd)
+                {
+                    if (_dbManager.IsInCollection(collectionId, wp.FolderPath)) {
+                        alreadyInCollectionCount++;
+                        continue;
+                    }
+
+                    _dbManager.AddToCollection(collectionId, wp.FolderPath);
+                    addedCount++;
+                    Log.Information($"成功将壁纸{wp.Project?.Title} 添加到合集{collection.Name}");
+                }
+
+                // 显示成功提示
+                if (addedCount > 0)
+                {
+                    string message;
+                    if (wallpapersToAdd.Count == 1)
+                    {
+                        message = $"已将壁纸「{wallpapersToAdd[0].Project?.Title}」添加到合集「{collection.Name}」。";
+                    }
+                    else
+                    {
+                        message = $"已将 {addedCount} 个壁纸添加到合集「{collection.Name}」。";
+                        if (alreadyInCollectionCount > 0)
+                        {
+                            message += $"\n{alreadyInCollectionCount} 个壁纸已存在于合集中。";
+                        }
+                    }
                     await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
-                        Message = $"该壁纸已存在于合集「{collection.Name}」中。",
+                        Message = message,
+                        Title = "成功",
+                        ShowCancelButton = false,
+                        DialogType = DialogType.Information
+                    });
+                }
+                else if (alreadyInCollectionCount > 0)
+                {
+                    await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                        Message = $"所有选中的壁纸已存在于合集「{collection.Name}」中。",
                         Title = "提示",
                         ShowCancelButton = false,
                         DialogType = DialogType.Information
                     });
-                    return;
                 }
-
-                _dbManager.AddToCollection(collectionId, wallpaper.FolderPath);
-                Log.Information($"成功将壁纸{wallpaper.Project?.Title} 添加到合集{collection.Name}");
-
-                // 显示成功提示
-                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
-                    Message = $"已将壁纸「{wallpaper.Project?.Title}」添加到合集「{collection.Name}」。",
-                    Title = "成功",
-                    ShowCancelButton = false,
-                    DialogType = DialogType.Information
-                });
 
                 // 刷新合集页面（如果当前正在查看该合集）
                 var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
@@ -476,6 +607,144 @@ namespace WallpaperEngine.ViewModels {
                 } catch (Exception ex) {
                     Log.Warning($"删除分类失败: {ex.Message}");
                 }
+            }
+        }
+
+        /// <summary>
+        /// 处理壁纸选择，支持Ctrl和Shift多选
+        /// </summary>
+        /// <param name="wallpaper">点击的壁纸项</param>
+        /// <param name="isCtrlPressed">Ctrl键是否按下</param>
+        /// <param name="isShiftPressed">Shift键是否按下</param>
+        public void HandleWallpaperSelection(WallpaperItem wallpaper, bool isCtrlPressed, bool isShiftPressed)
+        {
+            if (wallpaper == null) return;
+
+            // 如果没有修饰键，清空选择并选中当前项
+            if (!isCtrlPressed && !isShiftPressed)
+            {
+                ClearSelection();
+                AddToSelection(wallpaper);
+                _lastSelectedItem = wallpaper;
+                SelectedWallpaper = wallpaper;
+                return;
+            }
+
+            // Ctrl键：切换当前项的选中状态
+            if (isCtrlPressed && !isShiftPressed)
+            {
+                ToggleSelection(wallpaper);
+                _lastSelectedItem = wallpaper;
+                SelectedWallpaper = SelectedWallpapers.LastOrDefault();
+                return;
+            }
+
+            // Shift键：选择从上次选中项到当前项之间的所有壁纸
+            if (isShiftPressed && !isCtrlPressed)
+            {
+                if (_lastSelectedItem == null)
+                {
+                    ClearSelection();
+                    AddToSelection(wallpaper);
+                    _lastSelectedItem = wallpaper;
+                    SelectedWallpaper = wallpaper;
+                    return;
+                }
+
+                // 找到两个壁纸在列表中的索引
+                int lastIndex = Wallpapers.IndexOf(_lastSelectedItem);
+                int currentIndex = Wallpapers.IndexOf(wallpaper);
+                if (lastIndex == -1 || currentIndex == -1) return;
+
+                int start = Math.Min(lastIndex, currentIndex);
+                int end = Math.Max(lastIndex, currentIndex);
+
+                ClearSelection();
+                for (int i = start; i <= end; i++)
+                {
+                    AddToSelection(Wallpapers[i]);
+                }
+                SelectedWallpaper = wallpaper;
+                return;
+            }
+
+            // Ctrl+Shift组合：将当前项添加到选区，但不改变其他项
+            if (isCtrlPressed && isShiftPressed)
+            {
+                // 扩展选区：从_lastSelectedItem到当前项，但保持已有选区
+                if (_lastSelectedItem == null)
+                {
+                    AddToSelection(wallpaper);
+                    _lastSelectedItem = wallpaper;
+                    SelectedWallpaper = wallpaper;
+                    return;
+                }
+
+                int lastIndex = Wallpapers.IndexOf(_lastSelectedItem);
+                int currentIndex = Wallpapers.IndexOf(wallpaper);
+                if (lastIndex == -1 || currentIndex == -1) return;
+
+                int start = Math.Min(lastIndex, currentIndex);
+                int end = Math.Max(lastIndex, currentIndex);
+
+                for (int i = start; i <= end; i++)
+                {
+                    AddToSelection(Wallpapers[i]);
+                }
+                SelectedWallpaper = wallpaper;
+                // 不更新_lastSelectedItem，保持之前的最后选中项
+                return;
+            }
+        }
+
+        /// <summary>
+        /// 清空选中项
+        /// </summary>
+        private void ClearSelection()
+        {
+            foreach (var item in SelectedWallpapers.ToList())
+            {
+                item.IsSelected = false;
+            }
+            SelectedWallpapers.Clear();
+        }
+
+        /// <summary>
+        /// 添加壁纸到选中项
+        /// </summary>
+        private void AddToSelection(WallpaperItem wallpaper)
+        {
+            if (!SelectedWallpapers.Contains(wallpaper))
+            {
+                SelectedWallpapers.Add(wallpaper);
+                wallpaper.IsSelected = true;
+            }
+        }
+
+        /// <summary>
+        /// 从选中项中移除壁纸
+        /// </summary>
+        private void RemoveFromSelection(WallpaperItem wallpaper)
+        {
+            if (SelectedWallpapers.Contains(wallpaper))
+            {
+                SelectedWallpapers.Remove(wallpaper);
+                wallpaper.IsSelected = false;
+            }
+        }
+
+        /// <summary>
+        /// 切换壁纸的选中状态
+        /// </summary>
+        private void ToggleSelection(WallpaperItem wallpaper)
+        {
+            if (SelectedWallpapers.Contains(wallpaper))
+            {
+                RemoveFromSelection(wallpaper);
+            }
+            else
+            {
+                AddToSelection(wallpaper);
             }
         }
     }
