@@ -777,5 +777,16 @@ namespace WallpaperEngine.Data {
                 throw;
             }
         }
+
+        /// <summary>
+        /// 获取数据库中壁纸的总数量（不考虑筛选条件）
+        /// </summary>
+        /// <returns>壁纸总数</returns>
+        public int GetTotalWallpaperCount()
+        {
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "SELECT COUNT(*) FROM Wallpapers";
+            return Convert.ToInt32(command.ExecuteScalar());
+        }
     }
 }

@@ -28,11 +28,23 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>搜索文本变更时刷新壁纸视图</summary>
-        partial void OnSearchTextChanged(string value) => WallpapersView.Refresh();
+        partial void OnSearchTextChanged(string value)
+        {
+            WallpapersView.Refresh();
+            OnPropertyChanged(nameof(WallpaperCount));
+        }
         /// <summary>选中分类变更时刷新壁纸视图</summary>
-        partial void OnSelectedCategoryChanged(string value) => WallpapersView.Refresh();
+        partial void OnSelectedCategoryChanged(string value)
+        {
+            WallpapersView.Refresh();
+            OnPropertyChanged(nameof(WallpaperCount));
+        }
         /// <summary>收藏筛选状态变更时刷新壁纸视图</summary>
-        partial void OnShowFavoritesOnlyChanged(bool value) => WallpapersView.Refresh();
+        partial void OnShowFavoritesOnlyChanged(bool value)
+        {
+            WallpapersView.Refresh();
+            OnPropertyChanged(nameof(WallpaperCount));
+        }
         /// <summary>标签页切换时同步收藏筛选状态</summary>
         partial void OnCurrentTabChanged(int value)
         {

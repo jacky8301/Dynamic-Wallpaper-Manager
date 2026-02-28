@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.DependencyInjection;
 using Serilog;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows.Data;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
@@ -76,6 +77,10 @@ namespace WallpaperEngine.ViewModels {
         /// <summary>壁纸总数量</summary>
         [ObservableProperty]
         private int _totalCount;
+
+        /// <summary>数据库中的壁纸总数（不考虑筛选）</summary>
+        [ObservableProperty]
+        private int _totalWallpaperCount;
 
         /// <summary>上次扫描时间的显示文本</summary>
         [ObservableProperty]
@@ -212,8 +217,8 @@ namespace WallpaperEngine.ViewModels {
             OnPropertyChanged(nameof(WallpaperCount));
         }
 
-        /// <summary>壁纸列表中的壁纸总数</summary>
-        public int WallpaperCount => Wallpapers.Count;
+        /// <summary>当前筛选条件下的壁纸总数</summary>
+        public int WallpaperCount => Wallpapers.Count(FilterWallpapers);
 
         /// <summary>壁纸加载完成事件</summary>
         public event EventHandler LoadWallpapersCompleted;
@@ -241,6 +246,10 @@ namespace WallpaperEngine.ViewModels {
                         }
                     }
                 });
+
+                // 加载壁纸总数
+                await LoadTotalWallpaperCountAsync();
+
                 OnEventLoadWallpapersCompleted();
             } catch (Exception ex) {
                 Log.Fatal($"加载壁纸列表失败: {ex.Message}");
@@ -267,6 +276,26 @@ namespace WallpaperEngine.ViewModels {
                     ShowCancelButton =false, DialogType = DialogType.Error
                  });
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// 异步加载数据库中的壁纸总数
+        /// </summary>
+        private async Task LoadTotalWallpaperCountAsync()
+        {
+            try
+            {
+                var count = await Task.Run(() => _dbManager.GetTotalWallpaperCount());
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    TotalWallpaperCount = count;
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"加载壁纸总数失败: {ex.Message}");
+                // 不设置值，保持默认0
             }
         }
 

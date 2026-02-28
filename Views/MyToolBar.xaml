@@ -154,7 +154,7 @@
                     VerticalAlignment="Center"
                     FontWeight="SemiBold"
                     Foreground="#007ACC"
-                    Text="{Binding WallpaperCount}" />
+                    Text="{Binding TotalWallpaperCount}" />
             </StackPanel>
         </StackPanel>
     </ToolBar>
