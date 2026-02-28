@@ -5,6 +5,7 @@ using Serilog;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
@@ -48,6 +49,12 @@ namespace WallpaperEngine.ViewModels {
                 Collections.Clear();
                 foreach (var c in list) {
                     Collections.Add(c);
+                }
+
+                // 如果没有选中合集且合集列表不为空，则自动选中第一个合集
+                if (SelectedCollection == null && Collections.Count > 0)
+                {
+                    SelectedCollection = Collections.First();
                 }
             } catch (Exception ex) {
                 Log.Error($"加载合集列表失败: {ex.Message}");

@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
@@ -53,6 +54,16 @@ namespace WallpaperEngine.ViewModels {
             ClearSelection();
             SelectedWallpaper = null;
             _lastSelectedItem = null;
+
+            // 切换到合集页面时，如果没有选中合集，则自动选中第一个合集
+            if (value == 2)
+            {
+                var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
+                if (collectionVm != null && collectionVm.SelectedCollection == null && collectionVm.Collections.Count > 0)
+                {
+                    collectionVm.SelectedCollection = collectionVm.Collections.First();
+                }
+            }
         }
 
         /// <summary>
