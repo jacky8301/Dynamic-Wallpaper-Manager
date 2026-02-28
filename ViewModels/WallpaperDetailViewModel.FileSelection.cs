@@ -15,7 +15,7 @@ namespace WallpaperEngine.ViewModels {
                 return;
             }
             CurrentWallpaper.Project.Preview = fileName;
-            PreviewFileName = fileName;
+            PreviewFileName = fileName ?? string.Empty;
             Log.Information("设置预览图文件: {FileName}", fileName);
             try {
                 // 保存到project.json
@@ -39,7 +39,7 @@ namespace WallpaperEngine.ViewModels {
                 return;
             }
             try {
-                ContentFileName = fileName;
+                ContentFileName = fileName ?? string.Empty;
                 CurrentWallpaper.Project.File = fileName;
                 Log.Information("设置内容文件: {FileName}", fileName);
                 // 保存到project.json

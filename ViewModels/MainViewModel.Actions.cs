@@ -19,19 +19,19 @@ namespace WallpaperEngine.ViewModels {
         /// </summary>
         /// <param name="parameter">壁纸对象或壁纸ID字符串</param>
         [RelayCommand]
-        private void PreviewWallpaper(object parameter)
+        private async Task PreviewWallpaper(object parameter)
         {
             if (parameter is WallpaperItem wallpaper) {
                 SelectedWallpaper = wallpaper;
                 Log.Information("预览壁纸: {Title}", wallpaper.Project.Title);
                 _dataContextService.CurrentWallpaper = wallpaper;
-                OpenPreviewWindowNew(wallpaper);
+                await OpenPreviewWindowNew(wallpaper);
             } else if (parameter is string wallpaperId) {
                 var myWallpaper = Wallpapers.FirstOrDefault(w => w.Id == wallpaperId);
                 if (myWallpaper != null) {
                     SelectedWallpaper = myWallpaper;
                     _dataContextService.CurrentWallpaper = myWallpaper;
-                    OpenPreviewWindowNew(myWallpaper);
+                    await OpenPreviewWindowNew(myWallpaper);
                 }
             }
         }
@@ -40,13 +40,13 @@ namespace WallpaperEngine.ViewModels {
         /// 根据壁纸类型选择预览方式（Web/Scene类型使用引擎预览，其他类型使用内置预览窗口）
         /// </summary>
         /// <param name="wallpaper">要预览的壁纸项</param>
-        private void OpenPreviewWindowNew(WallpaperItem wallpaper)
+        private async Task OpenPreviewWindowNew(WallpaperItem wallpaper)
         {
             var type = wallpaper.Project?.Type;
             if (type != null && (type.Equals("web", StringComparison.OrdinalIgnoreCase) || type.Equals("scene", StringComparison.OrdinalIgnoreCase))) {
                 _previewService.PreviewWallpaper(wallpaper);
             } else {
-                OpenPreviewWindow(wallpaper);
+                await OpenPreviewWindow(wallpaper);
             }
         }
 

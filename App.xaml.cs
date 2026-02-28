@@ -24,9 +24,7 @@ namespace WallpaperEngine {
         [DllImport("user32.dll")]
         private static extern bool IsIconic(IntPtr hWnd);
         private const int SW_RESTORE = 9;
-        private static Mutex _mutex = null;
         private const string AppGuid = "{80DEC730-14F5-4798-A4A7-EEEB4ADE1672}"; // 请替换为唯一名称
-        bool _createNew = true;
         private SingleInstanceManager _singleInstanceManager;
         public App()
         {
@@ -124,7 +122,7 @@ namespace WallpaperEngine {
         /// 处理从其他实例传递过来的命令行参数
         /// </summary>
         /// <param name="args">命令行参数数组</param>
-        private void ProcessCommandLineArgs(string[] args)
+        private void ProcessCommandLineArgs(string?[] args)
         {
             // 处理命令行参数的逻辑
             // 例如：

@@ -23,7 +23,7 @@ namespace WallpaperEngine.ViewModels {
 
         /// <summary>待删除的壁纸项</summary>
         [ObservableProperty]
-        private WallpaperItem _itemPendingDeletion;
+        private WallpaperItem? _itemPendingDeletion;
 
         /// <summary>应用程序设置</summary>
         [ObservableProperty]
@@ -35,7 +35,7 @@ namespace WallpaperEngine.ViewModels {
 
         /// <summary>当前选中的壁纸</summary>
         [ObservableProperty]
-        private WallpaperItem _selectedWallpaper;
+        private WallpaperItem? _selectedWallpaper;
 
         /// <summary>搜索文本</summary>
         [ObservableProperty]
@@ -121,7 +121,7 @@ namespace WallpaperEngine.ViewModels {
         public MainViewModel(IDataContextService dataContextService, IWallpaperFileService wallpaperFileService)
         {
             _dbManager = Ioc.Default.GetService<DatabaseManager>();
-            _scanner = new WallpaperScanner(_dbManager);
+            _scanner = new WallpaperScanner(_dbManager!);
 
             WallpapersView = CollectionViewSource.GetDefaultView(Wallpapers);
             WallpapersView.Filter = FilterWallpapers;

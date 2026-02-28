@@ -11,8 +11,11 @@ namespace WallpaperEngine.Converters {
         {
             // 这里可以调用你的方法，或直接写逻辑
             // 例如，假设你的方法是 CheckIfButtonShouldBeEnabled(string input)
-            string input = value as string;
-            return !string.IsNullOrEmpty(input);
+            if (value is string input)
+            {
+                return !string.IsNullOrEmpty(input);
+            }
+            return false;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

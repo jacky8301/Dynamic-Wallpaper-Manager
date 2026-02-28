@@ -10,7 +10,7 @@ namespace WallpaperEngine.Services {
     public class PreviewService {
         private readonly ApplicationSettings _settings;
         private readonly ISettingsService _settingsService;
-        private Process _currentPreviewProcess;
+        private Process? _currentPreviewProcess;
 
         /// <summary>
         /// 初始化预览服务并加载应用程序设置
@@ -41,7 +41,7 @@ namespace WallpaperEngine.Services {
         /// <returns>预览进程成功启动返回 true，否则返回 false</returns>
         /// <exception cref="InvalidOperationException">Wallpaper Engine 路径未设置或不存在</exception>
         /// <exception cref="FileNotFoundException">壁纸的 project.json 文件不存在</exception>
-        public bool PreviewWallpaper(WallpaperItem wallpaper, PreviewOptions options = null)
+        public bool PreviewWallpaper(WallpaperItem wallpaper, PreviewOptions? options = null)
         {
             if (wallpaper == null) return false;
 

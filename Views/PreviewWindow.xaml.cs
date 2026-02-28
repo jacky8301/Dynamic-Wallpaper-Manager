@@ -17,7 +17,7 @@ namespace WallpaperEngine.Views {
     public partial class PreviewWindow : Window {
         private readonly WallpaperItem _wallpaper;
         private readonly Window _parentWindow;
-        private DispatcherTimer _progressTimer;
+        private DispatcherTimer? _progressTimer;
         private bool _isDraggingProgress;
         private bool _isUpdatingProgress;
 
@@ -29,7 +29,7 @@ namespace WallpaperEngine.Views {
             _wallpaper = wallpaper;
             InitializeComponent();
             _parentWindow = System.Windows.Application.Current.MainWindow;
-            LoadPreview();
+            _ = LoadPreview();
         }
         // 窗口按钮事件处理
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
@@ -183,7 +183,7 @@ namespace WallpaperEngine.Views {
             }
         }
 
-        private void ProgressTimer_Tick(object sender, EventArgs e)
+        private void ProgressTimer_Tick(object? sender, EventArgs e)
         {
             if (_isDraggingProgress || !PreviewVideo.NaturalDuration.HasTimeSpan) return;
 

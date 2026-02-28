@@ -30,27 +30,27 @@ namespace WallpaperEngine.ViewModels {
 
         /// <summary>当前选中的壁纸类型</summary>
         [ObservableProperty]
-        private string _selectedType;
+        private string _selectedType = string.Empty;
 
         /// <summary>壁纸描述文本</summary>
         [ObservableProperty]
-        private string _description;
+        private string _description = string.Empty;
 
         /// <summary>壁纸标题</summary>
         [ObservableProperty]
-        private string _title;
+        private string _title = string.Empty;
 
         /// <summary>预览图文件名</summary>
         [ObservableProperty]
-        private string _previewFileName;
+        private string _previewFileName = string.Empty;
 
         /// <summary>壁纸内容文件名</summary>
         [ObservableProperty]
-        private string _contentFileName;
+        private string _contentFileName = string.Empty;
 
         /// <summary>当前选中的分类</summary>
         [ObservableProperty]
-        private string _selectedCategory;
+        private string _selectedCategory = string.Empty;
 
         /// <summary>标签编辑集合</summary>
         public ObservableCollection<string> Tags { get; } = new ObservableCollection<string>();
@@ -123,12 +123,12 @@ namespace WallpaperEngine.ViewModels {
             // 当服务中的状态改变时，更新自己的数据
             CurrentWallpaper = newWallpaper;
             _ = LoadFileListSafeAsync(newWallpaper);
-            SelectedType = CurrentWallpaper?.Project?.Type;
-            SelectedCategory = CurrentWallpaper?.Category;
-            Description = CurrentWallpaper?.Project?.Description;
-            Title = CurrentWallpaper?.Project?.Title;
-            PreviewFileName = CurrentWallpaper?.Project?.Preview;
-            ContentFileName = CurrentWallpaper?.Project?.File;
+            SelectedType = CurrentWallpaper?.Project?.Type ?? string.Empty;
+            SelectedCategory = CurrentWallpaper?.Category ?? string.Empty;
+            Description = CurrentWallpaper?.Project?.Description ?? string.Empty;
+            Title = CurrentWallpaper?.Project?.Title ?? string.Empty;
+            PreviewFileName = CurrentWallpaper?.Project?.Preview ?? string.Empty;
+            ContentFileName = CurrentWallpaper?.Project?.File ?? string.Empty;
             SyncTagsFromProject();
         }
 

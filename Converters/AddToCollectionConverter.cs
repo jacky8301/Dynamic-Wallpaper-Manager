@@ -17,7 +17,7 @@ namespace WallpaperEngine.Converters
             if (values == null)
             {
                 Log.Error($"AddToCollectionConverter: values is null");
-                return new object[2] { null, null };
+                return new object?[2] { null, null };
             }
 
             Log.Information($"  values.Length = {values.Length}");
@@ -47,14 +47,14 @@ namespace WallpaperEngine.Converters
             if (values.Length < 2)
             {
                 Log.Error($"AddToCollectionConverter: values too short, length: {values.Length}");
-                return new object[2] { null, null };
+                return new object?[2] { null, null };
             }
 
             // 简化逻辑：values[0]应该是壁纸对象，values[1]应该是合集ID
             // 但我们需要处理可能的类型不匹配
 
-            object wallpaperObj = values[0];
-            object collectionIdObj = values[1];
+            object? wallpaperObj = values[0];
+            object? collectionIdObj = values[1];
 
             // 处理DependencyProperty.UnsetValue
             if (wallpaperObj == System.Windows.DependencyProperty.UnsetValue)
@@ -79,7 +79,7 @@ namespace WallpaperEngine.Converters
             Log.Information($"AddToCollectionConverter: Returning array - wallpaper type: {wallpaperObj?.GetType().Name ?? "null"}, collectionId: {collectionIdObj?.ToString() ?? "null"}");
 
             // 总是返回长度为2的数组，即使元素可能为null
-            return new object[] { wallpaperObj, collectionIdObj };
+            return new object?[] { wallpaperObj, collectionIdObj };
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

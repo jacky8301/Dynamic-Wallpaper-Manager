@@ -52,7 +52,7 @@ namespace WallpaperEngine.Services {
         /// <param name="progress">扫描进度报告回调</param>
         /// <returns>扫描正常完成返回 true，被取消返回 false</returns>
         /// <exception cref="DirectoryNotFoundException">根目录不存在</exception>
-        public async Task<bool> ScanWallpapersAsync(string rootFolderPath, bool isIncremental, IProgress<ScanProgress> progress = null)
+        public async Task<bool> ScanWallpapersAsync(string rootFolderPath, bool isIncremental, IProgress<ScanProgress>? progress = null)
         {
             Log.Information("开始扫描壁纸, 路径: {RootPath}, 增量: {IsIncremental}", rootFolderPath, isIncremental);
 

@@ -52,14 +52,14 @@ namespace WallpaperEngine.Data {
             DateTime favoritedDate;
             if (hasFavoriteJoin) {
                 isFavorite = reader["FavFolderPath"] != DBNull.Value;
-                favoritedDate = reader["FavFavoritedDate"] != DBNull.Value
-                    ? DateTime.Parse(reader["FavFavoritedDate"].ToString())
+                favoritedDate = reader["FavFavoritedDate"] != DBNull.Value && DateTime.TryParse(reader["FavFavoritedDate"].ToString(), out var parsedDate)
+                    ? parsedDate
                     : DateTime.MinValue;
             } else {
                 isFavorite = Convert.ToInt32(reader["IsFavorite"]) == 1;
-                favoritedDate = string.IsNullOrEmpty(reader["FavoritedDate"]?.ToString())
-                    ? DateTime.MinValue
-                    : DateTime.Parse(reader["FavoritedDate"].ToString());
+                favoritedDate = reader["FavoritedDate"] != DBNull.Value && DateTime.TryParse(reader["FavoritedDate"].ToString(), out var parsedDate)
+                    ? parsedDate
+                    : DateTime.MinValue;
             }
 
             return new WallpaperItem {
@@ -76,16 +76,18 @@ namespace WallpaperEngine.Data {
                     Visibility = reader["Visibility"].ToString()
                 },
                 Category = reader["Category"].ToString(),
-                AddedDate = DateTime.Parse(reader["AddedDate"].ToString()),
+                AddedDate = reader["AddedDate"] != DBNull.Value && DateTime.TryParse(reader["AddedDate"].ToString(), out var addedDateParsed)
+                    ? addedDateParsed
+                    : DateTime.MinValue,
                 IsFavorite = isFavorite,
                 FavoritedDate = favoritedDate,
                 LastUpdated = reader["LastUpdated"]?.ToString(),
-                LastScanned = string.IsNullOrEmpty(reader["LastScanned"]?.ToString())
-                        ? DateTime.MinValue
-                        : DateTime.Parse(reader["LastScanned"].ToString()),
-                FolderLastModified = string.IsNullOrEmpty(reader["FolderLastModified"]?.ToString())
-                        ? DateTime.MinValue
-                        : DateTime.Parse(reader["FolderLastModified"].ToString())
+                LastScanned = reader["LastScanned"] != DBNull.Value && DateTime.TryParse(reader["LastScanned"].ToString(), out var lastScannedParsed)
+                        ? lastScannedParsed
+                        : DateTime.MinValue,
+                FolderLastModified = reader["FolderLastModified"] != DBNull.Value && DateTime.TryParse(reader["FolderLastModified"].ToString(), out var folderLastModifiedParsed)
+                        ? folderLastModifiedParsed
+                        : DateTime.MinValue
             };
         }
 
@@ -400,7 +402,9 @@ namespace WallpaperEngine.Data {
                 collections.Add(new WallpaperCollection {
                     Id = reader["Id"].ToString(),
                     Name = reader["Name"].ToString(),
-                    CreatedDate = DateTime.Parse(reader["CreatedDate"].ToString())
+                    CreatedDate = reader["CreatedDate"] != DBNull.Value && DateTime.TryParse(reader["CreatedDate"].ToString(), out var createdDateParsed)
+                        ? createdDateParsed
+                        : DateTime.MinValue
                 });
             }
             return collections;
@@ -571,8 +575,10 @@ namespace WallpaperEngine.Data {
             if (!reader.Read())
                 return true; // 不存在，需要添加
 
-            var dbLastModified = DateTime.Parse(reader["FolderLastModified"].ToString());
-            var dbFileSize = Convert.ToInt64(reader["FileSize"]);
+            if (!DateTime.TryParse(reader["FolderLastModified"].ToString(), out var dbLastModified))
+                return true;
+            if (!long.TryParse(reader["FileSize"].ToString(), out var dbFileSize))
+                return true;
 
             // 如果最后修改时间或文件大小变化，则需要更新
             return dbLastModified != lastModified || dbFileSize != fileSize;
@@ -583,7 +589,7 @@ namespace WallpaperEngine.Data {
         /// </summary>
         /// <param name="scanPath">扫描路径筛选条件，为 null 时返回所有记录</param>
         /// <returns>扫描历史列表</returns>
-        public List<ScanInfo> GetScanHistory(string scanPath = null)
+        public List<ScanInfo> GetScanHistory(string? scanPath = null)
         {
             var history = new List<ScanInfo>();
             using var command = m_connection.CreateCommand();
@@ -608,7 +614,9 @@ namespace WallpaperEngine.Data {
             while (reader.Read()) {
                 history.Add(new ScanInfo {
                     ScanPath = reader["ScanPath"].ToString(),
-                    LastScanTime = DateTime.Parse(reader["LastScanTime"].ToString()),
+                    LastScanTime = reader["LastScanTime"] != DBNull.Value && DateTime.TryParse(reader["LastScanTime"].ToString(), out var lastScanTimeParsed)
+                        ? lastScanTimeParsed
+                        : DateTime.MinValue,
                     TotalScanned = Convert.ToInt32(reader["TotalFolders"]),
                     NewFound = Convert.ToInt32(reader["NewFound"])
                 });

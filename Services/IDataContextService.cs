@@ -7,11 +7,11 @@ namespace WallpaperEngine.Services {
         /// <summary>
         /// 获取或设置当前选中的壁纸项
         /// </summary>
-        WallpaperItem CurrentWallpaper { get; set; }
+        WallpaperItem? CurrentWallpaper { get; set; }
 
         /// <summary>
         /// 当前选中壁纸发生变化时触发的事件
         /// </summary>
-        event EventHandler<WallpaperItem> CurrentWallpaperChanged;
+        event EventHandler<WallpaperItem?>? CurrentWallpaperChanged;
     }
 }

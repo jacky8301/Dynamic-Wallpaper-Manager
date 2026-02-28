@@ -142,7 +142,10 @@ namespace WallpaperEngine.ViewModels {
         private async Task UpdateDatabaseAsync()
         {
             await Task.Run(() => {
-                _dbManager.UpdateWallpaper(CurrentWallpaper);
+                if (CurrentWallpaper != null)
+                {
+                    _dbManager.UpdateWallpaper(CurrentWallpaper);
+                }
             });
         }
     }

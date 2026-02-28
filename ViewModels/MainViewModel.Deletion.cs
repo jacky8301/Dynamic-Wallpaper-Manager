@@ -151,7 +151,7 @@ namespace WallpaperEngine.ViewModels {
         /// <param name="wallpaper">已删除的壁纸项</param>
         private void ShowDeletionSuccess(WallpaperItem wallpaper)
         {
-            ShowNotification($"壁纸 '{wallpaper.Project.Title}' 已成功删除");
+            _ = ShowNotification($"壁纸 '{wallpaper.Project.Title}' 已成功删除");
         }
     }
 }
