@@ -13,4 +13,6 @@
     <local:ProtectedCategoryToVisibilityConverter x:Key="ProtectedCategoryToVisibilityConverter" />
     <local:AddToCollectionConverter x:Key="AddToCollectionConverter" />
     <local:CollectionCountConverter x:Key="CollectionCountConverter" />
+    <local:IsInCollectionConverter x:Key="IsInCollectionConverter" />
+    <local:CollectionMenuHeaderConverter x:Key="CollectionMenuHeaderConverter" />
 </ResourceDictionary>

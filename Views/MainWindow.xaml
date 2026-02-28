@@ -254,7 +254,14 @@
                                                         </MenuItem.ItemsSource>
                                                         <MenuItem.ItemContainerStyle>
                                                             <Style TargetType="MenuItem">
-                                                                <Setter Property="Header" Value="{Binding Name}" />
+                                                                <Setter Property="Header">
+                                                                    <Setter.Value>
+                                                                        <MultiBinding Converter="{StaticResource CollectionMenuHeaderConverter}">
+                                                                            <Binding Path="PlacementTarget.Tag" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                                                            <Binding />
+                                                                        </MultiBinding>
+                                                                    </Setter.Value>
+                                                                </Setter>
                                                                 <Setter Property="Command" Value="{Binding DataContext.AddToSpecificCollectionCommand, Source={x:Reference mainWindow}}" />
                                                                 <Setter Property="CommandParameter">
                                                                     <Setter.Value>
@@ -264,6 +271,8 @@
                                                                         </MultiBinding>
                                                                     </Setter.Value>
                                                                 </Setter>
+                                                                <Setter Property="Padding" Value="8,4" />
+                                                                <Setter Property="Margin" Value="0,2" />
                                                             </Style>
                                                         </MenuItem.ItemContainerStyle>
                                                         <MenuItem.Style>
