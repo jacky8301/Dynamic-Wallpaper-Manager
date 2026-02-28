@@ -49,6 +49,10 @@ namespace WallpaperEngine.ViewModels {
         partial void OnCurrentTabChanged(int value)
         {
             ShowFavoritesOnly = value == 1;
+            // 切换标签页时清空选中状态，使每个标签页的选中列表独立
+            ClearSelection();
+            SelectedWallpaper = null;
+            _lastSelectedItem = null;
         }
 
         /// <summary>
