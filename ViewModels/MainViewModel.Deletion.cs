@@ -17,17 +17,18 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private async Task DeleteWallpaper(object parameter)
         {
-            // 优先使用选中的壁纸列表
+            // 优先使用传入的参数（用户点击了特定壁纸的删除按钮）
+            if (parameter is WallpaperItem wallpaper) {
+                Log.Information("请求删除壁纸: {Title}", wallpaper.Project.Title);
+                await ShowDeletionConfirmation(wallpaper);
+                return;
+            }
+
+            // 如果没有参数但有选中的壁纸，使用选中的壁纸列表（例如从右键菜单触发）
             if (SelectedWallpapers.Count > 0)
             {
                 await ShowMultiDeletionConfirmation(SelectedWallpapers.ToList());
                 return;
-            }
-
-            // 如果没有选中的壁纸，则使用传入的参数
-            if (parameter is WallpaperItem wallpaper) {
-                Log.Information("请求删除壁纸: {Title}", wallpaper.Project.Title);
-                await ShowDeletionConfirmation(wallpaper);
             }
         }
 

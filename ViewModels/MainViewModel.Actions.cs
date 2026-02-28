@@ -22,10 +22,26 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private async Task PreviewWallpaper(object parameter)
         {
-            // 优先使用选中的壁纸列表
+            // 优先使用传入的参数（用户点击了特定壁纸的预览按钮）
+            if (parameter is WallpaperItem wp) {
+                SelectedWallpaper = wp;
+                Log.Information("预览壁纸: {Title}", wp.Project.Title);
+                _dataContextService.CurrentWallpaper = wp;
+                await OpenPreviewWindowNew(wp);
+                return;
+            } else if (parameter is string wallpaperId) {
+                var myWallpaper = Wallpapers.FirstOrDefault(w => w.Id == wallpaperId);
+                if (myWallpaper != null) {
+                    SelectedWallpaper = myWallpaper;
+                    _dataContextService.CurrentWallpaper = myWallpaper;
+                    await OpenPreviewWindowNew(myWallpaper);
+                }
+                return;
+            }
+
+            // 如果没有参数但有选中的壁纸，预览第一个选中的壁纸（例如从工具栏触发）
             if (SelectedWallpapers.Count > 0)
             {
-                // 预览第一个选中的壁纸
                 var selectedWallpaper = SelectedWallpapers.FirstOrDefault();
                 if (selectedWallpaper != null)
                 {
@@ -35,21 +51,6 @@ namespace WallpaperEngine.ViewModels {
                     await OpenPreviewWindowNew(selectedWallpaper);
                 }
                 return;
-            }
-
-            // 如果没有选中的壁纸，则使用传入的参数
-            if (parameter is WallpaperItem wp) {
-                SelectedWallpaper = wp;
-                Log.Information("预览壁纸: {Title}", wp.Project.Title);
-                _dataContextService.CurrentWallpaper = wp;
-                await OpenPreviewWindowNew(wp);
-            } else if (parameter is string wallpaperId) {
-                var myWallpaper = Wallpapers.FirstOrDefault(w => w.Id == wallpaperId);
-                if (myWallpaper != null) {
-                    SelectedWallpaper = myWallpaper;
-                    _dataContextService.CurrentWallpaper = myWallpaper;
-                    await OpenPreviewWindowNew(myWallpaper);
-                }
             }
         }
 
@@ -113,21 +114,21 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private void ApplyWallpaper(object parameter)
         {
-            // 优先使用选中的壁纸列表
+            // 优先使用传入的参数（用户点击了特定壁纸的应用按钮）
+            if (parameter is WallpaperItem wp) {
+                ApplySingleWallpaper(wp);
+                return;
+            }
+
+            // 如果没有参数但有选中的壁纸，应用第一个选中的壁纸（例如从工具栏触发）
             if (SelectedWallpapers.Count > 0)
             {
-                // 应用第一个选中的壁纸
                 var selectedWallpaper = SelectedWallpapers.FirstOrDefault();
                 if (selectedWallpaper != null)
                 {
                     ApplySingleWallpaper(selectedWallpaper);
                 }
                 return;
-            }
-
-            // 如果没有选中的壁纸，则使用传入的参数
-            if (parameter is WallpaperItem wp) {
-                ApplySingleWallpaper(wp);
             }
         }
 
@@ -175,26 +176,63 @@ namespace WallpaperEngine.ViewModels {
                 Log.Information("参数不是WallpaperItem，而是: {Type}", parameter.GetType().FullName);
             }
 
-            // 如果参数是壁纸项，优先使用参数（用户点击了特定壁纸的收藏按钮）
+            // 如果参数是壁纸项
             if (parameterWallpaper != null)
             {
-                ToggleSingleFavorite(parameterWallpaper);
-                // 如果当前仅显示收藏，且取消了收藏，刷新视图
-                if (ShowFavoritesOnly && !parameterWallpaper.IsFavorite) {
-                    WallpapersView.Refresh();
+                // 检查参数壁纸是否在选中列表中，且选中数量大于1
+                // 这种情况通常是右键菜单：用户选中了多个壁纸，然后右键点击其中一个打开菜单
+                bool isParameterInSelected = SelectedWallpapers.Contains(parameterWallpaper);
+
+                if (isParameterInSelected && SelectedWallpapers.Count > 1)
+                {
+                    // 收藏菜单场景：参数壁纸在选中列表中，且选中多个壁纸
+                    // 操作所有选中壁纸（优化选中项）
+                    bool anyUnfavorited = false;
+                    foreach (var wallpaperItem in SelectedWallpapers.ToList())
+                    {
+                        bool wasFavorite = wallpaperItem.IsFavorite;
+                        ToggleSingleFavorite(wallpaperItem);
+                        if (!wallpaperItem.IsFavorite) // 切换后不再是收藏状态
+                        {
+                            anyUnfavorited = true;
+                        }
+                    }
+                    // 如果当前仅显示收藏，且有壁纸被取消收藏，刷新视图
+                    if (ShowFavoritesOnly && anyUnfavorited)
+                    {
+                        WallpapersView.Refresh();
+                    }
+                }
+                else
+                {
+                    // 收藏按钮场景：参数壁纸不在选中列表中，或只有一个选中项
+                    // 只操作参数壁纸，并选中它（优化参数传入）
+                    ToggleSingleFavorite(parameterWallpaper);
+                    // 点击收藏按钮时，使点击的壁纸变成选中壁纸（清空其他选中项）
+                    HandleWallpaperSelection(parameterWallpaper, false, false);
+                    // 如果当前仅显示收藏，且取消了收藏，刷新视图
+                    if (ShowFavoritesOnly && !parameterWallpaper.IsFavorite) {
+                        WallpapersView.Refresh();
+                    }
                 }
                 return;
             }
 
-            // 如果没有参数但有选中的壁纸，使用选中的壁纸列表（例如从右键菜单触发）
+            // 如果没有参数但有选中的壁纸（例如从工具栏触发），使用选中的壁纸列表
             if (SelectedWallpapers.Count > 0)
             {
+                bool anyUnfavorited = false;
                 foreach (var wallpaperItem in SelectedWallpapers.ToList())
                 {
+                    bool wasFavorite = wallpaperItem.IsFavorite;
                     ToggleSingleFavorite(wallpaperItem);
+                    if (!wallpaperItem.IsFavorite) // 切换后不再是收藏状态
+                    {
+                        anyUnfavorited = true;
+                    }
                 }
-                // 如果当前仅显示收藏，刷新视图
-                if (ShowFavoritesOnly)
+                // 如果当前仅显示收藏，且有壁纸被取消收藏，刷新视图
+                if (ShowFavoritesOnly && anyUnfavorited)
                 {
                     WallpapersView.Refresh();
                 }
@@ -243,10 +281,17 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private async Task GoToWallpaperDirectory(object parameter)
         {
-            // 优先使用选中的壁纸列表
+            // 优先使用传入的参数（用户点击了特定壁纸的目录按钮）
+            if (parameter is WallpaperItem wp) {
+                Log.Debug("打开壁纸目录: {FolderPath}", wp.FolderPath);
+                SelectedWallpaper = wp;
+                await OpenWallpaperDirectory(wp);
+                return;
+            }
+
+            // 如果没有参数但有选中的壁纸，打开第一个选中的壁纸目录（例如从工具栏触发）
             if (SelectedWallpapers.Count > 0)
             {
-                // 打开第一个选中的壁纸目录
                 var selectedWallpaper = SelectedWallpapers.FirstOrDefault();
                 if (selectedWallpaper != null)
                 {
@@ -255,13 +300,6 @@ namespace WallpaperEngine.ViewModels {
                     await OpenWallpaperDirectory(selectedWallpaper);
                 }
                 return;
-            }
-
-            // 如果没有选中的壁纸，则使用传入的参数
-            if (parameter is WallpaperItem wp) {
-                Log.Debug("打开壁纸目录: {FolderPath}", wp.FolderPath);
-                SelectedWallpaper = wp;
-                await OpenWallpaperDirectory(wp);
             }
         }
 
@@ -405,7 +443,7 @@ namespace WallpaperEngine.ViewModels {
                 return;
             }
 
-            // 确定要添加的壁纸列表：优先使用选中的壁纸，如果没有则使用参数中的壁纸
+            // 确定要添加的壁纸列表：优先使用选中的壁纸列表（支持多选操作），如果没有选中的壁纸则使用参数中的壁纸
             List<WallpaperItem> wallpapersToAdd = new List<WallpaperItem>();
             if (SelectedWallpapers.Count > 0)
             {
@@ -451,16 +489,16 @@ namespace WallpaperEngine.ViewModels {
 
                 int addedCount = 0;
                 int alreadyInCollectionCount = 0;
-                foreach (var wp in wallpapersToAdd)
+                foreach (var wallpaper in wallpapersToAdd)
                 {
-                    if (_dbManager.IsInCollection(collectionId, wp.FolderPath)) {
+                    if (_dbManager.IsInCollection(collectionId, wallpaper.FolderPath)) {
                         alreadyInCollectionCount++;
                         continue;
                     }
 
-                    _dbManager.AddToCollection(collectionId, wp.FolderPath);
+                    _dbManager.AddToCollection(collectionId, wallpaper.FolderPath);
                     addedCount++;
-                    Log.Information($"成功将壁纸{wp.Project?.Title} 添加到合集{collection.Name}");
+                    Log.Information($"成功将壁纸{wallpaper.Project?.Title} 添加到合集{collection.Name}");
                 }
 
                 // 显示成功提示
