@@ -160,7 +160,33 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private void ToggleFavorite(object parameter)
         {
-            // 优先使用选中的壁纸列表
+            Log.Information("ToggleFavorite命令触发，参数类型: {ParameterType}, SelectedWallpapers.Count: {Count}",
+                parameter?.GetType().Name ?? "null", SelectedWallpapers.Count);
+
+            // 调试参数内容
+            WallpaperItem parameterWallpaper = null;
+            if (parameter is WallpaperItem wp)
+            {
+                parameterWallpaper = wp;
+                Log.Information("参数是WallpaperItem: {Title}, IsFavorite: {IsFavorite}", wp.Project?.Title, wp.IsFavorite);
+            }
+            else if (parameter != null)
+            {
+                Log.Information("参数不是WallpaperItem，而是: {Type}", parameter.GetType().FullName);
+            }
+
+            // 如果参数是壁纸项，优先使用参数（用户点击了特定壁纸的收藏按钮）
+            if (parameterWallpaper != null)
+            {
+                ToggleSingleFavorite(parameterWallpaper);
+                // 如果当前仅显示收藏，且取消了收藏，刷新视图
+                if (ShowFavoritesOnly && !parameterWallpaper.IsFavorite) {
+                    WallpapersView.Refresh();
+                }
+                return;
+            }
+
+            // 如果没有参数但有选中的壁纸，使用选中的壁纸列表（例如从右键菜单触发）
             if (SelectedWallpapers.Count > 0)
             {
                 foreach (var wallpaperItem in SelectedWallpapers.ToList())
@@ -175,13 +201,7 @@ namespace WallpaperEngine.ViewModels {
                 return;
             }
 
-            // 如果没有选中的壁纸，则使用传入的参数
-            if (parameter is WallpaperItem wp) {
-                ToggleSingleFavorite(wp);
-                if (ShowFavoritesOnly && !wp.IsFavorite) {
-                    WallpapersView.Refresh();
-                }
-            }
+            Log.Warning("ToggleFavorite: 没有参数也没有选中的壁纸");
         }
 
         /// <summary>
@@ -189,11 +209,15 @@ namespace WallpaperEngine.ViewModels {
         /// </summary>
         private void ToggleSingleFavorite(WallpaperItem wallpaper)
         {
+            Log.Information("切换收藏状态: {FolderPath}, 当前状态: {IsFavorite}, 新状态: {NewState}",
+                wallpaper.FolderPath, wallpaper.IsFavorite, !wallpaper.IsFavorite);
+
             wallpaper.IsFavorite = !wallpaper.IsFavorite;
             wallpaper.FavoritedDate = wallpaper.IsFavorite ? DateTime.Now : DateTime.MinValue;
 
             try {
                 _dbManager.ToggleFavorite(wallpaper.FolderPath, wallpaper.IsFavorite);
+                Log.Information("数据库更新成功");
             } catch (Exception ex) {
                 Log.Warning($"更新收藏状态失败: {ex.Message}");
                 wallpaper.IsFavorite = !wallpaper.IsFavorite;
@@ -207,6 +231,7 @@ namespace WallpaperEngine.ViewModels {
                 if (collectionWallpaper != null) {
                     collectionWallpaper.IsFavorite = wallpaper.IsFavorite;
                     collectionWallpaper.FavoritedDate = wallpaper.FavoritedDate;
+                    Log.Information("已同步收藏状态到合集视图");
                 }
             }
         }

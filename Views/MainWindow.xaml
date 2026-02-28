@@ -31,8 +31,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Styles/WallpaperItemStyle.xaml" />
-                <ResourceDictionary Source="/Styles/FavoriteButtonStyle.xaml" />
                 <ResourceDictionary Source="/Converters/CommonConverters.xaml" />
+                <ResourceDictionary Source="/Styles/FavoriteButtonStyle.xaml" />
                 <ResourceDictionary Source="/Styles/ToolBarStyle.xaml" />
                 <ResourceDictionary Source="/Styles/ModernComboBoxStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
@@ -321,15 +321,7 @@
                                                     VerticalAlignment="Top"
                                                     Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     CommandParameter="{Binding}"
-                                                    Style="{StaticResource FavoriteButtonStyle}">
-                                                    <!--  根据 IsFavorite 属性动态显示不同图标  -->
-                                                    <Button.Content>
-                                                        <MultiBinding Converter="{StaticResource FavoriteIconConverter}">
-                                                            <Binding Path="IsFavorite" />
-                                                            <Binding Path="IsMouseOver" RelativeSource="{RelativeSource Mode=Self}" />
-                                                        </MultiBinding>
-                                                    </Button.Content>
-                                                </Button>
+                                                    Style="{StaticResource FavoriteButtonStyle}" />
                                             </Grid>
                                         </Border>
                                     </DataTemplate>

@@ -220,7 +220,6 @@ namespace WallpaperEngine.ViewModels {
 
         private void OnWallpapersCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            Log.Debug("OnWallpapersCollectionChanged," + e.ToString());
             OnPropertyChanged(nameof(WallpaperCount));
         }
 
