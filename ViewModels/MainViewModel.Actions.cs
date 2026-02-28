@@ -165,7 +165,7 @@ namespace WallpaperEngine.ViewModels {
                 parameter?.GetType().Name ?? "null", SelectedWallpapers.Count);
 
             // 调试参数内容
-            WallpaperItem parameterWallpaper = null;
+            WallpaperItem? parameterWallpaper = null;
             if (parameter is WallpaperItem wp)
             {
                 parameterWallpaper = wp;

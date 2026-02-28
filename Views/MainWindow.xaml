@@ -161,7 +161,7 @@
                                 Grid.Column="0"
                                 ItemsSource="{Binding Wallpapers}"
                                 ScrollViewer.CanContentScroll="True"
-                                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.IsDeferredScrollingEnabled="False"
                                 VirtualizingPanel.IsVirtualizing="True"
                                 VirtualizingPanel.VirtualizationMode="Recycling"
                                 VirtualizingPanel.ScrollUnit="Pixel"

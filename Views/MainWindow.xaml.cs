@@ -127,8 +127,8 @@ namespace WallpaperEngine.Views {
             if (e.ChangedButton != MouseButton.Left) return;
 
             // 检查是否点击了按钮（如收藏按钮），如果是则跳过处理
-            DependencyObject originalSource = e.OriginalSource as DependencyObject;
-            DependencyObject current = originalSource;
+            DependencyObject? originalSource = e.OriginalSource as DependencyObject;
+            DependencyObject? current = originalSource;
             bool isButtonClick = false;
             while (current != null)
             {
@@ -141,8 +141,25 @@ namespace WallpaperEngine.Views {
             }
             if (isButtonClick) return;
 
+            // 检查是否点击了滚动条，如果是则跳过处理（允许滚动条正常工作）
+            current = originalSource;
+            bool isScrollBarClick = false;
+            while (current != null)
+            {
+                if (current is System.Windows.Controls.Primitives.ScrollBar ||
+                    current is System.Windows.Controls.Primitives.Thumb ||
+                    current is System.Windows.Controls.Primitives.RepeatButton ||
+                    current is System.Windows.Controls.Primitives.Track)
+                {
+                    isScrollBarClick = true;
+                    break;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            if (isScrollBarClick) return;
+
             // 找到被点击的Border（壁纸项）
-            DependencyObject source = e.OriginalSource as DependencyObject;
+            DependencyObject? source = e.OriginalSource as DependencyObject;
             while (source != null && !(source is Border))
             {
                 source = VisualTreeHelper.GetParent(source);
@@ -164,8 +181,8 @@ namespace WallpaperEngine.Views {
             if (e.ChangedButton != MouseButton.Right) return;
 
             // 检查是否点击了按钮（如收藏按钮），如果是则跳过处理
-            DependencyObject originalSource = e.OriginalSource as DependencyObject;
-            DependencyObject current = originalSource;
+            DependencyObject? originalSource = e.OriginalSource as DependencyObject;
+            DependencyObject? current = originalSource;
             bool isButtonClick = false;
             while (current != null)
             {
@@ -178,8 +195,25 @@ namespace WallpaperEngine.Views {
             }
             if (isButtonClick) return;
 
+            // 检查是否点击了滚动条，如果是则跳过处理（允许滚动条正常工作）
+            current = originalSource;
+            bool isScrollBarClick = false;
+            while (current != null)
+            {
+                if (current is System.Windows.Controls.Primitives.ScrollBar ||
+                    current is System.Windows.Controls.Primitives.Thumb ||
+                    current is System.Windows.Controls.Primitives.RepeatButton ||
+                    current is System.Windows.Controls.Primitives.Track)
+                {
+                    isScrollBarClick = true;
+                    break;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            if (isScrollBarClick) return;
+
             // 找到被点击的Border（壁纸项）
-            DependencyObject source = e.OriginalSource as DependencyObject;
+            DependencyObject? source = e.OriginalSource as DependencyObject;
             while (source != null && !(source is Border))
             {
                 source = VisualTreeHelper.GetParent(source);
