@@ -1,18 +1,33 @@
 ﻿<!--  在 App.xaml 或 Window.Resources 中定义  -->
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
     <!--  收藏按钮样式  -->
     <Style x:Key="FavoriteButtonStyle" TargetType="Button">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Foreground" Value="Gold" />
+        <Setter Property="Foreground" Value="LightGray" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Border Background="Transparent" CornerRadius="15">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <materialDesign:PackIcon
+                            Width="16"
+                            Height="16"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Kind="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" />
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+        <Style.Triggers>
+            <!-- 已收藏时显示特定颜色 -->
+            <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                <Setter Property="Foreground" Value="#ff36d2" />
+            </DataTrigger>
+            <!-- 鼠标悬停时显示相同颜色 -->
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Foreground" Value="#ff36d2" />
+            </Trigger>
+        </Style.Triggers>
     </Style>
 </ResourceDictionary>
