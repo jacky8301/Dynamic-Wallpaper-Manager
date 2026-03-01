@@ -101,17 +101,27 @@
                         <!--  工具栏  -->
                         <views:MyToolBar Grid.Row="0" />
                         <!--  Tab 切换栏  -->
-                        <Border Grid.Row="1" Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1">
-                            <StackPanel Orientation="Horizontal" Height="36">
-                                <RadioButton Content="全部壁纸" GroupName="MainTab"
-                                             IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToZeroConverter}}"
-                                             Style="{StaticResource TabRadioButtonStyle}" />
-                                <RadioButton Content="我的收藏" GroupName="MainTab"
-                                             IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToOneConverter}}"
-                                             Style="{StaticResource TabRadioButtonStyle}" />
-                                <RadioButton Content="壁纸合集" GroupName="MainTab"
-                                             IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToTwoConverter}}"
-                                             Style="{StaticResource TabRadioButtonStyle}" />
+                        <Border
+                            Grid.Row="1"
+                            Background="#FAFAFA"
+                            BorderBrush="#E0E0E0"
+                            BorderThickness="0,0,0,1">
+                            <StackPanel Height="36" Orientation="Horizontal">
+                                <RadioButton
+                                    Content="全部壁纸"
+                                    GroupName="MainTab"
+                                    IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToZeroConverter}}"
+                                    Style="{StaticResource TabRadioButtonStyle}" />
+                                <RadioButton
+                                    Content="我的收藏"
+                                    GroupName="MainTab"
+                                    IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToOneConverter}}"
+                                    Style="{StaticResource TabRadioButtonStyle}" />
+                                <RadioButton
+                                    Content="壁纸合集"
+                                    GroupName="MainTab"
+                                    IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToTwoConverter}}"
+                                    Style="{StaticResource TabRadioButtonStyle}" />
                             </StackPanel>
                         </Border>
                         <!--  扫描状态显示  -->
@@ -140,7 +150,7 @@
                         </Border>
                         <!--  内容区域  -->
                         <Grid Grid.Row="2">
-                            <!-- Tab 0/1: 壁纸列表 + 详情 -->
+                            <!--  Tab 0/1: 壁纸列表 + 详情  -->
                             <Grid>
                                 <Grid.Style>
                                     <Style TargetType="Grid">
@@ -156,186 +166,176 @@
                                     <ColumnDefinition Width="3*" />
                                     <ColumnDefinition Width="1*" />
                                 </Grid.ColumnDefinitions>
-                            <!--  壁纸网格  -->
-                            <ListBox
-                                Grid.Column="0"
-                                ItemsSource="{Binding Wallpapers}"
-                                ScrollViewer.CanContentScroll="True"
-                                ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.IsDeferredScrollingEnabled="False"
-                                VirtualizingPanel.IsVirtualizing="True"
-                                VirtualizingPanel.VirtualizationMode="Recycling"
-                                VirtualizingPanel.ScrollUnit="Pixel"
-                                BorderThickness="0"
-                                Background="Transparent"
-                                HorizontalContentAlignment="Stretch"
-                                SelectionMode="Single"
-                                x:Name="WallpaperListBox">
-                                <ListBox.ItemContainerStyle>
-                                    <Style TargetType="ListBoxItem">
-                                        <Setter Property="Padding" Value="0"/>
-                                        <Setter Property="Margin" Value="0"/>
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="ListBoxItem">
-                                                    <ContentPresenter/>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </ListBox.ItemContainerStyle>
-                                <ListBox.Resources>
-                                    <Style x:Key="SelectableBorderStyle" TargetType="Border">
-                                        <Setter Property="Background" Value="LightGray" />
-                                        <!--  默认背景  -->
-                                        <Setter Property="BorderBrush" Value="DarkGray" />
-                                        <!--  默认边框  -->
-                                        <Setter Property="BorderThickness" Value="1" />
-                                        <Setter Property="CornerRadius" Value="5" />
-                                        <!--  可选：圆角  -->
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                <Setter Property="Background" Value="Red" />
-                                                <!--  选中背景  -->
-                                                <Setter Property="BorderBrush" Value="Red" />
-                                                <!--  选中边框  -->
-                                                <!--  可以添加更多视觉变化，如阴影  -->
-                                                <Setter Property="Effect">
-                                                    <Setter.Value>
-                                                        <DropShadowEffect
-                                                            BlurRadius="10"
-                                                            ShadowDepth="0"
-                                                            Color="Red" />
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ListBox.Resources>
-                                <ListBox.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <vwp:VirtualizingWrapPanel Orientation="Horizontal" />
-                                    </ItemsPanelTemplate>
-                                </ListBox.ItemsPanel>
-                                <ListBox.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border
-                                            Width="200"
-                                            Height="150"
-                                            Margin="5"
-                                            BorderBrush="#E0E0E0"
-                                            BorderThickness="1"
-                                            Cursor="Hand"
-                                            Tag="{Binding}"
-                                            Style="{StaticResource SelectableBorderStyle}">
-                                            <!--  右键菜单定义  -->
-                                            <Border.ContextMenu>
-                                                <ContextMenu>
-                                                    <MenuItem
-                                                        Header="👁️ 预览壁纸"
-                                                        Command="{Binding DataContext.PreviewWallpaperCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}" />
-                                                    <Separator />
-                                                    <MenuItem
-                                                        Header="🚀 应用壁纸"
-                                                        Command="{Binding DataContext.ApplyWallpaperCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}" />
-                                                    <Separator />
-                                                    <MenuItem
-                                                        Header="{Binding IsFavorite, Converter={StaticResource FavoriteTextConverter}}"
-                                                        Command="{Binding DataContext.ToggleFavoriteCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}" />
-                                                    <Separator />
-                                                    <MenuItem
-                                                        Header="📁 转到壁纸目录"
-                                                        Command="{Binding DataContext.GoToWallpaperDirectoryCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}" />
-                                                    <Separator />
-                                                    <MenuItem Header="📂 添加到合集">
-                                                        <MenuItem.ItemsSource>
-                                                            <Binding Path="DataContext.Collections" Source="{x:Reference mainWindow}" />
-                                                        </MenuItem.ItemsSource>
-                                                        <MenuItem.ItemContainerStyle>
-                                                            <Style TargetType="MenuItem">
-                                                                <Setter Property="Header">
-                                                                    <Setter.Value>
-                                                                        <MultiBinding Converter="{StaticResource CollectionMenuHeaderConverter}">
-                                                                            <Binding Path="PlacementTarget.Tag" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
-                                                                            <Binding />
-                                                                        </MultiBinding>
-                                                                    </Setter.Value>
-                                                                </Setter>
-                                                                <Setter Property="Command" Value="{Binding DataContext.AddToSpecificCollectionCommand, Source={x:Reference mainWindow}}" />
-                                                                <Setter Property="CommandParameter">
-                                                                    <Setter.Value>
-                                                                        <MultiBinding Converter="{StaticResource AddToCollectionConverter}">
-                                                                            <Binding Path="PlacementTarget.Tag" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
-                                                                            <Binding Path="Id" />
-                                                                        </MultiBinding>
-                                                                    </Setter.Value>
-                                                                </Setter>
-                                                                <Setter Property="Padding" Value="8,4" />
-                                                                <Setter Property="Margin" Value="0,2" />
-                                                            </Style>
-                                                        </MenuItem.ItemContainerStyle>
-                                                        <MenuItem.Style>
-                                                            <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
-                                                                <Setter Property="IsEnabled" Value="True" />
-                                                                <Setter Property="Header" Value="{Binding DataContext.Collections.Count, Source={x:Reference mainWindow}, Converter={StaticResource CollectionCountConverter}}" />
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding DataContext.Collections.Count, Source={x:Reference mainWindow}}" Value="0">
-                                                                        <Setter Property="IsEnabled" Value="False" />
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </MenuItem.Style>
-                                                    </MenuItem>
-                                                    <Separator />
-                                                    <MenuItem
-                                                        Header="🗑️ 删除壁纸"
-                                                        Foreground="Red"
-                                                        Command="{Binding DataContext.DeleteWallpaperCommand, Source={x:Reference mainWindow}}"
-                                                        CommandParameter="{Binding}" />
-                                                </ContextMenu>
-                                            </Border.ContextMenu>
-                                            <Border.InputBindings>
-                                                <!--  将左键双击手势绑定到命令  -->
-                                                <MouseBinding
-                                                    Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"
-                                                    Gesture="LeftDoubleClick" />
-                                            </Border.InputBindings>
-                                            <Grid>
-                                                <Image Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}, IsAsync=True}" Stretch="UniformToFill" />
-                                                <Border VerticalAlignment="Bottom" Background="#80000000">
-                                                    <TextBlock
+                                <!--  壁纸网格  -->
+                                <ListBox
+                                    x:Name="WallpaperListBox"
+                                    Grid.Column="0"
+                                    HorizontalContentAlignment="Stretch"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    ItemsSource="{Binding Wallpapers}"
+                                    ScrollViewer.CanContentScroll="True"
+                                    ScrollViewer.IsDeferredScrollingEnabled="False"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    SelectionMode="Single"
+                                    VirtualizingPanel.IsVirtualizing="True"
+                                    VirtualizingPanel.ScrollUnit="Pixel"
+                                    VirtualizingPanel.VirtualizationMode="Recycling">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Padding" Value="0" />
+                                            <Setter Property="Margin" Value="0" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <ContentPresenter />
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.Resources>
+                                        <Style x:Key="SelectableBorderStyle" TargetType="Border">
+                                            <Setter Property="Background" Value="Transparent" />
+                                            <!--  默认背景  -->
+                                            <Setter Property="BorderBrush" Value="#E0E0E0" />
+                                            <!--  默认边框  -->
+                                            <Setter Property="BorderThickness" Value="1" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="Background" Value="#F0F8FF" />
+                                                    <!--  选中背景  -->
+                                                    <Setter Property="BorderBrush" Value="#2563eb" />
+                                                    <!--  选中边框，更深的蓝色  -->
+                                                    <Setter Property="BorderThickness" Value="4" />
+                                                    <!--  增加边框厚度  -->
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ListBox.Resources>
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <vwp:VirtualizingWrapPanel Orientation="Horizontal" />
+                                        </ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border
+                                                Width="200"
+                                                Height="150"
+                                                Margin="5"
+                                                Cursor="Hand"
+                                                Style="{StaticResource SelectableBorderStyle}"
+                                                Tag="{Binding}">
+                                                <!--  右键菜单定义  -->
+                                                <Border.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem
+                                                            Command="{Binding DataContext.PreviewWallpaperCommand, Source={x:Reference mainWindow}}"
+                                                            CommandParameter="{Binding}"
+                                                            Header="👁️ 预览壁纸" />
+                                                        <Separator />
+                                                        <MenuItem
+                                                            Command="{Binding DataContext.ApplyWallpaperCommand, Source={x:Reference mainWindow}}"
+                                                            CommandParameter="{Binding}"
+                                                            Header="🚀 应用壁纸" />
+                                                        <Separator />
+                                                        <MenuItem
+                                                            Command="{Binding DataContext.ToggleFavoriteCommand, Source={x:Reference mainWindow}}"
+                                                            CommandParameter="{Binding}"
+                                                            Header="{Binding IsFavorite, Converter={StaticResource FavoriteTextConverter}}" />
+                                                        <Separator />
+                                                        <MenuItem
+                                                            Command="{Binding DataContext.GoToWallpaperDirectoryCommand, Source={x:Reference mainWindow}}"
+                                                            CommandParameter="{Binding}"
+                                                            Header="📁 转到壁纸目录" />
+                                                        <Separator />
+                                                        <MenuItem Header="📂 添加到合集">
+                                                            <MenuItem.ItemsSource>
+                                                                <Binding Path="DataContext.Collections" Source="{x:Reference mainWindow}" />
+                                                            </MenuItem.ItemsSource>
+                                                            <MenuItem.ItemContainerStyle>
+                                                                <Style TargetType="MenuItem">
+                                                                    <Setter Property="Header">
+                                                                        <Setter.Value>
+                                                                            <MultiBinding Converter="{StaticResource CollectionMenuHeaderConverter}">
+                                                                                <Binding Path="PlacementTarget.Tag" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                                                                <Binding />
+                                                                            </MultiBinding>
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                    <Setter Property="Command" Value="{Binding DataContext.AddToSpecificCollectionCommand, Source={x:Reference mainWindow}}" />
+                                                                    <Setter Property="CommandParameter">
+                                                                        <Setter.Value>
+                                                                            <MultiBinding Converter="{StaticResource AddToCollectionConverter}">
+                                                                                <Binding Path="PlacementTarget.Tag" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                                                                <Binding Path="Id" />
+                                                                            </MultiBinding>
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                    <Setter Property="Padding" Value="8,4" />
+                                                                    <Setter Property="Margin" Value="0,2" />
+                                                                </Style>
+                                                            </MenuItem.ItemContainerStyle>
+                                                            <MenuItem.Style>
+                                                                <Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="MenuItem">
+                                                                    <Setter Property="IsEnabled" Value="True" />
+                                                                    <Setter Property="Header" Value="{Binding DataContext.Collections.Count, Source={x:Reference mainWindow}, Converter={StaticResource CollectionCountConverter}}" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding DataContext.Collections.Count, Source={x:Reference mainWindow}}" Value="0">
+                                                                            <Setter Property="IsEnabled" Value="False" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </MenuItem.Style>
+                                                        </MenuItem>
+                                                        <Separator />
+                                                        <MenuItem
+                                                            Command="{Binding DataContext.DeleteWallpaperCommand, Source={x:Reference mainWindow}}"
+                                                            CommandParameter="{Binding}"
+                                                            Foreground="Red"
+                                                            Header="🗑️ 删除壁纸" />
+                                                    </ContextMenu>
+                                                </Border.ContextMenu>
+                                                <Border.InputBindings>
+                                                    <!--  将左键双击手势绑定到命令  -->
+                                                    <MouseBinding
+                                                        Command="{Binding DataContext.PreviewWallpaperCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Gesture="LeftDoubleClick" />
+                                                </Border.InputBindings>
+                                                <Grid>
+                                                    <Image Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}, IsAsync=True}" Stretch="UniformToFill" />
+                                                    <Border VerticalAlignment="Bottom" Background="#80000000">
+                                                        <TextBlock
+                                                            Margin="5"
+                                                            FontWeight="Bold"
+                                                            Foreground="White"
+                                                            Text="{Binding Project.Title, Mode=TwoWay}"
+                                                            TextWrapping="Wrap" />
+                                                    </Border>
+                                                    <!--  收藏按钮 - 固定在右上角  -->
+                                                    <Button
                                                         Margin="5"
-                                                        FontWeight="Bold"
-                                                        Foreground="White"
-                                                        Text="{Binding Project.Title, Mode=TwoWay}"
-                                                        TextWrapping="Wrap" />
-                                                </Border>
-                                                <!--  收藏按钮 - 固定在右上角  -->
-                                                <Button
-                                                    Margin="5"
-                                                    HorizontalAlignment="Right"
-                                                    VerticalAlignment="Top"
-                                                    Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                    CommandParameter="{Binding}"
-                                                    Style="{StaticResource FavoriteButtonStyle}" />
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListBox.ItemTemplate>
-                            </ListBox>
-                            <!--  详情面板  -->
-                            <Border
-                                Grid.Column="1"
-                                BorderBrush="#E0E0E0"
-                                BorderThickness="1,0,0,0">
-                                <views:WallpaperDetailView />
-                            </Border>
+                                                        HorizontalAlignment="Right"
+                                                        VerticalAlignment="Top"
+                                                        Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource FavoriteButtonStyle}" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <!--  详情面板  -->
+                                <Border
+                                    Grid.Column="1"
+                                    BorderBrush="#E0E0E0"
+                                    BorderThickness="1,0,0,0">
+                                    <views:WallpaperDetailView />
+                                </Border>
                             </Grid>
-                            <!-- Tab 2: 壁纸合集 -->
+                            <!--  Tab 2: 壁纸合集  -->
                             <views:CollectionView x:Name="CollectionViewPanel">
                                 <views:CollectionView.Style>
                                     <Style TargetType="views:CollectionView">
@@ -381,8 +381,8 @@
             <tb:TaskbarIcon
                 x:Name="TrayIcon"
                 IconSource="/Assets/app.ico"
-                TrayMouseDoubleClick="TrayIcon_TrayMouseDoubleClick"
-                ToolTipText="Dynamic Wallpaper Manager">
+                ToolTipText="Dynamic Wallpaper Manager"
+                TrayMouseDoubleClick="TrayIcon_TrayMouseDoubleClick">
                 <tb:TaskbarIcon.ContextMenu>
                     <ContextMenu>
                         <MenuItem Click="ShowWindow_Click" Header="显示窗口" />

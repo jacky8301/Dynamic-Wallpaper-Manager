@@ -10,7 +10,7 @@
                         Margin="5"
                         Background="Transparent"
                         BorderBrush="Transparent"
-                        BorderThickness="2"
+                        BorderThickness="1"
                         Cursor="Hand">
 
                         <ContentPresenter />
@@ -25,8 +25,9 @@
 
                                     <!--  选中状态效果  -->
                                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                        <Setter Property="BorderBrush" Value="#007ACC" />
+                                        <Setter Property="BorderBrush" Value="#2563eb" />
                                         <Setter Property="Background" Value="#F0F8FF" />
+                                        <Setter Property="BorderThickness" Value="3" />
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
@@ -34,17 +35,6 @@
                     </Border>
 
                     <ControlTemplate.Triggers>
-                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                            <Setter TargetName="MainBorder" Property="Effect">
-                                <Setter.Value>
-                                    <DropShadowEffect
-                                        BlurRadius="10"
-                                        Opacity="0.5"
-                                        ShadowDepth="0"
-                                        Color="#007ACC" />
-                                </Setter.Value>
-                            </Setter>
-                        </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
