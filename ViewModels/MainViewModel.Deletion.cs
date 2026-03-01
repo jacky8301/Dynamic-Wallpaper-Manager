@@ -179,6 +179,8 @@ namespace WallpaperEngine.ViewModels {
                         _dataContextService.CurrentWallpaper = null;
                     }
                     ShowDeletionSuccess(wallpaper);
+                    // 更新壁纸总数
+                    await LoadTotalWallpaperCountAsync();
                 } else {
                     wallpaper.DeletionStatus = "删除失败";
                     await ShowErrorMessage($"删除壁纸 '{wallpaper.Project.Title}' 失败");
