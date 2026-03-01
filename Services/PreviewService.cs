@@ -27,10 +27,13 @@ namespace WallpaperEngine.Services {
         /// </summary>
         public class PreviewOptions {
             public string WindowTitle { get; set; } = "Wallpaper Preview";
-            public int Width { get; set; } = 1920;
+            public int Width { get; set; } = 1920;  // 改为较小尺寸便于居中
             public int Height { get; set; } = 1080;
             public string WindowId { get; set; } = "Wallpaper #1";
             public bool AutoClose { get; set; } = true;
+            public int X { get; set; } = 0;
+            public int Y { get; set; } = 0;
+            public bool Activate { get; set; } = true;
         }
 
         /// <summary>
@@ -65,6 +68,7 @@ namespace WallpaperEngine.Services {
 
                 // 构建命令参数
                 var arguments = BuildPreviewArguments(projectJsonPath, options);
+                Log.Debug("启动Wallpaper Engine预览，命令行参数: {Arguments}", arguments);
 
                 // 启动预览进程
                 var processStartInfo = new ProcessStartInfo {
@@ -102,6 +106,21 @@ namespace WallpaperEngine.Services {
             $"-height {options.Height}",
             "-paused false"  // 自动开始播放
         };
+
+            // 添加窗口位置参数
+            if (options.X != 0)
+            {
+                args.Add($"-x {options.X}");
+            }
+            if (options.Y != 0)
+            {
+                args.Add($"-y {options.Y}");
+            }
+            // 添加窗口激活参数
+            if (options.Activate)
+            {
+                args.Add("-activate");
+            }
 
             return string.Join(" ", args);
         }

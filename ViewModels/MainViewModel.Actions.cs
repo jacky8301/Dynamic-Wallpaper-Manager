@@ -3,9 +3,11 @@ using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
 using Serilog;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Forms;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
 using WallpaperEngine.Views;
@@ -62,7 +64,94 @@ namespace WallpaperEngine.ViewModels {
         {
             var type = wallpaper.Project?.Type;
             if (type != null && (type.Equals("web", StringComparison.OrdinalIgnoreCase) || type.Equals("scene", StringComparison.OrdinalIgnoreCase))) {
-                _previewService.PreviewWallpaper(wallpaper);
+                var options = new PreviewService.PreviewOptions();
+
+                // 计算预览窗口居中位置
+                var mainWindow = System.Windows.Application.Current.MainWindow;
+                if (mainWindow != null)
+                {
+                    // 获取主窗口的当前实际位置和尺寸
+                    double mainWindowLeft = mainWindow.Left;
+                    double mainWindowTop = mainWindow.Top;
+                    double mainWindowWidth = mainWindow.ActualWidth;
+                    double mainWindowHeight = mainWindow.ActualHeight;
+
+                    Log.Debug("主窗口初始值: Left={Left}, Top={Top}, ActualWidth={Width}, ActualHeight={Height}",
+                        mainWindowLeft, mainWindowTop, mainWindowWidth, mainWindowHeight);
+
+                    // 如果窗口位置或尺寸无效，尝试使用RestoreBounds
+                    if (double.IsNaN(mainWindowLeft) || double.IsNaN(mainWindowTop) ||
+                        double.IsNaN(mainWindowWidth) || double.IsNaN(mainWindowHeight) ||
+                        mainWindowWidth <= 0 || mainWindowHeight <= 0)
+                    {
+                        var mainWindowBounds = mainWindow.RestoreBounds;
+                        mainWindowLeft = mainWindowBounds.Left;
+                        mainWindowTop = mainWindowBounds.Top;
+                        mainWindowWidth = mainWindowBounds.Width;
+                        mainWindowHeight = mainWindowBounds.Height;
+                        Log.Debug("使用RestoreBounds: Left={Left}, Top={Top}, Width={Width}, Height={Height}",
+                            mainWindowLeft, mainWindowTop, mainWindowWidth, mainWindowHeight);
+                    }
+
+                    if (mainWindowWidth > 0 && mainWindowHeight > 0)
+                    {
+                        // 确保预览窗口尺寸不超过主窗口
+                        int previewWidth = Math.Min(options.Width, (int)mainWindowWidth);
+                        int previewHeight = Math.Min(options.Height, (int)mainWindowHeight);
+
+                        // 如果需要调整尺寸，更新options
+                        if (previewWidth != options.Width || previewHeight != options.Height)
+                        {
+                            options.Width = previewWidth;
+                            options.Height = previewHeight;
+                            Log.Debug("调整预览窗口尺寸: {Width}x{Height} -> {NewWidth}x{NewHeight}",
+                                options.Width, options.Height, previewWidth, previewHeight);
+                        }
+
+                        // 计算居中位置
+                        int x = (int)(mainWindowLeft + (mainWindowWidth - previewWidth) / 2);
+                        int y = (int)(mainWindowTop + (mainWindowHeight - previewHeight) / 2);
+
+                        Log.Debug("计算居中位置: x={X}, y={Y} (基于主窗口位置和尺寸)", x, y);
+
+                        // 确保位置在屏幕范围内（考虑多个显示器）
+                        try
+                        {
+                            var screen = System.Windows.Forms.Screen.FromPoint(new System.Drawing.Point((int)x, (int)y));
+                            if (screen != null)
+                            {
+                                var screenBounds = screen.WorkingArea;
+                                Log.Debug("屏幕工作区: Left={Left}, Top={Top}, Right={Right}, Bottom={Bottom}",
+                                    screenBounds.Left, screenBounds.Top, screenBounds.Right, screenBounds.Bottom);
+
+                                x = Math.Max(screenBounds.Left, Math.Min(x, screenBounds.Right - previewWidth));
+                                y = Math.Max(screenBounds.Top, Math.Min(y, screenBounds.Bottom - previewHeight));
+                                Log.Debug("调整后位置: x={X}, y={Y}", x, y);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning("获取屏幕信息失败: {Error}", ex.Message);
+                        }
+
+                        options.X = x;
+                        options.Y = y;
+
+                        // 调试日志
+                        Log.Information("最终预览窗口位置: 尺寸={Width}x{Height}, 位置=({X},{Y})",
+                            previewWidth, previewHeight, options.X, options.Y);
+                    }
+                    else
+                    {
+                        Log.Warning("无法获取有效的主窗口尺寸: Width={Width}, Height={Height}", mainWindowWidth, mainWindowHeight);
+                    }
+                }
+                else
+                {
+                    Log.Warning("无法获取主窗口引用");
+                }
+
+                _previewService.PreviewWallpaper(wallpaper, options);
             } else {
                 await OpenPreviewWindow(wallpaper);
             }
