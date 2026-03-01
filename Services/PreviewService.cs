@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Serilog;
 using WallpaperEngine.Models;
 
@@ -11,6 +13,18 @@ namespace WallpaperEngine.Services {
         private readonly ApplicationSettings _settings;
         private readonly ISettingsService _settingsService;
         private Process? _currentPreviewProcess;
+
+        // Windows API声明
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOZORDER = 0x0004;
+        private const uint SWP_NOACTIVATE = 0x0010;
+        private const int SW_SHOWNORMAL = 1;
 
         /// <summary>
         /// 初始化预览服务并加载应用程序设置
@@ -27,8 +41,8 @@ namespace WallpaperEngine.Services {
         /// </summary>
         public class PreviewOptions {
             public string WindowTitle { get; set; } = "Wallpaper Preview";
-            public int Width { get; set; } = 1920;  // 改为较小尺寸便于居中
-            public int Height { get; set; } = 1080;
+            public int Width { get; set; } = 800;  // 较小尺寸便于居中
+            public int Height { get; set; } = 600;
             public string WindowId { get; set; } = "Wallpaper #1";
             public bool AutoClose { get; set; } = true;
             public int X { get; set; } = 0;
@@ -81,6 +95,21 @@ namespace WallpaperEngine.Services {
 
                 _currentPreviewProcess = Process.Start(processStartInfo);
 
+                // 启动后台任务尝试移动窗口（如果命令行参数无效的备用方案）
+                if (_currentPreviewProcess != null && !_currentPreviewProcess.HasExited && (options.X != 0 || options.Y != 0))
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await TryMovePreviewWindowAsync(_currentPreviewProcess, options.X, options.Y, options.Width, options.Height);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warning("移动预览窗口任务失败: {Error}", ex.Message);
+                        }
+                    });
+                }
 
                 return _currentPreviewProcess != null && !_currentPreviewProcess.HasExited;
             } catch (Exception ex) {
@@ -123,6 +152,63 @@ namespace WallpaperEngine.Services {
             }
 
             return string.Join(" ", args);
+        }
+
+        /// <summary>
+        /// 尝试移动预览窗口到指定位置（备用方法，如果命令行参数无效）
+        /// </summary>
+        private async Task TryMovePreviewWindowAsync(Process process, int x, int y, int width, int height)
+        {
+            if (process == null || process.HasExited)
+                return;
+
+            Log.Debug("尝试移动预览窗口到位置: ({X},{Y}), 尺寸: {Width}x{Height}", x, y, width, height);
+
+            // 等待进程初始化并创建窗口
+            await Task.Delay(500);
+
+            int attempts = 0;
+            const int maxAttempts = 10;
+
+            while (attempts < maxAttempts && !process.HasExited)
+            {
+                try
+                {
+                    // 使用WindowFinder获取窗口句柄
+                    IntPtr hwnd = WindowFinder.GetMainWindowHandle(process.Id);
+                    if (hwnd != IntPtr.Zero)
+                    {
+                        Log.Debug("找到预览窗口句柄: {Handle}, 尝试移动", hwnd);
+
+                        // 移动窗口到指定位置
+                        bool moved = SetWindowPos(hwnd, IntPtr.Zero, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
+                        if (moved)
+                        {
+                            Log.Information("成功移动预览窗口到指定位置");
+                        }
+                        else
+                        {
+                            Log.Warning("移动预览窗口失败");
+                        }
+
+                        // 显示窗口
+                        ShowWindow(hwnd, SW_SHOWNORMAL);
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning("移动窗口时出错: {Error}", ex.Message);
+                }
+
+                attempts++;
+                await Task.Delay(200);
+            }
+
+            if (attempts >= maxAttempts)
+            {
+                Log.Warning("未能找到预览窗口，无法移动");
+            }
         }
 
         /// <summary>
