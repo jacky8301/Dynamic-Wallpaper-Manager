@@ -94,23 +94,6 @@ namespace WallpaperEngine.Services {
                 };
 
                 _currentPreviewProcess = Process.Start(processStartInfo);
-
-                // 启动后台任务尝试移动窗口（如果命令行参数无效的备用方案）
-                if (_currentPreviewProcess != null && !_currentPreviewProcess.HasExited && (options.X != 0 || options.Y != 0))
-                {
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await TryMovePreviewWindowAsync(_currentPreviewProcess, options.X, options.Y, options.Width, options.Height);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Warning("移动预览窗口任务失败: {Error}", ex.Message);
-                        }
-                    });
-                }
-
                 return _currentPreviewProcess != null && !_currentPreviewProcess.HasExited;
             } catch (Exception ex) {
                 Log.Error("启动预览失败: {Error}", ex.Message);
