@@ -89,6 +89,7 @@ namespace WallpaperEngine.ViewModels
 
                     // 构建 CategoryItem 列表
                     var categoryItems = new List<CategoryItem>();
+                    var defaultCategorySet = new HashSet<string>(CategoryConstants.DefaultCategories);
                     foreach (var category in allCategories)
                     {
                         var count = categoryStats.ContainsKey(category) ? categoryStats[category] : 0;
@@ -96,7 +97,11 @@ namespace WallpaperEngine.ViewModels
                         // 排除空的默认分类（不受保护的）
                         if (_defaultCategories.Contains(category) && !isProtected && count == 0)
                             continue;
-                        categoryItems.Add(new CategoryItem(category, count, isProtected));
+
+                        // 获取分类ID
+                        var categoryId = _dbManager.GetCategoryIdByName(category);
+                        var isDefault = defaultCategorySet.Contains(category);
+                        categoryItems.Add(new CategoryItem(categoryId, category, count, isProtected, isDefault));
                     }
 
                     // 按分类名称排序（受保护分类在前）
@@ -142,6 +147,15 @@ namespace WallpaperEngine.ViewModels
         private List<string> BuildCategoryList()
         {
             var allCategories = new List<string>(_defaultCategories);
+
+            // 添加硬编码的默认分类
+            foreach (var defaultCategory in CategoryConstants.DefaultCategories)
+            {
+                if (!allCategories.Contains(defaultCategory))
+                {
+                    allCategories.Add(defaultCategory);
+                }
+            }
 
             // 从数据库获取自定义分类
             try

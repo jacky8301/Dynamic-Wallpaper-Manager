@@ -1023,6 +1023,30 @@ namespace WallpaperEngine.Data {
         /// <returns>该分类下的壁纸数量</returns>
         public int GetCategoryWallpaperCount(int categoryId)
         {
+            // 虚拟分类处理
+            if (CategoryConstants.IsVirtualCategoryId(categoryId))
+            {
+                using var virtualCmd = m_connection.CreateCommand();
+                if (categoryId == CategoryConstants.ALL_CATEGORIES_ID)
+                {
+                    // "所有分类" - 返回所有壁纸总数
+                    virtualCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers";
+                }
+                else if (categoryId == CategoryConstants.UNCATEGORIZED_ID)
+                {
+                    // "未分类" - 返回 CategoryId = 1 的壁纸数量
+                    virtualCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE CategoryId = @categoryId";
+                    virtualCmd.Parameters.AddWithValue("@categoryId", categoryId);
+                }
+                else
+                {
+                    // 其他虚拟分类（目前没有）
+                    return 0;
+                }
+                return Convert.ToInt32(virtualCmd.ExecuteScalar());
+            }
+
+            // 正常分类
             using var cmd = m_connection.CreateCommand();
             cmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE CategoryId = @categoryId";
             cmd.Parameters.AddWithValue("@categoryId", categoryId);
