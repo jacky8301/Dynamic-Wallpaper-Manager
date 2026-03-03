@@ -57,6 +57,10 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private bool _showFavoritesOnly;
 
+        /// <summary>是否隐藏成人内容（ContentRating 为 Mature 或 Questionable）</summary>
+        [ObservableProperty]
+        private bool _hideAdultContent;
+
         /// <summary>当前选中的标签页索引</summary>
         [ObservableProperty]
         private int _currentTab;
@@ -273,7 +277,8 @@ namespace WallpaperEngine.ViewModels {
                 Log.Debug("LoadWallpapers from db start");
                 var results = _dbManager.SearchWallpapers(SearchText,
                     SelectedCategory == "所有分类" ? "" : SelectedCategory,
-                    ShowFavoritesOnly);
+                    ShowFavoritesOnly,
+                    HideAdultContent);
                 Log.Debug("LoadWallpapers from db finish");
                 return results;
             } catch (Exception ex) {

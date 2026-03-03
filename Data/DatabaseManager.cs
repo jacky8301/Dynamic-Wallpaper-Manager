@@ -309,10 +309,11 @@ namespace WallpaperEngine.Data {
         /// <param name="searchTerm">搜索关键词</param>
         /// <param name="category">分类筛选，为空则不限分类</param>
         /// <param name="favoritesOnly">是否仅返回已收藏的壁纸</param>
+        /// <param name="hideAdultContent">是否隐藏成人内容（ContentRating 为 Mature 或 Questionable）</param>
         /// <returns>匹配的壁纸列表，最多返回 1000 条</returns>
-        public List<WallpaperItem> SearchWallpapers(string searchTerm, string category = "", bool favoritesOnly = false)
+        public List<WallpaperItem> SearchWallpapers(string searchTerm, string category = "", bool favoritesOnly = false, bool hideAdultContent = false)
         {
-            Log.Debug("搜索壁纸, 关键词: {SearchTerm}, 分类: {Category}, 仅收藏: {FavoritesOnly}", searchTerm, category, favoritesOnly);
+            Log.Debug("搜索壁纸, 关键词: {SearchTerm}, 分类: {Category}, 仅收藏: {FavoritesOnly}, 隐藏成人内容: {HideAdultContent}", searchTerm, category, favoritesOnly, hideAdultContent);
             var wallpapers = new List<WallpaperItem>();
             using var command = m_connection.CreateCommand();
 
@@ -327,6 +328,9 @@ namespace WallpaperEngine.Data {
             }
             if (favoritesOnly) {
                 whereClause += " AND f.FolderPath IS NOT NULL";
+            }
+            if (hideAdultContent) {
+                whereClause += " AND w.ContentRating NOT IN ('Mature', 'Questionable')";
             }
 
             command.CommandText = $@"

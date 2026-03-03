@@ -24,8 +24,9 @@ namespace WallpaperEngine.ViewModels {
 
             bool matchesCategory = SelectedCategory == "所有分类" || wallpaper.Category == SelectedCategory;
             bool matchesFavorites = !ShowFavoritesOnly || wallpaper.IsFavorite;
+            bool matchesAdultFilter = !HideAdultContent || (wallpaper.Project.ContentRating != "Mature" && wallpaper.Project.ContentRating != "Questionable");
 
-            return matchesSearch && matchesCategory && matchesFavorites;
+            return matchesSearch && matchesCategory && matchesFavorites && matchesAdultFilter;
         }
 
         /// <summary>搜索文本变更时刷新壁纸视图</summary>
@@ -42,6 +43,12 @@ namespace WallpaperEngine.ViewModels {
         }
         /// <summary>收藏筛选状态变更时刷新壁纸视图</summary>
         partial void OnShowFavoritesOnlyChanged(bool value)
+        {
+            WallpapersView.Refresh();
+            OnPropertyChanged(nameof(WallpaperCount));
+        }
+        /// <summary>成人内容过滤状态变更时刷新壁纸视图</summary>
+        partial void OnHideAdultContentChanged(bool value)
         {
             WallpapersView.Refresh();
             OnPropertyChanged(nameof(WallpaperCount));

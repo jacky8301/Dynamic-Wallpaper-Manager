@@ -61,6 +61,20 @@
                 </ComboBox>
             </StackPanel>
 
+            <!--  成人内容过滤  -->
+            <StackPanel
+                Margin="10,0,5,0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <CheckBox
+                    Margin="0,0,5,0"
+                    VerticalAlignment="Center"
+                    IsChecked="{Binding HideAdultContent}"
+                    ToolTip="隐藏成人内容（ContentRating 为 Mature 或 Questionable）">
+                    <TextBlock Text="隐藏成人内容" />
+                </CheckBox>
+            </StackPanel>
+
             <Separator />
             <!--  扫描按钮组  -->
             <Button
