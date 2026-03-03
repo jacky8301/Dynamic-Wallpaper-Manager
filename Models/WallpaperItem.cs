@@ -29,9 +29,15 @@ namespace WallpaperEngine.Models {
         public WallpaperProject Project { get; set; } = new WallpaperProject();
 
         /// <summary>
-        /// 壁纸分类
+        /// 壁纸分类ID
         /// </summary>
-        public string Category { get; set; } = "未分类";
+        public int CategoryId { get; set; } = CategoryConstants.UNCATEGORIZED_ID;
+
+        /// <summary>
+        /// 壁纸分类名称
+        /// </summary>
+        [ObservableProperty]
+        private string _category = string.Empty;
 
         /// <summary>
         /// 壁纸添加日期
@@ -270,6 +276,30 @@ namespace WallpaperEngine.Models {
                 var mainFile = imageFiles.OrderByDescending(f => f.FileSize).First();
                 ContentFileName = mainFile.FileName;
             }
+        }
+
+        /// <summary>
+        /// 当分类名称变更时更新分类ID
+        /// </summary>
+        /// <param name="value">新的分类名称</param>
+        partial void OnCategoryChanged(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                CategoryId = CategoryConstants.UNCATEGORIZED_ID;
+                return;
+            }
+
+            // 检查是否为虚拟分类
+            var virtualId = CategoryConstants.GetVirtualCategoryId(value);
+            if (virtualId >= 0)
+            {
+                CategoryId = virtualId;
+                return;
+            }
+
+            // 实际分类的ID需要在数据库查询时设置，这里保持CategoryId不变
+            // 实际的CategoryId会在ReadWallpaperItem中设置
         }
     }
 }

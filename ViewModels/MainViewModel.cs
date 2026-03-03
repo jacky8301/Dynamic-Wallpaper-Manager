@@ -49,9 +49,13 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private string _searchText = string.Empty;
 
-        /// <summary>当前选中的分类</summary>
+        /// <summary>当前选中的分类ID（0表示"所有分类"）</summary>
         [ObservableProperty]
-        private string _selectedCategory = "所有分类";
+        private int _selectedCategoryId = CategoryConstants.ALL_CATEGORIES_ID;
+
+        /// <summary>当前选中的分类项</summary>
+        [ObservableProperty]
+        private CategoryItem? _selectedCategory;
 
         /// <summary>是否仅显示收藏的壁纸</summary>
         [ObservableProperty]
@@ -121,10 +125,7 @@ namespace WallpaperEngine.ViewModels {
         public ICollectionView WallpapersView { get; }
 
         /// <summary>壁纸分类列表，包含默认分类和自定义分类</summary>
-        public ObservableCollection<string> Categories { get; } = new ObservableCollection<string>
-        {
-            "所有分类", "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
-        };
+        public ObservableCollection<CategoryItem> Categories { get; } = new ObservableCollection<CategoryItem>();
 
         /// <summary>壁纸合集列表，用于右键菜单快速添加</summary>
         public ObservableCollection<WallpaperCollection> Collections { get; } = new ObservableCollection<WallpaperCollection>();
@@ -144,7 +145,7 @@ namespace WallpaperEngine.ViewModels {
 
             Wallpapers.CollectionChanged += OnWallpapersCollectionChanged;
 
-            SelectedCategory = "所有分类";
+            SelectedCategoryId = CategoryConstants.ALL_CATEGORIES_ID;
             ShowFavoritesOnly = false;
             SearchText = string.Empty;
             CheckLastScanTime();
@@ -170,43 +171,45 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
-        /// 从数据库加载自定义分类并同步到分类列表
+        /// 从数据库加载所有分类（包括默认分类）并同步到分类列表
         /// </summary>
         private void LoadCustomCategories()
         {
             try {
-                var customCategories = _dbManager.GetCustomCategories();
-                // 默认分类列表（硬编码，与构造函数中的初始列表一致）
-                var defaultCategories = new HashSet<string>
-                {
-                    "所有分类", "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
-                };
+                // 先清空分类列表
+                Categories.Clear();
 
-                // 找出需要移除的自定义分类（存在于Categories中但不在数据库且不是默认分类）
-                var categoriesToRemove = new List<string>();
-                foreach (var category in Categories)
+                // 添加虚拟分类："所有分类" (ID = 0)
+                Categories.Add(new CategoryItem(CategoryConstants.ALL_CATEGORIES_ID, "所有分类", 0, true));
+
+                // 添加虚拟分类："未分类" (ID = 1)
+                Categories.Add(new CategoryItem(CategoryConstants.UNCATEGORIZED_ID, "未分类", 0, true));
+
+                // 从数据库加载所有分类（包括默认分类和自定义分类）
+                var allCategories = _dbManager.GetAllCategories();
+                foreach (var category in allCategories)
                 {
-                    if (!defaultCategories.Contains(category) && !customCategories.Contains(category))
-                    {
-                        categoriesToRemove.Add(category);
-                    }
+                    Categories.Add(category);
                 }
 
-                // 移除已删除的自定义分类
-                foreach (var category in categoriesToRemove)
-                {
-                    Categories.Remove(category);
-                }
+                // 更新分类统计信息（壁纸数量）
+                UpdateCategoryStats();
 
-                // 添加新的自定义分类
-                foreach (var category in customCategories) {
-                    if (!Categories.Contains(category)) {
-                        Categories.Add(category);
-                    }
-                }
+                // 同步选中分类项
+                var matchedCategory = Categories.FirstOrDefault(c => c.Id == SelectedCategoryId);
+                SelectedCategory = matchedCategory;
             } catch (Exception ex) {
-                Log.Warning($"加载自定义分类失败: {ex.Message}");
+                Log.Error($"加载分类失败: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 更新分类统计信息（壁纸数量）
+        /// </summary>
+        private void UpdateCategoryStats()
+        {
+            // 分类在从数据库加载时已经设置了壁纸数量，这里只需要更新显示
+            // 如果需要实时更新，可以重新查询数据库
         }
 
         /// <summary>
@@ -240,8 +243,34 @@ namespace WallpaperEngine.ViewModels {
         /// <param name="category">新增的分类名称</param>
         public void OnCategoryAdded(object? sender, string category)
         {
-            if (!Categories.Contains(category)) {
-                Categories.Add(category);
+            // 检查分类是否已存在（按名称）
+            if (!Categories.Any(c => c.Name == category)) {
+                // 从数据库获取分类ID，如果不存在则添加
+                var categoryId = _dbManager.GetCategoryIdByName(category);
+                if (categoryId < 0)
+                {
+                    // 分类不存在，添加它
+                    categoryId = _dbManager.AddCategory(category);
+                }
+
+                if (categoryId > 0)
+                {
+                    // 获取壁纸数量
+                    var count = _dbManager.GetCategoryWallpaperCount(categoryId);
+                    var isProtected = CategoryConstants.IsProtectedCategory(category);
+                    // 添加到分类列表（插入到虚拟分类之后）
+                    var newCategory = new CategoryItem(categoryId, category, count, isProtected);
+                    // 找到插入位置（在虚拟分类之后）
+                    int insertIndex = 2; // "所有分类"(0) 和 "未分类"(1) 之后
+                    if (insertIndex <= Categories.Count)
+                    {
+                        Categories.Insert(insertIndex, newCategory);
+                    }
+                    else
+                    {
+                        Categories.Add(newCategory);
+                    }
+                }
             }
         }
 
@@ -299,7 +328,7 @@ namespace WallpaperEngine.ViewModels {
             try {
                 Log.Debug("LoadWallpapers from db start");
                 var results = _dbManager.SearchWallpapers(SearchText,
-                    SelectedCategory == "所有分类" ? "" : SelectedCategory,
+                    SelectedCategoryId,
                     ShowFavoritesOnly,
                     HideAdultContent);
                 Log.Debug("LoadWallpapers from db finish");

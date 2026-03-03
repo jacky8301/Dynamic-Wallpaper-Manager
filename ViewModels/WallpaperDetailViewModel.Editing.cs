@@ -53,8 +53,23 @@ namespace WallpaperEngine.ViewModels {
                     CurrentWallpaper.Project.Type = SelectedType.ToLower();
                 }
                 if (SelectedCategory != null && CurrentWallpaper.Category != SelectedCategory) {
-                    CurrentWallpaper.Category = SelectedCategory;
-                    CurrentWallpaper.Project.Category = SelectedCategory;
+                    var categoryToSave = string.IsNullOrEmpty(SelectedCategory) ? "未分类" : SelectedCategory;
+                    CurrentWallpaper.Category = categoryToSave;
+                    CurrentWallpaper.Project.Category = categoryToSave;
+
+                    // 更新分类ID
+                    var categoryId = CategoryConstants.GetVirtualCategoryId(categoryToSave);
+                    if (categoryId < 0)
+                    {
+                        // 非虚拟分类，从数据库获取ID
+                        categoryId = _dbManager.GetCategoryIdByName(categoryToSave);
+                        if (categoryId < 0)
+                        {
+                            // 分类不存在，创建它
+                            categoryId = _dbManager.AddCategory(categoryToSave);
+                        }
+                    }
+                    CurrentWallpaper.CategoryId = categoryId;
                 }
 
                 if (SelectedContentRating != null && CurrentWallpaper.Project.ContentRating != SelectedContentRating) {
@@ -108,7 +123,7 @@ namespace WallpaperEngine.ViewModels {
             if (_originalItem != null) {
                 RestoreFromBackup(CurrentWallpaper, _originalItem);
                 SelectedType = CurrentWallpaper.Project.Type;
-                SelectedCategory = CurrentWallpaper.Category;
+                SelectedCategory = string.IsNullOrEmpty(CurrentWallpaper.Category) ? "未分类" : CurrentWallpaper.Category;
                 SelectedContentRating = CurrentWallpaper.Project.ContentRating;
                 Description = CurrentWallpaper.Project.Description;
                 Title = CurrentWallpaper.Project.Title;

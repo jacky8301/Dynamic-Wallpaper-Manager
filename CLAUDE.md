@@ -17,17 +17,25 @@ dotnet build DynamicWallpaperManager.csproj -c Release
 
 # Build for x86 (legacy compatibility)
 dotnet build DynamicWallpaperManager.csproj -c Release -p:Platform=x86
+
+# Clean build
+dotnet clean
+dotnet build DynamicWallpaperManager.csproj
+
+# Restore dependencies
+dotnet restore DynamicWallpaperManager.csproj
 ```
 
 For installer packaging, use NSIS with `DynamicWallpaperManager.nsi`.
 
 ### Running the Application
 
-- **Debug mode**: Use `dotnet run` from the project directory, or run the built executable from `bin/Debug/net8.0-windows/`.
+- **Debug mode**: Use `dotnet run` from the project directory, or run the built executable from `bin/Debug/net8.0-windows/`. In Visual Studio, press F5 to debug.
 - **Release mode**: Run the executable from `bin/Release/net8.0-windows/` or `bin/x86/Release/net8.0-windows/` for x86 builds.
 - **Command line arguments**:
   - `-autostart`: Starts the application minimized (used for auto-start registration).
   - `-Show`: Shows the main window (used by desktop shortcut).
+- **Single instance behavior**: The application uses `SingleInstanceManager` to ensure only one instance runs. Subsequent launches forward arguments to the first instance.
 
 ### Packaging with NSIS
 
@@ -93,6 +101,22 @@ ViewModels are also registered as singletons for state persistence.
 4. Reports progress via `IProgress<ScanProgress>`
 5. Saves scan record to `ScanHistory` table
 
+### Category Management System
+
+The application has a comprehensive category management system with the following characteristics:
+
+- **Default Categories**: Hardcoded default categories (`自然`, `抽象`, `游戏`, `动漫`, `科幻`, `风景`, `建筑`, `动物`) are defined in `_defaultCategories` list in `CategoryManagementViewModel` and `MainViewModel`
+- **Protected Categories**: `所有分类` and `未分类` are protected categories that cannot be renamed or deleted
+- **Custom Categories**: Users can add, rename, and delete custom categories via `CategoryManagementViewModel`
+- **Empty Default Category Cleanup**: Empty default categories (except protected ones) are automatically removed from UI lists when they have no wallpapers
+- **Category Statistics**: The system tracks wallpaper counts per category via `DatabaseManager.GetCategoryStatistics()`
+
+**Category Management Workflow**:
+- `CategoryManagementViewModel` provides UI for managing categories (add, rename, delete)
+- `MainViewModel` maintains category list for filtering and display
+- `CategoryItem` model represents category with name, count, and protected status
+- Category renaming updates all related wallpaper records in database via `DatabaseManager.RenameCategory()`
+
 ### Image Caching and Thumbnail Generation
 
 - **ImageLoader**: Loads and resizes wallpaper preview images asynchronously, respecting a concurrent limit.
@@ -112,6 +136,7 @@ ViewModels are also registered as singletons for state persistence.
 - **Material Design for WPF**: The UI uses `MaterialDesignThemes` and `MaterialDesignColors` for a modern look.
 - **VirtualizingWrapPanel**: The wallpaper grid uses `VirtualizingWrapPanel` to virtualize items and maintain performance with large collections.
 - **Custom styles**: XAML styles are defined in the `Styles/` folder and referenced from `App.xaml`.
+- **Dialog Services**: `MaterialDialogService` provides standardized dialog boxes (confirmation, input, error). Input dialogs accept optional `defaultText` parameter to pre-populate the text field, commonly used for rename operations.
 
 ## Key File Locations
 
@@ -131,7 +156,7 @@ The `Favorites` table is intentionally normalized — a wallpaper's favorite sta
 **Table details**:
 - `Wallpapers`: Core wallpaper metadata, including folder path, title, tags, category, file hash, etc.
 - `Favorites`: Records folder paths and favorited date; unique constraint on `FolderPath`.
-- `Categories`: User‑defined category names.
+- `Categories`: User‑defined category names. Only custom categories are stored; default categories are hardcoded.
 - `Collections` and `CollectionItems`: For grouping wallpapers into user‑defined collections.
 - `ScanHistory`: Log of each scan operation with statistics.
 
@@ -167,3 +192,5 @@ Follow `.editorconfig` conventions:
 - **Database locked**: Ensure no other process is accessing `wallpapers.db`. The application holds a single SQLite connection for its lifetime.
 - **Wallpaper Engine not detected**: The `PreviewService` attempts to locate Wallpaper Engine via the registry; if not found, previews will fail. The path can be set manually in the settings UI.
 - **High memory usage**: The `ImageCache` limits the number of cached images; thumbnails are stored on disk. If memory grows, check for unbounded collections in view‑models.
+- **Category management issues**: Default categories (`自然`, `抽象`, etc.) that are empty may be automatically hidden from UI lists. Protected categories (`所有分类`, `未分类`) cannot be renamed or deleted.
+- **Single instance conflicts**: If the application appears unresponsive, check for existing instances via Task Manager and terminate them before relaunching.

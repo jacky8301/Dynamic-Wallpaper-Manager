@@ -36,13 +36,15 @@ namespace WallpaperEngine.ViewModels {
         /// <param name="title">对话框标题</param>
         /// <param name="message">提示消息</param>
         /// <param name="placeholder">输入框占位符</param>
+        /// <param name="defaultText">输入框默认文本</param>
         /// <param name="dialogHost">对话框宿主名称</param>
-        public InputDialogViewModel(string title, string message, string placeholder = "", string dialogHost = "MainRootDialog")
+        public InputDialogViewModel(string title, string message, string placeholder = "", string defaultText = "", string dialogHost = "MainRootDialog")
         {
             Title = title;
             Message = message;
             Placeholder = placeholder;
             _dialogHost = dialogHost;
+            InputText = defaultText;
 
             ConfirmCommand = new RelayCommand(OnConfirm);
             CancelCommand = new RelayCommand(OnCancel);

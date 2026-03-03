@@ -8,6 +8,9 @@ namespace WallpaperEngine.ViewModels {
     /// 主视图模型的筛选部分，包含壁纸搜索、分类筛选和收藏筛选逻辑
     /// </summary>
     public partial class MainViewModel {
+        /// <summary>防止SelectedCategory和SelectedCategoryId之间递归更新的标志</summary>
+        private bool _updatingSelection;
+
         /// <summary>
         /// 壁纸筛选谓词，根据搜索文本、分类和收藏状态过滤壁纸
         /// </summary>
@@ -22,7 +25,7 @@ namespace WallpaperEngine.ViewModels {
                                wallpaper.Project.Description.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
                                wallpaper.Project.Tags.Any(t => t.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
 
-            bool matchesCategory = SelectedCategory == "所有分类" || wallpaper.Category == SelectedCategory;
+            bool matchesCategory = SelectedCategoryId == CategoryConstants.ALL_CATEGORIES_ID || wallpaper.CategoryId == SelectedCategoryId;
             bool matchesFavorites = !ShowFavoritesOnly || wallpaper.IsFavorite;
             bool matchesAdultFilter = !HideAdultContent || (wallpaper.Project.ContentRating != "Mature" && wallpaper.Project.ContentRating != "Questionable");
 
@@ -36,11 +39,43 @@ namespace WallpaperEngine.ViewModels {
             OnPropertyChanged(nameof(WallpaperCount));
         }
         /// <summary>选中分类变更时刷新壁纸视图</summary>
-        partial void OnSelectedCategoryChanged(string value)
+        partial void OnSelectedCategoryIdChanged(int value)
         {
+            if (!_updatingSelection)
+            {
+                _updatingSelection = true;
+                try
+                {
+                    // 根据ID从Categories集合中查找对应的CategoryItem
+                    var category = Categories.FirstOrDefault(c => c.Id == value);
+                    SelectedCategory = category;
+                }
+                finally
+                {
+                    _updatingSelection = false;
+                }
+            }
+
             WallpapersView.Refresh();
             OnPropertyChanged(nameof(WallpaperCount));
         }
+        /// <summary>选中分类项变更时更新选中分类ID</summary>
+        partial void OnSelectedCategoryChanged(CategoryItem? value)
+        {
+            if (!_updatingSelection)
+            {
+                _updatingSelection = true;
+                try
+                {
+                    SelectedCategoryId = value?.Id ?? CategoryConstants.ALL_CATEGORIES_ID;
+                }
+                finally
+                {
+                    _updatingSelection = false;
+                }
+            }
+        }
+
         /// <summary>收藏筛选状态变更时刷新壁纸视图</summary>
         partial void OnShowFavoritesOnlyChanged(bool value)
         {
@@ -89,7 +124,7 @@ namespace WallpaperEngine.ViewModels {
         private async Task ClearSearch()
         {
             SearchText = string.Empty;
-            SelectedCategory = "所有分类";
+            SelectedCategoryId = CategoryConstants.ALL_CATEGORIES_ID;
             CurrentTab = 0;
 
             await LoadWallpapersAsync();

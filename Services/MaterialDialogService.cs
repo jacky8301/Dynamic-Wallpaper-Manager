@@ -29,12 +29,13 @@ namespace WallpaperEngine.Services {
         /// <param name="title">对话框标题</param>
         /// <param name="message">提示信息</param>
         /// <param name="placeholder">输入框占位文本</param>
+        /// <param name="defaultText">输入框默认文本</param>
         /// <param name="dialogHost">DialogHost 标识符</param>
         /// <returns>对话框结果，Data 属性包含用户输入的文本</returns>
-        public static async Task<MaterialDialogResult> ShowInputAsync(string title, string message, string placeholder = "", string dialogHost = "MainRootDialog")
+        public static async Task<MaterialDialogResult> ShowInputAsync(string title, string message, string placeholder = "", string defaultText = "", string dialogHost = "MainRootDialog")
         {
             var view = new InputDialog();
-            view.DataContext = new InputDialogViewModel(title, message, placeholder, dialogHost);
+            view.DataContext = new InputDialogViewModel(title, message, placeholder, defaultText, dialogHost);
 
             var result = await DialogHost.Show(view, dialogHost);
             return result as MaterialDialogResult ?? new MaterialDialogResult { Confirmed = false };

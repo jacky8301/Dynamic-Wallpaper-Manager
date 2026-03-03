@@ -117,7 +117,7 @@ namespace WallpaperEngine.ViewModels {
         {
             if (SelectedCollection == null) return;
 
-            var result = await MaterialDialogService.ShowInputAsync("重命名合集", "请输入新的合集名称", SelectedCollection.Name);
+            var result = await MaterialDialogService.ShowInputAsync("重命名合集", "请输入新的合集名称", "", SelectedCollection.Name);
             if (result.Confirmed && result.Data is string newName && !string.IsNullOrWhiteSpace(newName)) {
                 try {
                     _dbManager.RenameCollection(SelectedCollection.Id, newName);

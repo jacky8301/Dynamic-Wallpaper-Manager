@@ -175,10 +175,19 @@ namespace WallpaperEngine.Services {
                 wallpaperItem.Project = project;
                 // 优先使用 project.json 中的分类，否则根据标签推断
                 if (string.IsNullOrEmpty(project.Category) || project.Category == "未分类") {
-                    var detectedCategory = GetCategory(project);
-                    project.Category = detectedCategory;
+                    var detectedCategoryId = GetCategory(project);
+                    var categoryName = _dbManager.GetCategoryNameById(detectedCategoryId) ?? "未分类";
+                    project.Category = categoryName;
+                    wallpaperItem.CategoryId = detectedCategoryId;
+                    wallpaperItem.Category = categoryName;
                 }
-                wallpaperItem.Category = project.Category;
+                else
+                {
+                    // 将分类名称转换为ID
+                    var categoryId = _dbManager.GetCategoryIdByName(project.Category);
+                    wallpaperItem.CategoryId = categoryId >= 0 ? categoryId : CategoryConstants.UNCATEGORIZED_ID;
+                    wallpaperItem.Category = project.Category;
+                }
                 _dbManager.SaveWallpaper(wallpaperItem);
                 return isNew ? ScanResultType.New : ScanResultType.Updated;
             } catch (Exception ex) {
@@ -191,22 +200,24 @@ namespace WallpaperEngine.Services {
         /// 根据壁纸项目的标签自动推断分类，匹配预定义的标签-分类映射表
         /// </summary>
         /// <param name="project">壁纸项目信息</param>
-        /// <returns>推断出的分类名称，无法匹配时返回"未分类"</returns>
-        private static string GetCategory(WallpaperProject project)
+        /// <returns>推断出的分类ID，无法匹配时返回"未分类"的ID（1）</returns>
+        private int GetCategory(WallpaperProject project)
         {
             if (project.Tags == null || project.Tags.Count == 0) {
-                return "未分类";
+                return CategoryConstants.UNCATEGORIZED_ID;
             }
 
             foreach (var tag in project.Tags) {
                 foreach (var cat in TagCategories) {
                     if (cat.Value.Any(t => tag.Contains(t, StringComparison.OrdinalIgnoreCase))) {
-                        return cat.Key;
+                        // 通过分类名称获取ID
+                        var categoryId = _dbManager.GetCategoryIdByName(cat.Key);
+                        return categoryId >= 0 ? categoryId : CategoryConstants.UNCATEGORIZED_ID;
                     }
                 }
             }
 
-            return "未分类";
+            return CategoryConstants.UNCATEGORIZED_ID;
         }
     }
 

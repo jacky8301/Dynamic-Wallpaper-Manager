@@ -80,7 +80,7 @@ namespace WallpaperEngine.ViewModels {
         /// <summary>壁纸分类列表数据源</summary>
         public ObservableCollection<string> CategoryList { get; } = new ObservableCollection<string>
         {
-            "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
+            "未分类" // 受保护虚拟分类
         };
 
         /// <summary>内容分级列表数据源</summary>
@@ -134,6 +134,15 @@ namespace WallpaperEngine.ViewModels {
             AddTagCommand = new AsyncRelayCommand(AddTag);
             RemoveTagCommand = new RelayCommand<string>(RemoveTag);
             NavigateToCollectionCommand = new RelayCommand<WallpaperCollection>(NavigateToCollection);
+
+            // 添加默认分类（硬编码）
+            foreach (var defaultCategory in CategoryConstants.DefaultCategories)
+            {
+                if (!CategoryList.Contains(defaultCategory))
+                {
+                    CategoryList.Add(defaultCategory);
+                }
+            }
 
             // 加载自定义分类
             LoadCustomCategories();
@@ -212,8 +221,19 @@ namespace WallpaperEngine.ViewModels {
             // 当服务中的状态改变时，更新自己的数据
             CurrentWallpaper = newWallpaper;
             _ = LoadFileListSafeAsync(newWallpaper);
+            // 确保分类列表是最新的，防止自定义分类缺失
+            LoadCustomCategories();
             SelectedType = CurrentWallpaper?.Project?.Type ?? string.Empty;
-            SelectedCategory = CurrentWallpaper?.Category ?? string.Empty;
+            var category = CurrentWallpaper?.Category;
+            // 如果分类为空，或者分类不在当前分类列表中，则使用"未分类"
+            if (string.IsNullOrEmpty(category) || !CategoryList.Contains(category))
+            {
+                SelectedCategory = "未分类";
+            }
+            else
+            {
+                SelectedCategory = category;
+            }
             SelectedContentRating = CurrentWallpaper?.Project?.ContentRating ?? "Everyone";
             Description = CurrentWallpaper?.Project?.Description ?? string.Empty;
             Title = CurrentWallpaper?.Project?.Title ?? string.Empty;
@@ -258,7 +278,8 @@ namespace WallpaperEngine.ViewModels {
                     Category = source.Project.Category
                 },
                 IsFavorite = source.IsFavorite,
-                Category = source.Category
+                Category = source.Category,
+                CategoryId = source.CategoryId
             };
         }
 
@@ -280,6 +301,7 @@ namespace WallpaperEngine.ViewModels {
             target.Project.Category = backup.Project.Category;
             target.IsFavorite = backup.IsFavorite;
             target.Category = backup.Category;
+            target.CategoryId = backup.CategoryId;
         }
 
         /// <summary>
@@ -329,11 +351,15 @@ namespace WallpaperEngine.ViewModels {
         {
             try {
                 var customCategories = _dbManager.GetCustomCategories();
-                // 默认分类列表（硬编码，与构造函数中的初始列表一致）
+                // 默认分类列表（包括受保护分类"未分类"和硬编码默认分类）
                 var defaultCategories = new HashSet<string>
                 {
-                    "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
+                    "未分类" // 受保护虚拟分类
                 };
+                foreach (var cat in CategoryConstants.DefaultCategories)
+                {
+                    defaultCategories.Add(cat);
+                }
 
                 // 找出需要移除的自定义分类（存在于CategoryList中但不在数据库且不是默认分类）
                 var categoriesToRemove = new List<string>();

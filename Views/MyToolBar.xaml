@@ -38,7 +38,7 @@
                     ToolTip="按分类筛选壁纸">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding}"
+                            <TextBlock Text="{Binding Name}"
                                        Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
                                 <TextBlock.ContextMenu>
                                     <ContextMenu
@@ -46,13 +46,13 @@
                                         <MenuItem
                                             Header="✏️ 重命名"
                                             Command="{Binding PlacementTarget.Tag.RenameCategoryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                            CommandParameter="{Binding}" />
+                                            CommandParameter="{Binding Name}" />
                                         <Separator />
                                         <MenuItem
                                             Header="🗑️ 删除分类"
                                             Foreground="Red"
                                             Command="{Binding PlacementTarget.Tag.DeleteCategoryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                            CommandParameter="{Binding}" />
+                                            CommandParameter="{Binding Name}" />
                                     </ContextMenu>
                                 </TextBlock.ContextMenu>
                             </TextBlock>

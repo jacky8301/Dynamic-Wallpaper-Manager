@@ -96,7 +96,7 @@ namespace WallpaperEngine.ViewModels {
                 await HandleScanError(ex);
             } finally {
                 IsScanning = false;
-                SelectedCategory = "所有分类";
+                SelectedCategoryId = CategoryConstants.ALL_CATEGORIES_ID;
                 ShowFavoritesOnly = false;
                 SearchText = string.Empty;
                 _dbManager.SaveScanRecord(CurrentScanFolder, NewFoundCount, UpdatedCount, SkippedCount);

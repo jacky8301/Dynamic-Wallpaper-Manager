@@ -25,7 +25,7 @@ namespace WallpaperEngine.ViewModels
         /// </summary>
         private readonly List<string> _defaultCategories = new()
         {
-            "所有分类", "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
+            "所有分类", "未分类"
         };
 
         /// <summary>
@@ -93,6 +93,9 @@ namespace WallpaperEngine.ViewModels
                     {
                         var count = categoryStats.ContainsKey(category) ? categoryStats[category] : 0;
                         var isProtected = CategoryItem.IsProtectedCategory(category);
+                        // 排除空的默认分类（不受保护的）
+                        if (_defaultCategories.Contains(category) && !isProtected && count == 0)
+                            continue;
                         categoryItems.Add(new CategoryItem(category, count, isProtected));
                     }
 
@@ -207,7 +210,15 @@ namespace WallpaperEngine.ViewModels
                 return;
 
             var oldName = SelectedCategory.Name;
-            var result = await MaterialDialogService.ShowInputAsync("重命名分类", "请输入新的分类名称", oldName);
+            var categoryId = SelectedCategory.Id;
+            // 检查是否为虚拟分类或无效ID
+            if (CategoryConstants.IsVirtualCategoryId(categoryId) || categoryId <= 0)
+            {
+                await MaterialDialogService.ShowErrorAsync("无法重命名虚拟分类或无效分类", "错误");
+                return;
+            }
+
+            var result = await MaterialDialogService.ShowInputAsync("重命名分类", "请输入新的分类名称", "", oldName);
             if (result.Confirmed && result.Data is string newName && !string.IsNullOrWhiteSpace(newName) && newName != oldName)
             {
                 // 检查新名称是否已存在
@@ -219,7 +230,7 @@ namespace WallpaperEngine.ViewModels
 
                 try
                 {
-                    _dbManager.RenameCategory(oldName, newName);
+                    _dbManager.RenameCategory(categoryId, newName);
 
                     // 重新加载分类列表
                     await LoadCategoriesAsync();
@@ -248,7 +259,15 @@ namespace WallpaperEngine.ViewModels
                 return;
 
             var categoryName = SelectedCategory.Name;
+            var categoryId = SelectedCategory.Id;
             var wallpaperCount = SelectedCategory.WallpaperCount;
+
+            // 检查是否为虚拟分类或无效ID
+            if (CategoryConstants.IsVirtualCategoryId(categoryId) || categoryId <= 0)
+            {
+                await MaterialDialogService.ShowErrorAsync("无法删除虚拟分类或无效分类", "错误");
+                return;
+            }
 
             var confirmed = await MaterialDialogService.ShowConfirmationAsync(
                 $"确定要删除分类「{categoryName}」吗？\n该分类下有 {wallpaperCount} 个壁纸，删除后这些壁纸将被重置为「未分类」。",
@@ -258,7 +277,7 @@ namespace WallpaperEngine.ViewModels
             {
                 try
                 {
-                    _dbManager.DeleteCategory(categoryName);
+                    _dbManager.DeleteCategory(categoryId);
 
                     // 重新加载分类列表
                     await LoadCategoriesAsync();

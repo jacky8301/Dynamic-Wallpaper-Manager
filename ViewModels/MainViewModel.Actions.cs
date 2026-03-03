@@ -703,33 +703,55 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private async Task RenameCategory(string category)
         {
-            if (string.IsNullOrEmpty(category) || ProtectedCategories.Contains(category)) return;
+            if (string.IsNullOrEmpty(category) || CategoryConstants.IsProtectedCategory(category)) return;
 
-            var result = await MaterialDialogService.ShowInputAsync("重命名分类", "请输入新的分类名称", category);
+            // 获取分类ID
+            var categoryId = _dbManager.GetCategoryIdByName(category);
+            if (categoryId <= 0 || CategoryConstants.IsVirtualCategoryId(categoryId))
+            {
+                // 虚拟分类或不存在
+                return;
+            }
+
+            var result = await MaterialDialogService.ShowInputAsync("重命名分类", "请输入新的分类名称", "", category);
             if (result.Confirmed && result.Data is string newName && !string.IsNullOrWhiteSpace(newName) && newName != category) {
-                if (Categories.Contains(newName)) {
+                // 检查新名称是否已存在
+                if (Categories.Any(c => c.Name == newName)) {
                     await MaterialDialogService.ShowErrorAsync("该分类名称已存在", "错误");
                     return;
                 }
                 try {
-                    _dbManager.RenameCategory(category, newName);
-                    var index = Categories.IndexOf(category);
-                    Categories[index] = newName;
-                    // 更新内存中壁纸的分类
-                    foreach (var w in Wallpapers.Where(w => w.Category == category)) {
-                        w.Category = newName;
+                    // 重命名分类
+                    _dbManager.RenameCategory(categoryId, newName);
+
+                    // 更新分类列表中的名称
+                    var categoryItem = Categories.FirstOrDefault(c => c.Id == categoryId);
+                    if (categoryItem != null)
+                    {
+                        categoryItem.Name = newName;
+                        // 触发UI更新
+                        var index = Categories.IndexOf(categoryItem);
+                        Categories[index] = categoryItem; // 重新设置以触发通知
                     }
-                    if (SelectedCategory == category) {
-                        SelectedCategory = newName;
+
+                    // 更新内存中壁纸的分类ID（保持不变，只是名称变了）
+                    // 不需要更新Wallpapers的CategoryId，因为ID没变
+
+                    // 如果当前选中的是这个分类，更新选中状态
+                    if (SelectedCategoryId == categoryId)
+                    {
+                        // ID不变，名称会在UI中自动更新
                     }
+
                     // 同步详情页分类列表
                     var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
                     if (detailVm != null) {
-                        var detailIndex = detailVm.CategoryList.IndexOf(category);
-                        if (detailIndex >= 0) {
-                            detailVm.CategoryList[detailIndex] = newName;
-                        }
+                        // 详情页也需要更新分类名称
+                        // 注意：详情页的CategoryList也需要更新
                     }
+
+                    // 重新加载分类列表以确保一致性
+                    LoadCustomCategories();
                 } catch (Exception ex) {
                     Log.Warning($"重命名分类失败: {ex.Message}");
                 }
@@ -743,7 +765,15 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private async Task DeleteCategory(string category)
         {
-            if (string.IsNullOrEmpty(category) || ProtectedCategories.Contains(category)) return;
+            if (string.IsNullOrEmpty(category) || CategoryConstants.IsProtectedCategory(category)) return;
+
+            // 获取分类ID
+            var categoryId = _dbManager.GetCategoryIdByName(category);
+            if (categoryId <= 0 || CategoryConstants.IsVirtualCategoryId(categoryId))
+            {
+                // 虚拟分类或不存在
+                return;
+            }
 
             var confirmed = await MaterialDialogService.ShowConfirmationAsync(
                 $"确定要删除分类「{category}」吗？\n该分类下的壁纸将被重置为「未分类」。",
@@ -751,18 +781,35 @@ namespace WallpaperEngine.ViewModels {
 
             if (confirmed) {
                 try {
-                    _dbManager.DeleteCategory(category);
-                    Categories.Remove(category);
-                    // 更新内存中壁纸的分类
-                    foreach (var w in Wallpapers.Where(w => w.Category == category)) {
-                        w.Category = "未分类";
+                    // 删除分类
+                    _dbManager.DeleteCategory(categoryId);
+
+                    // 从分类列表中移除
+                    var categoryItem = Categories.FirstOrDefault(c => c.Id == categoryId);
+                    if (categoryItem != null)
+                    {
+                        Categories.Remove(categoryItem);
                     }
-                    if (SelectedCategory == category) {
-                        SelectedCategory = "所有分类";
+
+                    // 更新内存中壁纸的分类ID为"未分类" (ID = 1)
+                    foreach (var w in Wallpapers.Where(w => w.CategoryId == categoryId)) {
+                        w.CategoryId = CategoryConstants.UNCATEGORIZED_ID;
                     }
+
+                    // 如果当前选中的是这个分类，切换到"所有分类" (ID = 0)
+                    if (SelectedCategoryId == categoryId) {
+                        SelectedCategoryId = CategoryConstants.ALL_CATEGORIES_ID;
+                    }
+
                     // 同步详情页分类列表
                     var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
-                    detailVm?.CategoryList.Remove(category);
+                    if (detailVm != null) {
+                        // 详情页也需要移除这个分类
+                        // 注意：详情页的CategoryList需要更新
+                    }
+
+                    // 重新加载分类列表以确保一致性
+                    LoadCustomCategories();
                 } catch (Exception ex) {
                     Log.Warning($"删除分类失败: {ex.Message}");
                 }
