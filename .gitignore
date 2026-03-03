@@ -4,3 +4,12 @@ Debug
 Release
 obj
 *.user
+
+# Claude Code memory
+.claude/
+
+# Build outputs
+*.exe
+
+# Log files
+log/
