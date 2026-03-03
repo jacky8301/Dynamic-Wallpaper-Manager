@@ -52,6 +52,10 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private string _selectedCategory = string.Empty;
 
+        /// <summary>当前选中的内容分级</summary>
+        [ObservableProperty]
+        private string _selectedContentRating = "Everyone";
+
         /// <summary>标签编辑集合</summary>
         public ObservableCollection<string> Tags { get; } = new ObservableCollection<string>();
 
@@ -68,6 +72,14 @@ namespace WallpaperEngine.ViewModels {
         public ObservableCollection<string> CategoryList { get; } = new ObservableCollection<string>
         {
             "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
+        };
+
+        /// <summary>内容分级列表数据源</summary>
+        public List<string> ContentRatingList { get; } = new List<string>
+        {
+            "Everyone",
+            "Questionable",
+            "Mature"
         };
 
         /// <summary>开始编辑命令</summary>
@@ -125,6 +137,7 @@ namespace WallpaperEngine.ViewModels {
             _ = LoadFileListSafeAsync(newWallpaper);
             SelectedType = CurrentWallpaper?.Project?.Type ?? string.Empty;
             SelectedCategory = CurrentWallpaper?.Category ?? string.Empty;
+            SelectedContentRating = CurrentWallpaper?.Project?.ContentRating ?? "Everyone";
             Description = CurrentWallpaper?.Project?.Description ?? string.Empty;
             Title = CurrentWallpaper?.Project?.Title ?? string.Empty;
             PreviewFileName = CurrentWallpaper?.Project?.Preview ?? string.Empty;

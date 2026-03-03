@@ -132,6 +132,21 @@
                         ToolTip="新增分类" />
                 </Grid>
 
+                <!--  内容分级  -->
+                <StackPanel Margin="0,0,0,4" Orientation="Horizontal">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontWeight="Bold"
+                        Text="内容分级:" />
+                    <ComboBox
+                        Margin="6,0,0,0"
+                        FontSize="14"
+                        IsEnabled="{Binding IsEditMode}"
+                        ItemsSource="{Binding ContentRatingList}"
+                        SelectedItem="{Binding SelectedContentRating, Mode=TwoWay}"
+                        Style="{StaticResource MaterialDesignDataGridComboBox}" />
+                </StackPanel>
+
                 <!--  标签  -->
                 <StackPanel Margin="0,0,0,2" Orientation="Horizontal">
                     <TextBlock

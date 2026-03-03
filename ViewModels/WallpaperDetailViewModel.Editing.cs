@@ -57,6 +57,10 @@ namespace WallpaperEngine.ViewModels {
                     CurrentWallpaper.Project.Category = SelectedCategory;
                 }
 
+                if (SelectedContentRating != null && CurrentWallpaper.Project.ContentRating != SelectedContentRating) {
+                    CurrentWallpaper.Project.ContentRating = SelectedContentRating;
+                }
+
                 if (Description != null && CurrentWallpaper.Project.Description != Description) {
                     CurrentWallpaper.Project.Description = Description;
                 }
@@ -105,6 +109,7 @@ namespace WallpaperEngine.ViewModels {
                 RestoreFromBackup(CurrentWallpaper, _originalItem);
                 SelectedType = CurrentWallpaper.Project.Type;
                 SelectedCategory = CurrentWallpaper.Category;
+                SelectedContentRating = CurrentWallpaper.Project.ContentRating;
                 Description = CurrentWallpaper.Project.Description;
                 Title = CurrentWallpaper.Project.Title;
                 SyncTagsFromProject();
