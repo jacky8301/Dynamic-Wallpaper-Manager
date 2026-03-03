@@ -24,6 +24,7 @@
             </ResourceDictionary.MergedDictionaries>
             <converters:ImagePathToSourceConverter x:Key="ImageToSourceConverter" />
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+            <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -220,8 +221,7 @@
                 <!--  所属合集  -->
                 <StackPanel
                     Margin="0,0,0,2"
-                    Orientation="Horizontal"
-                    Visibility="{Binding ShowCollectionsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    Orientation="Horizontal">
                     <TextBlock
                         VerticalAlignment="Center"
                         FontWeight="Bold"
@@ -231,41 +231,52 @@
                     Margin="0,0,0,6"
                     Padding="6"
                     Background="{StaticResource LightBackground}"
-                    CornerRadius="4"
-                    Visibility="{Binding ShowCollectionsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <ItemsControl ItemsSource="{Binding WallpaperCollections}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border
-                                    Margin="2,2"
-                                    Padding="6,2"
-                                    Background="{StaticResource SecondaryBrush}"
-                                    CornerRadius="10"
-                                    Cursor="Hand"
-                                    ToolTip="点击查看合集">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock
-                                            VerticalAlignment="Center"
-                                            FontSize="11"
-                                            FontWeight="SemiBold"
-                                            Foreground="White"
-                                            Text="{Binding Name}" />
-                                    </StackPanel>
-                                    <Border.InputBindings>
-                                        <MouseBinding
-                                            MouseAction="LeftClick"
-                                            Command="{Binding DataContext.NavigateToCollectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}" />
-                                    </Border.InputBindings>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    CornerRadius="4">
+                    <Grid>
+                        <ItemsControl
+                            ItemsSource="{Binding WallpaperCollections}"
+                            Visibility="{Binding ShowCollectionsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border
+                                        Margin="2,2"
+                                        Padding="6,2"
+                                        Background="{StaticResource SecondaryBrush}"
+                                        CornerRadius="10"
+                                        Cursor="Hand"
+                                        ToolTip="点击查看合集">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock
+                                                VerticalAlignment="Center"
+                                                FontSize="11"
+                                                FontWeight="SemiBold"
+                                                Foreground="White"
+                                                Text="{Binding Name}" />
+                                        </StackPanel>
+                                        <Border.InputBindings>
+                                            <MouseBinding
+                                                MouseAction="LeftClick"
+                                                Command="{Binding DataContext.NavigateToCollectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}" />
+                                        </Border.InputBindings>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            HorizontalAlignment="Left"
+                            FontSize="11"
+                            FontStyle="Italic"
+                            Foreground="Gray"
+                            Text="该壁纸未加入任何合集"
+                            Visibility="{Binding ShowCollectionsSection, Converter={StaticResource InverseBooleanToVisibilityConverter}}" />
+                    </Grid>
                 </Border>
 
                 <!--  文件信息  -->
