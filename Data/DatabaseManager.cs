@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.Sqlite;
 using Serilog;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
 using WallpaperEngine.Models;
@@ -823,6 +824,43 @@ namespace WallpaperEngine.Data {
             using var command = m_connection.CreateCommand();
             command.CommandText = "SELECT COUNT(*) FROM Wallpapers";
             return Convert.ToInt32(command.ExecuteScalar());
+        }
+
+        /// <summary>
+        /// 获取所有分类的壁纸数量统计
+        /// </summary>
+        /// <param name="allCategories">所有需要统计的分类列表（包括默认分类和自定义分类）</param>
+        /// <returns>分类名称到壁纸数量的字典</returns>
+        public Dictionary<string, int> GetCategoryStatistics(List<string> allCategories)
+        {
+            var stats = new Dictionary<string, int>();
+
+            // 为每个分类查询壁纸数量
+            foreach (var category in allCategories)
+            {
+                using var cmd = m_connection.CreateCommand();
+                cmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE Category = @category";
+                cmd.Parameters.AddWithValue("@category", category);
+
+                var count = Convert.ToInt32(cmd.ExecuteScalar());
+                stats[category] = count;
+            }
+
+            return stats;
+        }
+
+        /// <summary>
+        /// 获取指定分类的壁纸数量
+        /// </summary>
+        /// <param name="category">分类名称</param>
+        /// <returns>该分类下的壁纸数量</returns>
+        public int GetCategoryWallpaperCount(string category)
+        {
+            using var cmd = m_connection.CreateCommand();
+            cmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE Category = @category";
+            cmd.Parameters.AddWithValue("@category", category);
+
+            return Convert.ToInt32(cmd.ExecuteScalar());
         }
     }
 }

@@ -170,12 +170,35 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
-        /// 从数据库加载自定义分类并添加到分类列表中
+        /// 从数据库加载自定义分类并同步到分类列表
         /// </summary>
         private void LoadCustomCategories()
         {
             try {
                 var customCategories = _dbManager.GetCustomCategories();
+                // 默认分类列表（硬编码，与构造函数中的初始列表一致）
+                var defaultCategories = new HashSet<string>
+                {
+                    "所有分类", "未分类", "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
+                };
+
+                // 找出需要移除的自定义分类（存在于Categories中但不在数据库且不是默认分类）
+                var categoriesToRemove = new List<string>();
+                foreach (var category in Categories)
+                {
+                    if (!defaultCategories.Contains(category) && !customCategories.Contains(category))
+                    {
+                        categoriesToRemove.Add(category);
+                    }
+                }
+
+                // 移除已删除的自定义分类
+                foreach (var category in categoriesToRemove)
+                {
+                    Categories.Remove(category);
+                }
+
+                // 添加新的自定义分类
                 foreach (var category in customCategories) {
                     if (!Categories.Contains(category)) {
                         Categories.Add(category);

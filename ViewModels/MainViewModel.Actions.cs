@@ -906,5 +906,24 @@ namespace WallpaperEngine.ViewModels {
                 AddToSelection(wallpaper);
             }
         }
+
+        /// <summary>
+        /// 打开分类管理窗口
+        /// </summary>
+        [RelayCommand]
+        private void ManageCategories()
+        {
+            var categoryWindow = new CategoryManagementWindow
+            {
+                Owner = System.Windows.Application.Current.MainWindow,
+                DataContext = Ioc.Default.GetService<CategoryManagementViewModel>(),
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+
+            categoryWindow.ShowDialog();
+
+            // 对话框关闭后刷新分类列表
+            LoadCustomCategories();
+        }
     }
 }

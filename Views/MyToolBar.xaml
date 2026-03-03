@@ -59,6 +59,16 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+                <!--  分类管理按钮  -->
+                <Button
+                    Width="30"
+                    Height="30"
+                    Margin="5,0,0,0"
+                    Command="{Binding ManageCategoriesCommand}"
+                    ToolTip="管理分类"
+                    Style="{StaticResource MaterialDesignIconButton}">
+                    <materialDesign:PackIcon Kind="Cog" Width="16" Height="16" />
+                </Button>
             </StackPanel>
 
             <!--  成人内容过滤  -->
