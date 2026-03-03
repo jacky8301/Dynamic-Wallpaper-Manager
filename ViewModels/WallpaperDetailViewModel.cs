@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using System.Collections.ObjectModel;
+using System.Linq;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
@@ -56,6 +57,14 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private string _selectedContentRating = "Everyone";
 
+        /// <summary>当前壁纸所属的合集列表</summary>
+        [ObservableProperty]
+        private ObservableCollection<WallpaperCollection> _wallpaperCollections = new();
+
+        /// <summary>是否显示合集区域（当壁纸不属于任何合集时隐藏）</summary>
+        [ObservableProperty]
+        private bool _showCollectionsSection = false;
+
         /// <summary>标签编辑集合</summary>
         public ObservableCollection<string> Tags { get; } = new ObservableCollection<string>();
 
@@ -98,6 +107,8 @@ namespace WallpaperEngine.ViewModels {
         public IAsyncRelayCommand AddTagCommand { get; }
         /// <summary>移除标签命令</summary>
         public IRelayCommand<string> RemoveTagCommand { get; }
+        /// <summary>导航到合集命令</summary>
+        public IRelayCommand<WallpaperCollection> NavigateToCollectionCommand { get; }
 
         /// <summary>新增分类事件，通知 MainViewModel 同步</summary>
         public event EventHandler<string>? CategoryAdded;
@@ -122,9 +133,75 @@ namespace WallpaperEngine.ViewModels {
             AddCategoryCommand = new AsyncRelayCommand(AddCategory);
             AddTagCommand = new AsyncRelayCommand(AddTag);
             RemoveTagCommand = new RelayCommand<string>(RemoveTag);
+            NavigateToCollectionCommand = new RelayCommand<WallpaperCollection>(NavigateToCollection);
 
             // 加载自定义分类
             LoadCustomCategories();
+        }
+
+        /// <summary>
+        /// 加载当前壁纸所属的合集列表
+        /// </summary>
+        private async Task LoadWallpaperCollections()
+        {
+            if (CurrentWallpaper == null || string.IsNullOrEmpty(CurrentWallpaper.FolderPath))
+            {
+                WallpaperCollections.Clear();
+                ShowCollectionsSection = false;
+                return;
+            }
+
+            try
+            {
+                var collections = await Task.Run(() => _dbManager.GetCollectionsForWallpaper(CurrentWallpaper.FolderPath));
+                WallpaperCollections.Clear();
+                foreach (var collection in collections)
+                {
+                    WallpaperCollections.Add(collection);
+                }
+                ShowCollectionsSection = WallpaperCollections.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"加载壁纸合集失败: {ex.Message}");
+                ShowCollectionsSection = false;
+            }
+        }
+
+        /// <summary>
+        /// 导航到指定合集视图
+        /// </summary>
+        /// <param name="collection">要导航到的合集</param>
+        private void NavigateToCollection(WallpaperCollection? collection)
+        {
+            if (collection == null) return;
+
+            try
+            {
+                // 获取 MainViewModel 实例
+                var mainViewModel = Ioc.Default.GetService<MainViewModel>();
+                if (mainViewModel != null)
+                {
+                    // 切换到合集标签页（标签页2）
+                    mainViewModel.CurrentTab = 2;
+
+                    // 获取 CollectionViewModel 实例并选中指定合集
+                    var collectionViewModel = Ioc.Default.GetService<CollectionViewModel>();
+                    if (collectionViewModel != null)
+                    {
+                        // 查找并选中对应的合集
+                        var targetCollection = collectionViewModel.Collections.FirstOrDefault(c => c.Id == collection.Id);
+                        if (targetCollection != null)
+                        {
+                            collectionViewModel.SelectedCollection = targetCollection;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"导航到合集失败: {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -143,6 +220,9 @@ namespace WallpaperEngine.ViewModels {
             PreviewFileName = CurrentWallpaper?.Project?.Preview ?? string.Empty;
             ContentFileName = CurrentWallpaper?.Project?.File ?? string.Empty;
             SyncTagsFromProject();
+
+            // 加载壁纸所属合集
+            _ = LoadWallpaperCollections();
         }
 
         /// <summary>

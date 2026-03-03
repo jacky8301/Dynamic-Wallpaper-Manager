@@ -534,6 +534,38 @@ namespace WallpaperEngine.Data {
         }
 
         /// <summary>
+        /// 获取包含指定壁纸的所有合集
+        /// </summary>
+        /// <param name="folderPath">壁纸文件夹路径</param>
+        /// <returns>包含该壁纸的合集列表</returns>
+        public List<WallpaperCollection> GetCollectionsForWallpaper(string folderPath)
+        {
+            var collections = new List<WallpaperCollection>();
+            using var command = m_connection.CreateCommand();
+            command.CommandText = @"
+                SELECT c.Id, c.Name, c.CreatedDate
+                FROM Collections c
+                INNER JOIN CollectionItems ci ON c.Id = ci.CollectionId
+                WHERE ci.WallpaperFolderPath = @folderPath
+                ORDER BY c.CreatedDate DESC";
+            command.Parameters.AddWithValue("@folderPath", folderPath);
+
+            using var reader = command.ExecuteReader();
+            while (reader.Read())
+            {
+                collections.Add(new WallpaperCollection
+                {
+                    Id = reader["Id"].ToString(),
+                    Name = reader["Name"].ToString(),
+                    CreatedDate = reader["CreatedDate"] != DBNull.Value && DateTime.TryParse(reader["CreatedDate"].ToString(), out var createdDateParsed)
+                        ? createdDateParsed
+                        : DateTime.MinValue
+                });
+            }
+            return collections;
+        }
+
+        /// <summary>
         /// 保存一次扫描操作的记录到扫描历史表
         /// </summary>
         /// <param name="scanPath">扫描路径</param>
