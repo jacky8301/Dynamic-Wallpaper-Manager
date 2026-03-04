@@ -89,7 +89,7 @@ namespace WallpaperEngine.Services {
                     FileName = _settings.WallpaperEnginePath,
                     Arguments = arguments,
                     UseShellExecute = false,
-                    CreateNoWindow = true,
+                    CreateNoWindow = false,
                     WindowStyle = ProcessWindowStyle.Normal
                 };
 
