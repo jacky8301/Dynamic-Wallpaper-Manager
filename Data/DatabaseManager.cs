@@ -76,8 +76,8 @@ namespace WallpaperEngine.Data {
                     Preview = reader["PreviewFile"].ToString(),
                     Type = reader["WallpaperType"].ToString(),
                     Tags = reader["Tags"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
-                    ContentRating = reader["ContentRating"].ToString(),
-                    Visibility = reader["Visibility"].ToString()
+                    ContentRating = reader["ContentRating"] != DBNull.Value ? reader["ContentRating"].ToString() : "Everyone",
+                    Visibility = reader["Visibility"] != DBNull.Value ? reader["Visibility"].ToString() : "public"
                 },
                 CategoryId = categoryId,
                 Category = categoryName,

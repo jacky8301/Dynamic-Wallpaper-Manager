@@ -234,7 +234,7 @@ namespace WallpaperEngine.ViewModels {
             {
                 SelectedCategory = category;
             }
-            SelectedContentRating = CurrentWallpaper?.Project?.ContentRating ?? "Everyone";
+            SelectedContentRating = string.IsNullOrEmpty(CurrentWallpaper?.Project?.ContentRating) ? "Everyone" : CurrentWallpaper.Project.ContentRating;
             Description = CurrentWallpaper?.Project?.Description ?? string.Empty;
             Title = CurrentWallpaper?.Project?.Title ?? string.Empty;
             PreviewFileName = CurrentWallpaper?.Project?.Preview ?? string.Empty;
