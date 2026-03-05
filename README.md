@@ -1,7 +1,7 @@
 # Dynamic Wallpaper Manager
+<img width="779" height="558" alt="wallpaper" src="https://github.com/user-attachments/assets/14301413-21ba-416a-9dfd-f9c623962264" />
 
 中文 | [English](./README.md)
-![Uploading wallpaper.png…]()
 
 Dynamic Wallpaper Manager 是一款专为 Wallpaper Engine 设计的桌面壁纸管理工具，采用 WPF 开发，提供现代化的 Material Design 界面。
 
