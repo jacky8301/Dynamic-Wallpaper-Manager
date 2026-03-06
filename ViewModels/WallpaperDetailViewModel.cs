@@ -151,7 +151,7 @@ namespace WallpaperEngine.ViewModels {
         /// <summary>
         /// 加载当前壁纸所属的合集列表
         /// </summary>
-        private async Task LoadWallpaperCollections()
+        public async Task LoadWallpaperCollections()
         {
             if (CurrentWallpaper == null || string.IsNullOrEmpty(CurrentWallpaper.FolderPath))
             {

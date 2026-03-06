@@ -635,6 +635,19 @@ namespace WallpaperEngine.ViewModels {
                 if (collectionVm?.SelectedCollection?.Id == collectionId) {
                     collectionVm.LoadCollectionWallpapers();
                 }
+
+                // 刷新壁纸详情页的合集信息（如果详情页已打开）
+                var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
+                if (detailVm?.CurrentWallpaper != null) {
+                    // 检查添加的壁纸是否包含当前详情页显示的壁纸
+                    var currentPath = detailVm.CurrentWallpaper.FolderPath;
+                    foreach (var wp in wallpapersToAdd) {
+                        if (wp.FolderPath == currentPath) {
+                            _ = detailVm.LoadWallpaperCollections();
+                            break;
+                        }
+                    }
+                }
             } catch (Exception ex) {
                 Log.Warning($"添加壁纸到合集失败: {ex.Message}");
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
@@ -686,6 +699,13 @@ namespace WallpaperEngine.ViewModels {
                     var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
                     if (collectionVm?.SelectedCollection?.Id == selected.Id) {
                         collectionVm.LoadCollectionWallpapers();
+                    }
+                    // 刷新壁纸详情页的合集信息（如果当前正在查看该壁纸详情）
+                    var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
+                    if (detailVm?.CurrentWallpaper != null) {
+                        if (detailVm.CurrentWallpaper.FolderPath == wallpaper.FolderPath) {
+                            _ = detailVm.LoadWallpaperCollections();
+                        }
                     }
                 } catch (Exception ex) {
                     Log.Warning($"添加壁纸到合集失败: {ex.Message}");
