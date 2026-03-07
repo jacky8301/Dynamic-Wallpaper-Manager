@@ -31,7 +31,7 @@
     <Grid Margin="12">
         <Grid.RowDefinitions>
             <!--  预览图  -->
-            <RowDefinition Height="2*" MinHeight="80" />
+            <RowDefinition Height="250" MinHeight="250" />
             <!--  信息区  -->
             <RowDefinition Height="3*" MinHeight="80" />
             <!--  操作按钮  -->
@@ -44,6 +44,7 @@
             Background="Black"
             CornerRadius="6">
             <Image
+                HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Source="{Binding CurrentWallpaper.PreviewImagePath, Converter={StaticResource ImageToSourceConverter}}"
                 Stretch="Uniform" />
@@ -74,8 +75,8 @@
                         Text="描述:" />
                     <ScrollViewer
                         Grid.Column="1"
-                        Margin="6,0,0,0"
                         MaxHeight="80"
+                        Margin="6,0,0,0"
                         VerticalAlignment="Top"
                         VerticalScrollBarVisibility="Auto">
                         <ContentControl
@@ -220,9 +221,7 @@
                 </Border>
 
                 <!--  所属合集  -->
-                <StackPanel
-                    Margin="0,0,0,2"
-                    Orientation="Horizontal">
+                <StackPanel Margin="0,0,0,2" Orientation="Horizontal">
                     <TextBlock
                         VerticalAlignment="Center"
                         FontWeight="Bold"
@@ -234,9 +233,7 @@
                     Background="{StaticResource LightBackground}"
                     CornerRadius="4">
                     <Grid>
-                        <ItemsControl
-                            ItemsSource="{Binding WallpaperCollections}"
-                            Visibility="{Binding ShowCollectionsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ItemsControl ItemsSource="{Binding WallpaperCollections}" Visibility="{Binding ShowCollectionsSection, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <WrapPanel Orientation="Horizontal" />
@@ -261,17 +258,17 @@
                                         </StackPanel>
                                         <Border.InputBindings>
                                             <MouseBinding
-                                                MouseAction="LeftClick"
                                                 Command="{Binding DataContext.NavigateToCollectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}" />
+                                                CommandParameter="{Binding}"
+                                                MouseAction="LeftClick" />
                                         </Border.InputBindings>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                         <TextBlock
-                            VerticalAlignment="Center"
                             HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             FontSize="11"
                             FontStyle="Italic"
                             Foreground="Gray"
