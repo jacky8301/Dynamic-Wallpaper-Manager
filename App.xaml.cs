@@ -1,10 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;    // 为什么要引入两个dependencyInjection命名空间？因为CommunityToolkit.Mvvm.DependencyInjection是对Microsoft.Extensions.DependencyInjection的封装，提供了更简化的API来注册和解析依赖项。
 using Serilog;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows;
 using WallpaperEngine.Common;
 using WallpaperEngine.Data;
@@ -19,12 +17,7 @@ namespace WallpaperEngine {
     public partial class App : Application {
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);
-        [DllImport("user32.dll")]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-        [DllImport("user32.dll")]
-        private static extern bool IsIconic(IntPtr hWnd);
-        private const int SW_RESTORE = 9;
-        private const string AppGuid = "{80DEC730-14F5-4798-A4A7-EEEB4ADE1672}"; // 请替换为唯一名称
+        private const string AppGuid = "{80DEC730-14F5-4798-A4A7-EEEB4ADE1672}";
         private SingleInstanceManager _singleInstanceManager;
         public App()
         {
