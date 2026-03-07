@@ -31,6 +31,15 @@ namespace WallpaperEngine.Views {
                 WallpaperListBox.PreviewMouseRightButtonDown += ListBox_PreviewMouseRightButtonDown;
                 WallpaperListBox.SelectionChanged += WallpaperListBox_SelectionChanged;
             }
+
+            // 添加窗口关闭事件处理，确保托盘图标被正确释放
+            this.Closing += MainWindow_Closing;
+        }
+
+        // 窗口关闭时释放托盘图标资源
+        private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            TrayIcon?.Dispose();
         }
         private MainViewModel ViewModel;
         // 允许通过拖动标题栏移动窗口
