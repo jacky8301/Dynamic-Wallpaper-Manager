@@ -162,6 +162,35 @@ namespace WallpaperEngine.Services {
                 }
 
                 wallpaperItem.Project = project;
+
+                // 处理壁纸ID：优先使用project.json中的wallpaperId，否则使用现有ID或生成新ID
+                string wallpaperId = string.Empty;
+                if (!string.IsNullOrEmpty(project.WallpaperId))
+                {
+                    wallpaperId = project.WallpaperId;
+                }
+                else if (existingWallpaper != null)
+                {
+                    wallpaperId = existingWallpaper.Id;
+                    project.WallpaperId = wallpaperId;
+                    // 将ID写回project.json文件
+                    await WriteWallpaperIdToProjectFile(projectFile, project);
+                }
+                else
+                {
+                    wallpaperId = Guid.NewGuid().ToString();
+                    project.WallpaperId = wallpaperId;
+                    await WriteWallpaperIdToProjectFile(projectFile, project);
+                }
+
+                wallpaperItem.Id = wallpaperId;
+
+                // 如果project.json中的ID与现有ID不同，需要删除旧记录
+                if (existingWallpaper != null && existingWallpaper.Id != wallpaperId)
+                {
+                    _dbManager.DeleteWallpaperByPath(folderPath);
+                }
+
                 // 使用 project.json 中的分类，如果为空或"未分类"，则设置为"未分类"
                 if (string.IsNullOrEmpty(project.Category) || project.Category == "未分类") {
                     project.Category = "未分类";
@@ -180,6 +209,25 @@ namespace WallpaperEngine.Services {
             } catch (Exception ex) {
                 Log.Fatal($"Error processing folder {folderPath}: {ex.Message}");
                 return ScanResultType.Skipped;
+            }
+        }
+
+        /// <summary>
+        /// 将壁纸ID写回project.json文件
+        /// </summary>
+        /// <param name="projectFile">project.json文件路径</param>
+        /// <param name="project">壁纸项目对象</param>
+        private async Task WriteWallpaperIdToProjectFile(string projectFile, WallpaperProject project)
+        {
+            try
+            {
+                var json = JsonConvert.SerializeObject(project, Formatting.Indented);
+                await File.WriteAllTextAsync(projectFile, json);
+                Log.Debug("已更新壁纸ID到文件: {ProjectFile}", projectFile);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("更新project.json文件失败 {ProjectFile}: {Message}", projectFile, ex.Message);
             }
         }
 

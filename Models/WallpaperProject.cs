@@ -60,5 +60,11 @@ namespace WallpaperEngine.Models {
         /// </summary>
         [JsonProperty("category")]
         public string Category { get; set; } = "未分类";
+
+        /// <summary>
+        /// 壁纸唯一标识符
+        /// </summary>
+        [JsonProperty("wallpaperId")]
+        public string WallpaperId { get; set; } = string.Empty;
     }
 }
