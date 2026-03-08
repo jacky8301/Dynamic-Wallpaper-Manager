@@ -587,12 +587,12 @@ namespace WallpaperEngine.ViewModels {
                 int alreadyInCollectionCount = 0;
                 foreach (var wallpaper in wallpapersToAdd)
                 {
-                    if (_dbManager.IsInCollection(collectionId, wallpaper.FolderPath)) {
+                    if (_dbManager.IsInCollection(collectionId, wallpaper.Id)) {
                         alreadyInCollectionCount++;
                         continue;
                     }
 
-                    _dbManager.AddToCollection(collectionId, wallpaper.FolderPath);
+                    _dbManager.AddToCollection(collectionId, wallpaper.Id);
                     addedCount++;
                     Log.Information($"成功将壁纸{wallpaper.Project?.Title} 添加到合集{collection.Name}");
                 }
@@ -685,7 +685,7 @@ namespace WallpaperEngine.ViewModels {
             var result = await DialogHost.Show(view, "MainRootDialog");
             if (result is MaterialDialogResult dialogResult && dialogResult.Confirmed && dialogResult.Data is WallpaperCollection selected) {
                 try {
-                    if (_dbManager.IsInCollection(selected.Id, wallpaper.FolderPath)) {
+                    if (_dbManager.IsInCollection(selected.Id, wallpaper.Id)) {
                         await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                             Message = $"该壁纸已存在于合集「{selected.Name}」中。",
                             Title = "提示",
@@ -694,7 +694,7 @@ namespace WallpaperEngine.ViewModels {
                         });
                         return;
                     }
-                    _dbManager.AddToCollection(selected.Id, wallpaper.FolderPath);
+                    _dbManager.AddToCollection(selected.Id, wallpaper.Id);
                     // 刷新合集页面（如果当前正在查看该合集）
                     var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
                     if (collectionVm?.SelectedCollection?.Id == selected.Id) {

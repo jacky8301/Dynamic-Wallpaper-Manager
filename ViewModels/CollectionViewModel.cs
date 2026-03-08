@@ -76,9 +76,9 @@ namespace WallpaperEngine.ViewModels {
             if (SelectedCollection == null) return;
 
             try {
-                var folderPaths = _dbManager.GetCollectionItems(SelectedCollection.Id);
-                foreach (var path in folderPaths) {
-                    var wallpaper = _dbManager.GetWallpaperByFolderPath(path);
+                var wallpaperIds = _dbManager.GetCollectionItems(SelectedCollection.Id);
+                foreach (var id in wallpaperIds) {
+                    var wallpaper = _dbManager.GetWallpaperById(id);
                     if (wallpaper != null) {
                         CollectionWallpapers.Add(wallpaper);
                     }
@@ -167,7 +167,7 @@ namespace WallpaperEngine.ViewModels {
             if (SelectedCollection == null || wallpaper == null) return;
 
             try {
-                _dbManager.RemoveFromCollection(SelectedCollection.Id, wallpaper.FolderPath);
+                _dbManager.RemoveFromCollection(SelectedCollection.Id, wallpaper.Id);
                 CollectionWallpapers.Remove(wallpaper);
             } catch (Exception ex) {
                 Log.Error($"从合集移除壁纸失败: {ex.Message}");

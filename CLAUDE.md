@@ -54,7 +54,7 @@ The installer script `DynamicWallpaperManager.nsi` packages the x86 release buil
 - **Code style**: The project uses a detailed `.editorconfig` to enforce coding conventions (4‑space indentation, explicit types, expression‑bodied members, etc.). No additional linter or formatter is required; Visual Studio / dotnet format will respect these settings.
 - **Dependency injection**: All services and view‑models are registered as singletons in `App.xaml.cs` using `CommunityToolkit.Mvvm.DependencyInjection`. View‑models are split into partial classes for maintainability (see Architecture).
 - **Logging**: Serilog is configured to write to the console and a rolling file (`log/dynamic_wallpaper_manager.log`). Log levels can be adjusted in `App.xaml.cs`.
-- **Database**: SQLite database is automatically created at `%USERPROFILE%\DynamicWallpaperManager\wallpapers.db` on first run. No manual migration steps are needed; schema updates are handled by `DatabaseManager.InitializeDatabase()`.
+- **Database**: SQLite database is automatically created at `%USERPROFILE%\DynamicWallpaperManager\wallpapers.db` on first run. No manual migration steps are needed; schema updates are handled by `DatabaseManager.InitializeDatabase()`, which performs automatic schema migration (e.g., adding missing columns, rebuilding tables if necessary).
 - **Testing**: The project does not currently include unit tests.
 
 ## Architecture
@@ -91,15 +91,26 @@ ViewModels are also registered as singletons for state persistence.
 - `WallpaperDetailViewModel.CategoryAdded` — Notifies when a new category is created
 - `MainViewModel.LoadWallpapersCompleted` — Signals when wallpaper loading is finished
 
+### Favorite State Synchronization
+
+When a wallpaper's favorite status changes (via `MainViewModel.ToggleFavoriteCommand`):
+1. The `DatabaseManager.ToggleFavorite()` method is called with the wallpaper's `Id`
+2. The `Favorites` table is updated using `WallpaperId` as the foreign key
+3. The `Wallpapers.IsFavorite` column is updated as a denormalized cache
+4. The change is synchronized to the `CollectionViewModel` by matching `WallpaperItem.Id` (not `FolderPath`)
+5. All instances of the same wallpaper (in main view, collection view, etc.) are updated to maintain consistency
+
 ### Wallpaper Scanner Workflow
 
 `WallpaperScanner.ScanWallpapersAsync()` performs directory enumeration looking for numbered subdirectories (e.g., `1/`, `2/`):
 
 1. Reads `project.json` in each folder to extract metadata
-2. Auto-categorizes based on tags (nature, abstract, game, anime, etc.)
-3. Compares with database records for incremental updates
-4. Reports progress via `IProgress<ScanProgress>`
-5. Saves scan record to `ScanHistory` table
+2. Generates or reads existing wallpaper ID from the `project.json` file
+3. Auto-categorizes based on tags (nature, abstract, game, anime, etc.)
+4. Compares with database records for incremental updates
+5. Reports progress via `IProgress<ScanProgress>`
+6. Saves scan record to `ScanHistory` table
+7. Writes back the wallpaper ID to `project.json` if missing
 
 ### Category Management System
 
@@ -147,6 +158,15 @@ The application has a comprehensive category management system with the followin
 | Settings | `%APPDATA%\DynamicWallpaperManager\settings.json` |
 | Thumbnail Cache | `%USERPROFILE%\DynamicWallpaperManager\thumbnails\` |
 
+## Wallpaper ID System
+
+Each wallpaper is assigned a unique identifier (`Wallpapers.Id`) stored as a TEXT primary key. This ID is:
+- **Generated** when a wallpaper is first scanned, based on the `project.json` file's content or folder path
+- **Persisted** in the `project.json` file itself (in the `wallpaperId` field) to survive folder moves
+- **Used** as the primary foreign key in related tables (`Favorites.WallpaperId`)
+
+The system maintains backward compatibility: `Favorites` retains the `FolderPath` column but primarily uses `WallpaperId` for joins. Database initialization automatically migrates existing data and adds the `WallpaperId` column if missing.
+
 ## Database Schema
 
 SQLite tables: `Wallpapers`, `Favorites` (normalized), `Collections`, `CollectionItems`, `Categories`, `ScanHistory`.
@@ -154,13 +174,13 @@ SQLite tables: `Wallpapers`, `Favorites` (normalized), `Collections`, `Collectio
 The `Favorites` table is intentionally normalized — a wallpaper's favorite status is determined by checking this table, not a flag on `Wallpapers`. However, the `Wallpapers` table also contains an `IsFavorite` column that is kept in sync for performance (denormalized cache).
 
 **Table details**:
-- `Wallpapers`: Core wallpaper metadata, including folder path, title, tags, category, file hash, etc.
-- `Favorites`: Records folder paths and favorited date; unique constraint on `FolderPath`.
+- `Wallpapers`: Core wallpaper metadata, including folder path, title, tags, category, file hash, etc. Primary key is `Id` (TEXT), a unique wallpaper identifier.
+- `Favorites`: Records wallpaper favorite status. Uses `WallpaperId` (TEXT) as foreign key to `Wallpapers.Id`; also retains `FolderPath` for backward compatibility. Unique constraint on `FolderPath`.
 - `Categories`: User‑defined category names. Only custom categories are stored; default categories are hardcoded.
 - `Collections` and `CollectionItems`: For grouping wallpapers into user‑defined collections.
 - `ScanHistory`: Log of each scan operation with statistics.
 
-Indexes are created on frequently queried columns (`Title`, `Tags`, `Category`, `IsFavorite`, `ScanPath`, etc.).
+Indexes are created on frequently queried columns (`Title`, `Tags`, `Category`, `IsFavorite`, `ScanPath`, etc.). An additional index `IX_Favorites_WallpaperId` exists for `Favorites.WallpaperId`.
 
 ## Wallpaper Engine Integration
 
@@ -194,3 +214,4 @@ Follow `.editorconfig` conventions:
 - **High memory usage**: The `ImageCache` limits the number of cached images; thumbnails are stored on disk. If memory grows, check for unbounded collections in view‑models.
 - **Category management issues**: Default categories (`自然`, `抽象`, etc.) that are empty may be automatically hidden from UI lists. Protected categories (`所有分类`, `未分类`) cannot be renamed or deleted.
 - **Single instance conflicts**: If the application appears unresponsive, check for existing instances via Task Manager and terminate them before relaunching.
+- **Database schema errors**: If you encounter "table Favorites has no column named WallpaperId", delete the database file (`%USERPROFILE%\DynamicWallpaperManager\wallpapers.db`) and restart the application. The database will be recreated with the correct schema. The application includes automatic migration logic, but in rare cases manual cleanup may be needed.

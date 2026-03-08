@@ -91,7 +91,7 @@ namespace WallpaperEngine.Converters
                     return CreateHeaderContent(false, collectionName);
                 }
 
-                bool isInCollection = dbManager.IsInCollection(collection.Id, wallpaper.FolderPath);
+                bool isInCollection = dbManager.IsInCollection(collection.Id, wallpaper.Id);
                 Log.Information($"CollectionMenuHeaderConverter: Wallpaper {wallpaper.Project?.Title} in collection {collection.Name}: {isInCollection}");
 
                 return CreateHeaderContent(isInCollection, collectionName);

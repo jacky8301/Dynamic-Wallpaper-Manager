@@ -80,7 +80,7 @@ namespace WallpaperEngine.Converters
                     return false;
                 }
 
-                bool isInCollection = dbManager.IsInCollection(collectionId, wallpaper.FolderPath);
+                bool isInCollection = dbManager.IsInCollection(collectionId, wallpaper.Id);
                 Log.Information($"IsInCollectionConverter: Wallpaper {wallpaper.Project?.Title} in collection {collectionId}: {isInCollection}");
                 return isInCollection;
             }

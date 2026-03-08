@@ -155,7 +155,7 @@ namespace WallpaperEngine.ViewModels {
 
             try
             {
-                var collections = await Task.Run(() => _dbManager.GetCollectionsForWallpaper(CurrentWallpaper.FolderPath));
+                var collections = await Task.Run(() => _dbManager.GetCollectionsForWallpaper(CurrentWallpaper.Id));
                 WallpaperCollections.Clear();
                 foreach (var collection in collections)
                 {
