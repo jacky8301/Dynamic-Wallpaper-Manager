@@ -12,6 +12,7 @@ namespace WallpaperEngine.Data {
     public sealed class DatabaseManager : IDisposable {
         private SqliteConnection m_connection;
         private readonly string m_dbPath;
+        private readonly object m_lock = new object();
 
         /// <summary>
         /// 初始化数据库管理器，连接或创建指定路径的 SQLite 数据库
@@ -21,6 +22,49 @@ namespace WallpaperEngine.Data {
         {
             m_dbPath = databasePath;
             InitializeDatabase();
+        }
+
+        /// <summary>
+        /// 确保数据库连接处于打开状态，如果连接已关闭则重新打开
+        /// </summary>
+        private void EnsureConnectionOpen()
+        {
+            if (m_connection == null || m_connection.State != System.Data.ConnectionState.Open)
+            {
+                Log.Warning("数据库连接已关闭，正在重新打开");
+                m_connection?.Dispose();
+                var connectionString = $"Data Source={m_dbPath}";
+                m_connection = new SqliteConnection(connectionString);
+                m_connection.Open();
+            }
+        }
+
+        /// <summary>
+        /// 在锁内执行数据库操作，确保连接处于打开状态
+        /// </summary>
+        /// <param name="action">要执行的数据库操作，接收当前连接作为参数</param>
+        private void ExecuteInLock(Action<SqliteConnection> action)
+        {
+            lock (m_lock)
+            {
+                EnsureConnectionOpen();
+                action(m_connection);
+            }
+        }
+
+        /// <summary>
+        /// 在锁内执行数据库查询操作，确保连接处于打开状态
+        /// </summary>
+        /// <typeparam name="T">返回类型</typeparam>
+        /// <param name="func">要执行的数据库查询，接收当前连接作为参数并返回结果</param>
+        /// <returns>查询结果</returns>
+        private T ExecuteInLock<T>(Func<SqliteConnection, T> func)
+        {
+            lock (m_lock)
+            {
+                EnsureConnectionOpen();
+                return func(m_connection);
+            }
         }
 
         /// <summary>
@@ -103,20 +147,24 @@ namespace WallpaperEngine.Data {
         /// <returns>匹配的壁纸项，未找到时返回 null</returns>
         public WallpaperItem GetWallpaperByFolderPath(string folderPath)
         {
-            using var command = m_connection.CreateCommand();
-            command.CommandText = @"
+            lock (m_lock)
+            {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = @"
                 SELECT w.*, f.FolderPath AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
                 FROM Wallpapers w
                 LEFT JOIN Favorites f ON w.FolderPath = f.FolderPath
                 WHERE w.FolderPath = @folderPath";
-            command.Parameters.AddWithValue("@folderPath", folderPath);
+                command.Parameters.AddWithValue("@folderPath", folderPath);
 
-            using (var reader = command.ExecuteReader()) {
-                if (reader.Read()) {
-                    return ReadWallpaperItem(reader);
+                using (var reader = command.ExecuteReader()) {
+                    if (reader.Read()) {
+                        return ReadWallpaperItem(reader);
+                    }
                 }
+                return null; // 没找到
             }
-            return null; // 没找到
         }
 
         /// <summary>
@@ -126,20 +174,24 @@ namespace WallpaperEngine.Data {
         /// <param name="isFavorite">true 表示收藏，false 表示取消收藏</param>
         public void ToggleFavorite(string folderPath, bool isFavorite)
         {
-            Log.Information("切换收藏状态: {FolderPath}, 收藏: {IsFavorite}", folderPath, isFavorite);
-            using var command = m_connection.CreateCommand();
-            if (isFavorite) {
-                command.CommandText = @"
+            lock (m_lock)
+            {
+                EnsureConnectionOpen();
+                Log.Information("切换收藏状态: {FolderPath}, 收藏: {IsFavorite}", folderPath, isFavorite);
+                using var command = m_connection.CreateCommand();
+                if (isFavorite) {
+                    command.CommandText = @"
                 INSERT OR IGNORE INTO Favorites (FolderPath, FavoritedDate)
                 VALUES (@folderPath, @favoritedDate)";
-                command.Parameters.AddWithValue("@folderPath", folderPath);
-                command.Parameters.AddWithValue("@favoritedDate", DateTime.Now.ToString("O"));
-            } else {
-                command.CommandText = @"
+                    command.Parameters.AddWithValue("@folderPath", folderPath);
+                    command.Parameters.AddWithValue("@favoritedDate", DateTime.Now.ToString("O"));
+                } else {
+                    command.CommandText = @"
                 DELETE FROM Favorites WHERE FolderPath = @folderPath";
-                command.Parameters.AddWithValue("@folderPath", folderPath);
+                    command.Parameters.AddWithValue("@folderPath", folderPath);
+                }
+                command.ExecuteNonQuery();
             }
-            command.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -407,9 +459,12 @@ namespace WallpaperEngine.Data {
         /// <param name="wallpaper">要保存的壁纸项</param>
         public void SaveWallpaper(WallpaperItem wallpaper)
         {
-            Log.Debug("保存壁纸记录: {FolderPath}", wallpaper.FolderPath);
-            using var command = m_connection.CreateCommand();
-            command.CommandText = @"
+            lock (m_lock)
+            {
+                EnsureConnectionOpen();
+                Log.Debug("保存壁纸记录: {FolderPath}", wallpaper.FolderPath);
+                using var command = m_connection.CreateCommand();
+                command.CommandText = @"
                 INSERT OR REPLACE INTO Wallpapers
                 (Id, FolderPath, FolderName, Title, Description, FileName, PreviewFile,
                  WallpaperType, Tags, IsFavorite, CategoryId, AddedDate, ContentRating, Visibility, FavoritedDate, LastUpdated, LastScanned, FolderLastModified, FileSize, FileHash)
@@ -417,46 +472,47 @@ namespace WallpaperEngine.Data {
                 ($id, $folderPath, $folderName, $title, $description, $fileName, $previewFile,
                  $wallpaperType, $tags, $isFavorite, $categoryId, $addedDate, $contentRating, $visibility, $favoritedDate, $lastUpdated, $lastScanned, $folderLastModified, $fileSize, $fileHash)";
 
-            // 计算文件哈希
-            var fileHash = string.Empty;
-            var lastModified = DateTime.MinValue;
-            var fileSize = 0L;
+                // 计算文件哈希
+                var fileHash = string.Empty;
+                var lastModified = DateTime.MinValue;
+                var fileSize = 0L;
 
-            try {
-                var mainFile = Path.Combine(wallpaper.FolderPath, wallpaper.Project.File);
-                if (File.Exists(mainFile)) {
-                    var fileInfo = new FileInfo(mainFile);
-                    lastModified = fileInfo.LastWriteTime;
-                    fileSize = fileInfo.Length;
+                try {
+                    var mainFile = Path.Combine(wallpaper.FolderPath, wallpaper.Project.File);
+                    if (File.Exists(mainFile)) {
+                        var fileInfo = new FileInfo(mainFile);
+                        lastModified = fileInfo.LastWriteTime;
+                        fileSize = fileInfo.Length;
+                    }
+                } catch (Exception ex) {
+                    Log.Warning($"获取文件信息失败 {wallpaper.FolderPath}: {ex.Message}");
+                    lastModified = DateTime.Now;
                 }
-            } catch (Exception ex) {
-                Log.Warning($"获取文件信息失败 {wallpaper.FolderPath}: {ex.Message}");
-                lastModified = DateTime.Now;
+
+                command.Parameters.AddWithValue("$id", wallpaper.Id);
+                command.Parameters.AddWithValue("$folderPath", wallpaper.FolderPath);
+                command.Parameters.AddWithValue("$folderName", wallpaper.FolderName);
+                command.Parameters.AddWithValue("$title", wallpaper.Project.Title);
+                command.Parameters.AddWithValue("$description", wallpaper.Project.Description);
+                command.Parameters.AddWithValue("$fileName", wallpaper.Project.File);
+                command.Parameters.AddWithValue("$previewFile", wallpaper.Project.Preview);
+                command.Parameters.AddWithValue("$wallpaperType", wallpaper.Project.Type);
+                command.Parameters.AddWithValue("$tags", string.Join(",", wallpaper.Project.Tags ?? new List<string>()));
+                command.Parameters.AddWithValue("$isFavorite", wallpaper.IsFavorite ? 1 : 0);
+                command.Parameters.AddWithValue("$categoryId", wallpaper.CategoryId);
+                command.Parameters.AddWithValue("$addedDate", wallpaper.AddedDate.ToString("O"));
+                command.Parameters.AddWithValue("$contentRating", wallpaper.Project.ContentRating);
+                command.Parameters.AddWithValue("$visibility", wallpaper.Project.Visibility);
+                command.Parameters.AddWithValue("$favoritedDate", wallpaper.FavoritedDate);
+                command.Parameters.AddWithValue("$lastUpdated", wallpaper.LastUpdated);
+                // 快速扫描新增字段
+                command.Parameters.AddWithValue("$lastScanned", wallpaper.LastScanned.ToString("O"));
+                command.Parameters.AddWithValue("$folderLastModified", wallpaper.FolderLastModified.ToString("O"));
+                command.Parameters.AddWithValue("$fileSize", fileSize);
+                command.Parameters.AddWithValue("$fileHash", fileHash);
+
+                command.ExecuteNonQuery();
             }
-
-            command.Parameters.AddWithValue("$id", wallpaper.Id);
-            command.Parameters.AddWithValue("$folderPath", wallpaper.FolderPath);
-            command.Parameters.AddWithValue("$folderName", wallpaper.FolderName);
-            command.Parameters.AddWithValue("$title", wallpaper.Project.Title);
-            command.Parameters.AddWithValue("$description", wallpaper.Project.Description);
-            command.Parameters.AddWithValue("$fileName", wallpaper.Project.File);
-            command.Parameters.AddWithValue("$previewFile", wallpaper.Project.Preview);
-            command.Parameters.AddWithValue("$wallpaperType", wallpaper.Project.Type);
-            command.Parameters.AddWithValue("$tags", string.Join(",", wallpaper.Project.Tags ?? new List<string>()));
-            command.Parameters.AddWithValue("$isFavorite", wallpaper.IsFavorite ? 1 : 0);
-            command.Parameters.AddWithValue("$categoryId", wallpaper.CategoryId);
-            command.Parameters.AddWithValue("$addedDate", wallpaper.AddedDate.ToString("O"));
-            command.Parameters.AddWithValue("$contentRating", wallpaper.Project.ContentRating);
-            command.Parameters.AddWithValue("$visibility", wallpaper.Project.Visibility);
-            command.Parameters.AddWithValue("$favoritedDate", wallpaper.FavoritedDate);
-            command.Parameters.AddWithValue("$lastUpdated", wallpaper.LastUpdated);
-            // 快速扫描新增字段
-            command.Parameters.AddWithValue("$lastScanned", wallpaper.LastScanned.ToString("O"));
-            command.Parameters.AddWithValue("$folderLastModified", wallpaper.FolderLastModified.ToString("O"));
-            command.Parameters.AddWithValue("$fileSize", fileSize);
-            command.Parameters.AddWithValue("$fileHash", fileHash);
-
-            command.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -541,9 +597,12 @@ namespace WallpaperEngine.Data {
         /// </summary>
         public void Dispose()
         {
-            Log.Debug("关闭数据库连接");
-            m_connection?.Close();
-            m_connection?.Dispose();
+            lock (m_lock)
+            {
+                Log.Debug("关闭数据库连接");
+                m_connection?.Close();
+                m_connection?.Dispose();
+            }
         }
 
         // ===== 合集管理 =====
@@ -921,27 +980,31 @@ namespace WallpaperEngine.Data {
         /// <param name="id">要删除的分类ID</param>
         public void DeleteCategory(int id)
         {
-            Log.Information("删除分类ID: {Id}", id);
-            using var transaction = m_connection.BeginTransaction();
-            try {
-                using var updateCmd = m_connection.CreateCommand();
-                updateCmd.CommandText = "UPDATE Wallpapers SET CategoryId = 1 WHERE CategoryId = @id";
-                updateCmd.Parameters.AddWithValue("@id", id);
-                updateCmd.ExecuteNonQuery();
+            lock (m_lock)
+            {
+                EnsureConnectionOpen();
+                Log.Information("删除分类ID: {Id}", id);
+                using var transaction = m_connection.BeginTransaction();
+                try {
+                    using var updateCmd = m_connection.CreateCommand();
+                    updateCmd.CommandText = "UPDATE Wallpapers SET CategoryId = 1 WHERE CategoryId = @id";
+                    updateCmd.Parameters.AddWithValue("@id", id);
+                    updateCmd.ExecuteNonQuery();
 
-                using var deleteCmd = m_connection.CreateCommand();
-                deleteCmd.CommandText = "DELETE FROM Categories WHERE Id = @id AND IsDefault = 0";
-                deleteCmd.Parameters.AddWithValue("@id", id);
-                var rowsAffected = deleteCmd.ExecuteNonQuery();
-                if (rowsAffected == 0)
-                {
-                    Log.Warning("尝试删除默认分类或分类不存在: {Id}", id);
+                    using var deleteCmd = m_connection.CreateCommand();
+                    deleteCmd.CommandText = "DELETE FROM Categories WHERE Id = @id AND IsDefault = 0";
+                    deleteCmd.Parameters.AddWithValue("@id", id);
+                    var rowsAffected = deleteCmd.ExecuteNonQuery();
+                    if (rowsAffected == 0)
+                    {
+                        Log.Warning("尝试删除默认分类或分类不存在: {Id}", id);
+                    }
+
+                    transaction.Commit();
+                } catch {
+                    transaction.Rollback();
+                    throw;
                 }
-
-                transaction.Commit();
-            } catch {
-                transaction.Rollback();
-                throw;
             }
         }
 
