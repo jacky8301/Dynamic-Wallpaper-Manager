@@ -78,7 +78,6 @@ Section "主程序" SecMain
     File /r "bin\x86\Release\net8.0-windows\runtimes\win-x64\*.*"
     File /r "bin\x86\Release\net8.0-windows\runtimes\win-x86\*.*"
     File /r "bin\x86\Release\net8.0-windows\runtimes\win\*.*"
-    File /r "bin\x86\Release\net8.0-windows\runtimes\browser\*.*"
     File /r "bin\x86\Release\net8.0-windows\*.dll"
     File "bin\x86\Release\net8.0-windows\DynamicWallpaperManager.exe"
     File "bin\x86\Release\net8.0-windows\preview.jpg"
