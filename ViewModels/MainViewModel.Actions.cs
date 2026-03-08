@@ -350,7 +350,7 @@ namespace WallpaperEngine.ViewModels {
             wallpaper.FavoritedDate = wallpaper.IsFavorite ? DateTime.Now : DateTime.MinValue;
 
             try {
-                _dbManager.ToggleFavorite(wallpaper.FolderPath, wallpaper.IsFavorite);
+                _dbManager.ToggleFavorite(wallpaper.Id, wallpaper.IsFavorite);
                 Log.Information("数据库更新成功");
             } catch (Exception ex) {
                 Log.Warning($"更新收藏状态失败: {ex.Message}");
@@ -361,7 +361,7 @@ namespace WallpaperEngine.ViewModels {
             var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
             if (collectionVm != null) {
                 var collectionWallpaper = collectionVm.CollectionWallpapers
-                    .FirstOrDefault(w => w.FolderPath == wallpaper.FolderPath);
+                    .FirstOrDefault(w => w.Id == wallpaper.Id);
                 if (collectionWallpaper != null) {
                     collectionWallpaper.IsFavorite = wallpaper.IsFavorite;
                     collectionWallpaper.FavoritedDate = wallpaper.FavoritedDate;

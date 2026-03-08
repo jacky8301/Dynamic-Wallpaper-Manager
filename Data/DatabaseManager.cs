@@ -152,9 +152,9 @@ namespace WallpaperEngine.Data {
                 EnsureConnectionOpen();
                 using var command = m_connection.CreateCommand();
                 command.CommandText = @"
-                SELECT w.*, f.FolderPath AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
+                SELECT w.*, f.WallpaperId AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
                 FROM Wallpapers w
-                LEFT JOIN Favorites f ON w.FolderPath = f.FolderPath
+                LEFT JOIN Favorites f ON w.Id = f.WallpaperId
                 WHERE w.FolderPath = @folderPath";
                 command.Parameters.AddWithValue("@folderPath", folderPath);
 
@@ -170,25 +170,36 @@ namespace WallpaperEngine.Data {
         /// <summary>
         /// 切换壁纸的收藏状态，收藏时插入记录，取消收藏时删除记录
         /// </summary>
-        /// <param name="folderPath">壁纸文件夹路径</param>
+        /// <param name="wallpaperId">壁纸ID</param>
         /// <param name="isFavorite">true 表示收藏，false 表示取消收藏</param>
-        public void ToggleFavorite(string folderPath, bool isFavorite)
+        public void ToggleFavorite(string wallpaperId, bool isFavorite)
         {
             lock (m_lock)
             {
                 EnsureConnectionOpen();
-                Log.Information("切换收藏状态: {FolderPath}, 收藏: {IsFavorite}", folderPath, isFavorite);
+                Log.Information("切换收藏状态: {WallpaperId}, 收藏: {IsFavorite}", wallpaperId, isFavorite);
                 using var command = m_connection.CreateCommand();
                 if (isFavorite) {
+                    // 获取壁纸的FolderPath
+                    command.CommandText = "SELECT FolderPath FROM Wallpapers WHERE Id = @wallpaperId";
+                    command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+                    string folderPath = command.ExecuteScalar() as string;
+                    if (string.IsNullOrEmpty(folderPath))
+                    {
+                        Log.Warning("未找到壁纸ID对应的文件夹路径: {WallpaperId}", wallpaperId);
+                        return;
+                    }
+                    command.Parameters.Clear();
                     command.CommandText = @"
-                INSERT OR IGNORE INTO Favorites (FolderPath, FavoritedDate)
-                VALUES (@folderPath, @favoritedDate)";
+                INSERT OR IGNORE INTO Favorites (FolderPath, WallpaperId, FavoritedDate)
+                VALUES (@folderPath, @wallpaperId, @favoritedDate)";
                     command.Parameters.AddWithValue("@folderPath", folderPath);
+                    command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
                     command.Parameters.AddWithValue("@favoritedDate", DateTime.Now.ToString("O"));
                 } else {
                     command.CommandText = @"
-                DELETE FROM Favorites WHERE FolderPath = @folderPath";
-                    command.Parameters.AddWithValue("@folderPath", folderPath);
+                DELETE FROM Favorites WHERE WallpaperId = @wallpaperId";
+                    command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
                 }
                 command.ExecuteNonQuery();
             }
@@ -405,20 +416,140 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
 
             // 创建收藏表
+            bool wallpaperIdColumnExists = false;
             command.CommandText = @"
             CREATE TABLE IF NOT EXISTS Favorites (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 FolderPath TEXT NOT NULL UNIQUE,
+                WallpaperId TEXT,
                 FavoritedDate TEXT NOT NULL
             )";
             command.ExecuteNonQuery();
 
+            // 确保WallpaperId列存在（兼容旧版本数据库）
+            try
+            {
+                // 首先检查WallpaperId列是否已存在
+                command.CommandText = "PRAGMA table_info(Favorites)";
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var columnName = reader.GetString(1); // name column
+                        if (columnName.Equals("WallpaperId", StringComparison.OrdinalIgnoreCase))
+                        {
+                            wallpaperIdColumnExists = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!wallpaperIdColumnExists)
+                {
+                    Log.Information("Favorites表缺少WallpaperId列，正在添加...");
+                    command.CommandText = "ALTER TABLE Favorites ADD COLUMN WallpaperId TEXT";
+                    command.ExecuteNonQuery();
+                    Log.Information("已成功添加WallpaperId列到Favorites表");
+                    wallpaperIdColumnExists = true;
+                }
+                else
+                {
+                    Log.Debug("WallpaperId列已存在");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("检查或添加WallpaperId列时出错: {Error}", ex.Message);
+                // 尝试重建Favorites表
+                try
+                {
+                    Log.Information("尝试重建Favorites表...");
+
+                    // 备份现有收藏数据（从Wallpapers表获取，因为Favorites表可能结构不兼容）
+                    var backupData = new List<(string FolderPath, string WallpaperId)>();
+                    command.CommandText = "SELECT FolderPath, Id FROM Wallpapers WHERE IsFavorite = 1";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            backupData.Add((reader.GetString(0), reader.GetString(1)));
+                        }
+                    }
+
+                    Log.Information("找到 {Count} 个收藏记录需要迁移", backupData.Count);
+
+                    // 删除旧的Favorites表
+                    command.CommandText = "DROP TABLE IF EXISTS Favorites";
+                    command.ExecuteNonQuery();
+
+                    // 重新创建Favorites表（包含WallpaperId列）
+                    command.CommandText = @"
+                    CREATE TABLE Favorites (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        FolderPath TEXT NOT NULL UNIQUE,
+                        WallpaperId TEXT,
+                        FavoritedDate TEXT NOT NULL
+                    )";
+                    command.ExecuteNonQuery();
+
+                    // 恢复数据
+                    foreach (var (folderPath, wallpaperId) in backupData)
+                    {
+                        command.CommandText = @"
+                        INSERT OR IGNORE INTO Favorites (FolderPath, WallpaperId, FavoritedDate)
+                        VALUES (@folderPath, @wallpaperId, datetime('now'))";
+                        command.Parameters.Clear();
+                        command.Parameters.AddWithValue("@folderPath", folderPath);
+                        command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+                        command.ExecuteNonQuery();
+                    }
+
+                    Log.Information("Favorites表重建完成，包含WallpaperId列");
+                    wallpaperIdColumnExists = true;
+                }
+                catch (Exception rebuildEx)
+                {
+                    Log.Error(rebuildEx, "重建Favorites表失败");
+                    // 继续执行，后续操作可能会失败
+                }
+            }
+
             // 迁移旧数据：将 Wallpapers 表中 IsFavorite=1 的记录迁移到 Favorites 表
-            command.CommandText = @"
-            INSERT OR IGNORE INTO Favorites (FolderPath, FavoritedDate)
-            SELECT FolderPath, COALESCE(FavoritedDate, datetime('now'))
-            FROM Wallpapers WHERE IsFavorite = 1";
-            command.ExecuteNonQuery();
+            if (wallpaperIdColumnExists)
+            {
+                command.CommandText = @"
+                INSERT OR IGNORE INTO Favorites (FolderPath, WallpaperId, FavoritedDate)
+                SELECT FolderPath, Id, COALESCE(FavoritedDate, datetime('now'))
+                FROM Wallpapers WHERE IsFavorite = 1";
+                command.ExecuteNonQuery();
+                Log.Information("已迁移旧收藏数据到Favorites表");
+            }
+            else
+            {
+                Log.Warning("无法迁移旧收藏数据，因为Favorites表缺少WallpaperId列");
+            }
+
+            // 更新现有收藏记录的WallpaperId（如果为空）
+            if (wallpaperIdColumnExists)
+            {
+                command.CommandText = @"
+                UPDATE Favorites
+                SET WallpaperId = (SELECT Id FROM Wallpapers WHERE Wallpapers.FolderPath = Favorites.FolderPath)
+                WHERE WallpaperId IS NULL";
+                command.ExecuteNonQuery();
+                Log.Information("已更新现有收藏记录的WallpaperId");
+            }
+
+            // 为WallpaperId创建索引
+            try
+            {
+                command.CommandText = "CREATE INDEX IF NOT EXISTS IX_Favorites_WallpaperId ON Favorites(WallpaperId)";
+                command.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning("创建WallpaperId索引失败: {Error}", ex.Message);
+            }
 
             // 创建分类表（使用ID作为主键）
             command.CommandText = @"
@@ -543,18 +674,18 @@ namespace WallpaperEngine.Data {
                 command.Parameters.AddWithValue("@categoryId", categoryId);
             }
             if (favoritesOnly) {
-                whereClause += " AND f.FolderPath IS NOT NULL";
+                whereClause += " AND f.WallpaperId IS NOT NULL";
             }
             if (hideAdultContent) {
                 whereClause += " AND w.ContentRating NOT IN ('Mature', 'Questionable')";
             }
 
             command.CommandText = $@"
-                SELECT w.*, f.FolderPath AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
+                SELECT w.*, f.WallpaperId AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
                 FROM Wallpapers w
-                LEFT JOIN Favorites f ON w.FolderPath = f.FolderPath
+                LEFT JOIN Favorites f ON w.Id = f.WallpaperId
                 {whereClause}
-                ORDER BY (CASE WHEN f.FolderPath IS NOT NULL THEN 1 ELSE 0 END) DESC, w.AddedDate DESC
+                ORDER BY (CASE WHEN f.WallpaperId IS NOT NULL THEN 1 ELSE 0 END) DESC, w.AddedDate DESC
                 LIMIT 1000";
 
             using var reader = command.ExecuteReader();
@@ -573,7 +704,7 @@ namespace WallpaperEngine.Data {
         {
             Log.Information("删除壁纸记录: {Id}", wallpaperId);
             using var command = m_connection.CreateCommand();
-            command.CommandText = "DELETE FROM Favorites WHERE FolderPath IN (SELECT FolderPath FROM Wallpapers WHERE Id = $id)";
+            command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = $id";
             command.Parameters.AddWithValue("$id", wallpaperId);
             command.ExecuteNonQuery();
 

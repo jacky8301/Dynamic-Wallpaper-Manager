@@ -210,7 +210,7 @@ namespace WallpaperEngine.ViewModels {
             if (mainVm == null) return;
 
             // 找到主视图中对应的壁纸实例，保持状态同步
-            var mainWallpaper = mainVm.Wallpapers.FirstOrDefault(w => w.FolderPath == wallpaper.FolderPath);
+            var mainWallpaper = mainVm.Wallpapers.FirstOrDefault(w => w.Id == wallpaper.Id);
             if (mainWallpaper != null) {
                 mainVm.ToggleFavoriteCommand.Execute(mainWallpaper);
                 // 同步状态到合集中的实例
