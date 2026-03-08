@@ -451,6 +451,10 @@ namespace WallpaperEngine.Data {
             // 迁移分类到ID系统
             MigrateCategoriesToIdSystem();
 
+            // 将所有默认分类标记转为普通分类（IsDefault = 0）
+            command.CommandText = "UPDATE Categories SET IsDefault = 0 WHERE IsDefault = 1";
+            command.ExecuteNonQuery();
+
             Log.Information("数据库初始化完成");
         }
         /// <summary>

@@ -148,14 +148,7 @@ namespace WallpaperEngine.ViewModels
         {
             var allCategories = new List<string>(_defaultCategories);
 
-            // 添加硬编码的默认分类
-            foreach (var defaultCategory in CategoryConstants.DefaultCategories)
-            {
-                if (!allCategories.Contains(defaultCategory))
-                {
-                    allCategories.Add(defaultCategory);
-                }
-            }
+            // 注意：硬编码的默认分类已移除，不再添加到分类列表
 
             // 从数据库获取自定义分类
             try

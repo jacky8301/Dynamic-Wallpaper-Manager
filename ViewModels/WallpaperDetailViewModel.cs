@@ -135,14 +135,7 @@ namespace WallpaperEngine.ViewModels {
             RemoveTagCommand = new RelayCommand<string>(RemoveTag);
             NavigateToCollectionCommand = new RelayCommand<WallpaperCollection>(NavigateToCollection);
 
-            // 添加默认分类（硬编码）
-            foreach (var defaultCategory in CategoryConstants.DefaultCategories)
-            {
-                if (!CategoryList.Contains(defaultCategory))
-                {
-                    CategoryList.Add(defaultCategory);
-                }
-            }
+            // 注意：硬编码的默认分类已移除，不再添加到分类列表
 
             // 加载自定义分类
             LoadCustomCategories();
@@ -351,15 +344,12 @@ namespace WallpaperEngine.ViewModels {
         {
             try {
                 var customCategories = _dbManager.GetCustomCategories();
-                // 默认分类列表（包括受保护分类"未分类"和硬编码默认分类）
+                // 默认分类列表（仅包含受保护虚拟分类"未分类"，硬编码默认分类已移除）
                 var defaultCategories = new HashSet<string>
                 {
                     "未分类" // 受保护虚拟分类
                 };
-                foreach (var cat in CategoryConstants.DefaultCategories)
-                {
-                    defaultCategories.Add(cat);
-                }
+                // 注意：硬编码默认分类已移除，不再添加到默认分类列表
 
                 // 找出需要移除的自定义分类（存在于CategoryList中但不在数据库且不是默认分类）
                 var categoriesToRemove = new List<string>();

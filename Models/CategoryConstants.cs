@@ -19,11 +19,9 @@ namespace WallpaperEngine.Models
 
         /// <summary>
         /// 默认分类列表（不包括虚拟分类）
+        /// 注意：此列表已置空，不再有硬编码的默认分类
         /// </summary>
-        public static readonly List<string> DefaultCategories = new()
-        {
-            "自然", "抽象", "游戏", "动漫", "科幻", "风景", "建筑", "动物"
-        };
+        public static readonly List<string> DefaultCategories = new();
 
         /// <summary>
         /// 受保护的分类名称列表
