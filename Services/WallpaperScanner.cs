@@ -7,23 +7,12 @@ using Serilog;
 
 namespace WallpaperEngine.Services {
     /// <summary>
-    /// 壁纸扫描器，扫描指定文件夹中的壁纸目录，读取 project.json 并根据标签自动分类，支持增量扫描
+    /// 壁纸扫描器，扫描指定文件夹中的壁纸目录，读取 project.json，支持增量扫描
     /// </summary>
     public class WallpaperScanner {
         private readonly DatabaseManager _dbManager;
         private CancellationTokenSource _cancellationTokenSource;
 
-        private static readonly Dictionary<string, string[]> TagCategories = new()
-        {
-            { "自然", new[] { "nature", "自然", "风景", "landscape" } },
-            { "抽象", new[] { "abstract", "抽象", "艺术", "art" } },
-            { "游戏", new[] { "game", "游戏", "gaming" } },
-            { "动漫", new[] { "anime", "动漫", "动画" } },
-            { "科幻", new[] { "sci-fi", "科幻", "space" } },
-            { "风景", new[] { "scenery", "风景", "view" } },
-            { "建筑", new[] { "architecture", "建筑", "building" } },
-            { "动物", new[] { "animal", "动物", "pet" } }
-        };
 
         /// <summary>
         /// 初始化壁纸扫描器
@@ -133,7 +122,7 @@ namespace WallpaperEngine.Services {
         }
 
         /// <summary>
-        /// 处理单个壁纸文件夹，读取 project.json 并推断分类后保存到数据库
+        /// 处理单个壁纸文件夹，读取 project.json 并保存到数据库
         /// </summary>
         /// <param name="folderPath">壁纸文件夹路径</param>
         /// <param name="isIncremental">是否为增量模式</param>
@@ -173,13 +162,11 @@ namespace WallpaperEngine.Services {
                 }
 
                 wallpaperItem.Project = project;
-                // 优先使用 project.json 中的分类，否则根据标签推断
+                // 使用 project.json 中的分类，如果为空或"未分类"，则设置为"未分类"
                 if (string.IsNullOrEmpty(project.Category) || project.Category == "未分类") {
-                    var detectedCategoryId = GetCategory(project);
-                    var categoryName = _dbManager.GetCategoryNameById(detectedCategoryId) ?? "未分类";
-                    project.Category = categoryName;
-                    wallpaperItem.CategoryId = detectedCategoryId;
-                    wallpaperItem.Category = categoryName;
+                    project.Category = "未分类";
+                    wallpaperItem.CategoryId = CategoryConstants.UNCATEGORIZED_ID;
+                    wallpaperItem.Category = "未分类";
                 }
                 else
                 {
@@ -196,29 +183,6 @@ namespace WallpaperEngine.Services {
             }
         }
 
-        /// <summary>
-        /// 根据壁纸项目的标签自动推断分类，匹配预定义的标签-分类映射表
-        /// </summary>
-        /// <param name="project">壁纸项目信息</param>
-        /// <returns>推断出的分类ID，无法匹配时返回"未分类"的ID（1）</returns>
-        private int GetCategory(WallpaperProject project)
-        {
-            if (project.Tags == null || project.Tags.Count == 0) {
-                return CategoryConstants.UNCATEGORIZED_ID;
-            }
-
-            foreach (var tag in project.Tags) {
-                foreach (var cat in TagCategories) {
-                    if (cat.Value.Any(t => tag.Contains(t, StringComparison.OrdinalIgnoreCase))) {
-                        // 通过分类名称获取ID
-                        var categoryId = _dbManager.GetCategoryIdByName(cat.Key);
-                        return categoryId >= 0 ? categoryId : CategoryConstants.UNCATEGORIZED_ID;
-                    }
-                }
-            }
-
-            return CategoryConstants.UNCATEGORIZED_ID;
-        }
     }
 
 }
