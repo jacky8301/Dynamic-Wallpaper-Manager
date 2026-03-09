@@ -165,7 +165,7 @@ Each wallpaper is assigned a unique identifier (`Wallpapers.Id`) stored as a TEX
 - **Persisted** in the `project.json` file itself (in the `wallpaperId` field) to survive folder moves
 - **Used** as the primary foreign key in related tables (`Favorites.WallpaperId`)
 
-The system maintains backward compatibility: `Favorites` retains the `FolderPath` column but primarily uses `WallpaperId` for joins. Database initialization automatically migrates existing data and adds the `WallpaperId` column if missing.
+The system maintains backward compatibility: Database initialization automatically migrates existing data from older schema versions (including removing the `FolderPath` column if present) and ensures the `WallpaperId` column exists.
 
 ## Database Schema
 
@@ -175,7 +175,7 @@ The `Favorites` table is intentionally normalized — a wallpaper's favorite sta
 
 **Table details**:
 - `Wallpapers`: Core wallpaper metadata, including folder path, title, tags, category, file hash, etc. Primary key is `Id` (TEXT), a unique wallpaper identifier.
-- `Favorites`: Records wallpaper favorite status. Uses `WallpaperId` (TEXT) as foreign key to `Wallpapers.Id`; also retains `FolderPath` for backward compatibility. Unique constraint on `FolderPath`.
+- `Favorites`: Records wallpaper favorite status. Uses `WallpaperId` (TEXT) as foreign key to `Wallpapers.Id`. Unique constraint on `WallpaperId`. The table no longer contains a `FolderPath` column.
 - `Categories`: User‑defined category names. Only custom categories are stored; default categories are hardcoded.
 - `Collections` and `CollectionItems`: For grouping wallpapers into user‑defined collections.
 - `ScanHistory`: Log of each scan operation with statistics.
