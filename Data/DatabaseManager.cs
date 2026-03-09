@@ -29,8 +29,7 @@ namespace WallpaperEngine.Data {
         /// </summary>
         private void EnsureConnectionOpen()
         {
-            if (m_connection == null || m_connection.State != System.Data.ConnectionState.Open)
-            {
+            if (m_connection == null || m_connection.State != System.Data.ConnectionState.Open) {
                 Log.Warning("数据库连接已关闭，正在重新打开");
                 m_connection?.Dispose();
                 var connectionString = $"Data Source={m_dbPath}";
@@ -45,8 +44,7 @@ namespace WallpaperEngine.Data {
         /// <param name="action">要执行的数据库操作，接收当前连接作为参数</param>
         private void ExecuteInLock(Action<SqliteConnection> action)
         {
-            lock (m_lock)
-            {
+            lock (m_lock) {
                 EnsureConnectionOpen();
                 action(m_connection);
             }
@@ -60,8 +58,7 @@ namespace WallpaperEngine.Data {
         /// <returns>查询结果</returns>
         private T ExecuteInLock<T>(Func<SqliteConnection, T> func)
         {
-            lock (m_lock)
-            {
+            lock (m_lock) {
                 EnsureConnectionOpen();
                 return func(m_connection);
             }
@@ -147,8 +144,7 @@ namespace WallpaperEngine.Data {
         /// <returns>匹配的壁纸项，未找到时返回 null</returns>
         public WallpaperItem GetWallpaperByFolderPath(string folderPath)
         {
-            lock (m_lock)
-            {
+            lock (m_lock) {
                 EnsureConnectionOpen();
                 using var command = m_connection.CreateCommand();
                 command.CommandText = @"
@@ -174,8 +170,7 @@ namespace WallpaperEngine.Data {
         /// <returns>壁纸项，如果未找到则返回null</returns>
         public WallpaperItem GetWallpaperById(string wallpaperId)
         {
-            lock (m_lock)
-            {
+            lock (m_lock) {
                 EnsureConnectionOpen();
                 using var command = m_connection.CreateCommand();
                 command.CommandText = @"
@@ -201,8 +196,7 @@ namespace WallpaperEngine.Data {
         /// <param name="isFavorite">true 表示收藏，false 表示取消收藏</param>
         public void ToggleFavorite(string wallpaperId, bool isFavorite)
         {
-            lock (m_lock)
-            {
+            lock (m_lock) {
                 EnsureConnectionOpen();
                 Log.Information("切换收藏状态: {WallpaperId}, 收藏: {IsFavorite}", wallpaperId, isFavorite);
                 using var command = m_connection.CreateCommand();
@@ -211,8 +205,7 @@ namespace WallpaperEngine.Data {
                     command.CommandText = "SELECT 1 FROM Wallpapers WHERE Id = @wallpaperId";
                     command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
                     var exists = command.ExecuteScalar();
-                    if (exists == null)
-                    {
+                    if (exists == null) {
                         Log.Warning("未找到壁纸ID对应的记录: {WallpaperId}", wallpaperId);
                         return;
                     }
@@ -239,18 +232,14 @@ namespace WallpaperEngine.Data {
             Log.Information("开始迁移分类到ID系统");
 
             using var transaction = m_connection.BeginTransaction();
-            try
-            {
+            try {
                 // 1. 检查是否需要迁移Categories表（检查是否有Id列）
                 bool needsCategoryMigration = false;
-                using (var checkCmd = m_connection.CreateCommand())
-                {
+                using (var checkCmd = m_connection.CreateCommand()) {
                     checkCmd.CommandText = "PRAGMA table_info(Categories)";
                     using var reader = checkCmd.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        if (reader["name"].ToString() == "Id")
-                        {
+                    while (reader.Read()) {
+                        if (reader["name"].ToString() == "Id") {
                             needsCategoryMigration = false;
                             break;
                         }
@@ -259,8 +248,7 @@ namespace WallpaperEngine.Data {
                     needsCategoryMigration = true;
                 }
 
-                if (needsCategoryMigration)
-                {
+                if (needsCategoryMigration) {
                     // 备份旧Categories表（如果存在）
                     using var backupCmd = m_connection.CreateCommand();
                     backupCmd.CommandText = @"
@@ -280,8 +268,7 @@ namespace WallpaperEngine.Data {
 
                     // 插入默认分类
                     int defaultCategoryId = 2; // ID 1 是"未分类"，从2开始
-                    foreach (var categoryName in CategoryConstants.DefaultCategories)
-                    {
+                    foreach (var categoryName in CategoryConstants.DefaultCategories) {
                         using var insertCmd = m_connection.CreateCommand();
                         insertCmd.CommandText = @"
                             INSERT OR IGNORE INTO Categories (Id, Name, IsDefault)
@@ -310,21 +297,17 @@ namespace WallpaperEngine.Data {
                 // 2. 迁移Wallpapers表
                 // 检查是否有Category列（旧列）
                 bool hasOldCategoryColumn = false;
-                using (var checkCmd = m_connection.CreateCommand())
-                {
+                using (var checkCmd = m_connection.CreateCommand()) {
                     checkCmd.CommandText = "PRAGMA table_info(Wallpapers)";
                     using var reader = checkCmd.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        if (reader["name"].ToString() == "Category")
-                        {
+                    while (reader.Read()) {
+                        if (reader["name"].ToString() == "Category") {
                             hasOldCategoryColumn = true;
                         }
                     }
                 }
 
-                if (hasOldCategoryColumn)
-                {
+                if (hasOldCategoryColumn) {
                     // 添加CategoryId列（如果不存在）
                     using var alterCmd = m_connection.CreateCommand();
                     alterCmd.CommandText = @"
@@ -342,8 +325,7 @@ namespace WallpaperEngine.Data {
                     alterCmd.ExecuteNonQuery();
 
                     // 更新默认分类
-                    foreach (var categoryName in CategoryConstants.DefaultCategories)
-                    {
+                    foreach (var categoryName in CategoryConstants.DefaultCategories) {
                         alterCmd.CommandText = @"
                             UPDATE Wallpapers
                             SET CategoryId = (SELECT Id FROM Categories WHERE Name = @name)
@@ -367,9 +349,7 @@ namespace WallpaperEngine.Data {
 
                 transaction.Commit();
                 Log.Information("分类ID系统迁移完成");
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 transaction.Rollback();
                 Log.Error(ex, "分类ID系统迁移失败");
                 throw;
@@ -452,51 +432,39 @@ namespace WallpaperEngine.Data {
             command.ExecuteNonQuery();
 
             // 确保WallpaperId列存在（兼容旧版本数据库）
-            try
-            {
+            try {
                 // 首先检查WallpaperId列是否已存在
                 command.CommandText = "PRAGMA table_info(Favorites)";
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
+                using (var reader = command.ExecuteReader()) {
+                    while (reader.Read()) {
                         var columnName = reader.GetString(1); // name column
-                        if (columnName.Equals("WallpaperId", StringComparison.OrdinalIgnoreCase))
-                        {
+                        if (columnName.Equals("WallpaperId", StringComparison.OrdinalIgnoreCase)) {
                             wallpaperIdColumnExists = true;
                             break;
                         }
                     }
                 }
 
-                if (!wallpaperIdColumnExists)
-                {
+                if (!wallpaperIdColumnExists) {
                     Log.Information("Favorites表缺少WallpaperId列，正在添加...");
                     command.CommandText = "ALTER TABLE Favorites ADD COLUMN WallpaperId TEXT";
                     command.ExecuteNonQuery();
                     Log.Information("已成功添加WallpaperId列到Favorites表");
                     wallpaperIdColumnExists = true;
-                }
-                else
-                {
+                } else {
                     Log.Debug("WallpaperId列已存在");
                 }
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Log.Warning("检查或添加WallpaperId列时出错: {Error}", ex.Message);
                 // 尝试重建Favorites表
-                try
-                {
+                try {
                     Log.Information("尝试重建Favorites表...");
 
                     // 备份现有收藏数据（从Wallpapers表获取，因为Favorites表可能结构不兼容）
                     var backupData = new List<(string FolderPath, string WallpaperId)>();
                     command.CommandText = "SELECT FolderPath, Id FROM Wallpapers WHERE IsFavorite = 1";
-                    using (var reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
+                    using (var reader = command.ExecuteReader()) {
+                        while (reader.Read()) {
                             backupData.Add((reader.GetString(0), reader.GetString(1)));
                         }
                     }
@@ -517,8 +485,7 @@ namespace WallpaperEngine.Data {
                     command.ExecuteNonQuery();
 
                     // 恢复数据
-                    foreach (var (folderPath, wallpaperId) in backupData)
-                    {
+                    foreach (var (folderPath, wallpaperId) in backupData) {
                         command.CommandText = @"
                         INSERT OR IGNORE INTO Favorites (WallpaperId, FavoritedDate)
                         VALUES (@wallpaperId, datetime('now'))";
@@ -529,26 +496,21 @@ namespace WallpaperEngine.Data {
 
                     Log.Information("Favorites表重建完成，包含WallpaperId列");
                     wallpaperIdColumnExists = true;
-                }
-                catch (Exception rebuildEx)
-                {
+                } catch (Exception rebuildEx) {
                     Log.Error(rebuildEx, "重建Favorites表失败");
                     // 继续执行，后续操作可能会失败
                 }
             }
 
             // 迁移旧数据：将 Wallpapers 表中 IsFavorite=1 的记录迁移到 Favorites 表
-            if (wallpaperIdColumnExists)
-            {
+            if (wallpaperIdColumnExists) {
                 command.CommandText = @"
                 INSERT OR IGNORE INTO Favorites (WallpaperId, FavoritedDate)
                 SELECT Id, COALESCE(FavoritedDate, datetime('now'))
                 FROM Wallpapers WHERE IsFavorite = 1";
                 command.ExecuteNonQuery();
                 Log.Information("已迁移旧收藏数据到Favorites表");
-            }
-            else
-            {
+            } else {
                 Log.Warning("无法迁移旧收藏数据，因为Favorites表缺少WallpaperId列");
             }
 
@@ -557,68 +519,21 @@ namespace WallpaperEngine.Data {
             // 迁移Favorites表：如果存在FolderPath列，则重建表以移除该列
             bool hasFolderPathColumn = false;
             command.CommandText = "PRAGMA table_info(Favorites)";
-            using (var reader = command.ExecuteReader())
-            {
-                while (reader.Read())
-                {
+            using (var reader = command.ExecuteReader()) {
+                while (reader.Read()) {
                     var columnName = reader.GetString(1);
-                    if (columnName.Equals("FolderPath", StringComparison.OrdinalIgnoreCase))
-                    {
+                    if (columnName.Equals("FolderPath", StringComparison.OrdinalIgnoreCase)) {
                         hasFolderPathColumn = true;
                         break;
                     }
                 }
             }
-            if (hasFolderPathColumn)
-            {
-                Log.Information("Favorites表存在FolderPath列，正在迁移到新结构...");
-                // 备份现有数据
-                var backupData = new List<(string WallpaperId, string FavoritedDate)>();
-                command.CommandText = "SELECT WallpaperId, FavoritedDate FROM Favorites WHERE WallpaperId IS NOT NULL";
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        backupData.Add((reader.GetString(0), reader.GetString(1)));
-                    }
-                }
-                Log.Information("找到 {Count} 个收藏记录需要迁移", backupData.Count);
-
-                // 删除旧的Favorites表
-                command.CommandText = "DROP TABLE IF EXISTS Favorites";
-                command.ExecuteNonQuery();
-
-                // 重新创建Favorites表（不包含FolderPath列）
-                command.CommandText = @"
-                CREATE TABLE Favorites (
-                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    WallpaperId TEXT NOT NULL UNIQUE,
-                    FavoritedDate TEXT NOT NULL
-                )";
-                command.ExecuteNonQuery();
-
-                // 恢复数据
-                foreach (var (wallpaperId, favoritedDate) in backupData)
-                {
-                    command.CommandText = @"
-                    INSERT OR IGNORE INTO Favorites (WallpaperId, FavoritedDate)
-                    VALUES (@wallpaperId, @favoritedDate)";
-                    command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
-                    command.Parameters.AddWithValue("@favoritedDate", favoritedDate);
-                    command.ExecuteNonQuery();
-                }
-                Log.Information("Favorites表迁移完成，已移除FolderPath列");
-            }
 
             // 为WallpaperId创建索引
-            try
-            {
+            try {
                 command.CommandText = "CREATE INDEX IF NOT EXISTS IX_Favorites_WallpaperId ON Favorites(WallpaperId)";
                 command.ExecuteNonQuery();
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Log.Warning("创建WallpaperId索引失败: {Error}", ex.Message);
             }
 
@@ -639,128 +554,35 @@ namespace WallpaperEngine.Data {
                 CreatedDate TEXT NOT NULL
             )";
             command.ExecuteNonQuery();
+            // 检查CollectionItems表是否存在，如果不存在则创建
+            command.CommandText = "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='CollectionItems'";
+            var tableExists = Convert.ToInt64(command.ExecuteScalar()) > 0;
 
-            // 创建合集-壁纸关联表（新结构）
-            command.CommandText = @"
-            CREATE TABLE IF NOT EXISTS CollectionItems_new (
-                CollectionId TEXT NOT NULL,
-                WallpaperId TEXT NOT NULL,
-                AddedDate TEXT NOT NULL,
-                PRIMARY KEY (CollectionId, WallpaperId)
-            )";
-            command.ExecuteNonQuery();
-
-            // 检查现有CollectionItems表是否有WallpaperFolderPath列
-            bool hasWallpaperFolderPathColumn = false;
-            try
-            {
-                command.CommandText = "PRAGMA table_info(CollectionItems)";
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        var columnName = reader.GetString(1);
-                        if (columnName.Equals("WallpaperFolderPath", StringComparison.OrdinalIgnoreCase))
-                        {
-                            hasWallpaperFolderPathColumn = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                // 表可能不存在，忽略错误
-                Log.Debug("检查CollectionItems表结构时出错: {Error}", ex.Message);
-            }
-
-            // 如果存在WallpaperFolderPath列，需要迁移数据到新表
-            if (hasWallpaperFolderPathColumn)
-            {
-                Log.Information("CollectionItems表存在WallpaperFolderPath列，正在迁移到新结构...");
-
-                // 备份现有数据（包括WallpaperId为空的记录，尝试从Wallpapers表查找）
-                var backupData = new List<(string CollectionId, string WallpaperId, string AddedDate)>();
+            if (!tableExists) {
+                // 创建新表
                 command.CommandText = @"
-                    SELECT ci.CollectionId,
-                           COALESCE(ci.WallpaperId, w.Id) as WallpaperId,
-                           ci.AddedDate
-                    FROM CollectionItems ci
-                    LEFT JOIN Wallpapers w ON w.FolderPath = ci.WallpaperFolderPath
-                    WHERE ci.WallpaperId IS NOT NULL OR w.Id IS NOT NULL";
-                using (var reader = command.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        backupData.Add((
-                            reader.GetString(0),
-                            reader.GetString(1),
-                            reader.GetString(2)
-                        ));
-                    }
-                }
-                Log.Information("找到 {Count} 个合集记录需要迁移", backupData.Count);
-
-                // 删除旧表
-                command.CommandText = "DROP TABLE IF EXISTS CollectionItems";
-                command.ExecuteNonQuery();
-
-                // 重命名新表为CollectionItems
-                command.CommandText = "ALTER TABLE CollectionItems_new RENAME TO CollectionItems";
-                command.ExecuteNonQuery();
-
-                // 恢复数据
-                foreach (var (collectionId, wallpaperId, addedDate) in backupData)
-                {
-                    command.CommandText = @"
-                    INSERT OR IGNORE INTO CollectionItems (CollectionId, WallpaperId, AddedDate)
-                    VALUES (@collectionId, @wallpaperId, @addedDate)";
-                    command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@collectionId", collectionId);
-                    command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
-                    command.Parameters.AddWithValue("@addedDate", addedDate);
-                    command.ExecuteNonQuery();
-                }
-                Log.Information("CollectionItems表迁移完成，已移除WallpaperFolderPath列");
-            }
-            else
-            {
-                // 表不存在或已经是新结构，确保使用正确的表名
-                // 检查CollectionItems表是否存在，如果不存在则创建
-                command.CommandText = "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='CollectionItems'";
-                var tableExists = Convert.ToInt64(command.ExecuteScalar()) > 0;
-
-                if (!tableExists)
-                {
-                    // 创建新表
-                    command.CommandText = @"
                     CREATE TABLE CollectionItems (
                         CollectionId TEXT NOT NULL,
                         WallpaperId TEXT NOT NULL,
                         AddedDate TEXT NOT NULL,
                         PRIMARY KEY (CollectionId, WallpaperId)
                     )";
-                    command.ExecuteNonQuery();
-                    Log.Information("已创建CollectionItems表（新结构）");
-                }
-                else
-                {
-                    // 表已存在且没有WallpaperFolderPath列，可能是新结构
-                    // 确保WallpaperId列存在（理论上应该存在）
-                    // 如果表存在但结构可能不完整，我们信任现有结构
-                    Log.Debug("CollectionItems表已存在，跳过创建");
-                }
+                command.ExecuteNonQuery();
+                Log.Information("已创建CollectionItems表（新结构）");
+            } else {
+                // 表已存在且没有WallpaperFolderPath列，可能是新结构
+                // 确保WallpaperId列存在（理论上应该存在）
+                // 如果表存在但结构可能不完整，我们信任现有结构
+                Log.Debug("CollectionItems表已存在，跳过创建");
             }
 
+
             // 为WallpaperId创建索引
-            try
-            {
+            try {
                 command.CommandText = "CREATE INDEX IF NOT EXISTS IX_CollectionItems_WallpaperId ON CollectionItems(WallpaperId)";
                 command.ExecuteNonQuery();
                 Log.Information("已创建CollectionItems.WallpaperId索引");
-            }
-            catch (Exception ex)
-            {
+            } catch (Exception ex) {
                 Log.Warning("创建CollectionItems.WallpaperId索引失败: {Error}", ex.Message);
             }
 
@@ -779,8 +601,7 @@ namespace WallpaperEngine.Data {
         /// <param name="wallpaper">要保存的壁纸项</param>
         public void SaveWallpaper(WallpaperItem wallpaper)
         {
-            lock (m_lock)
-            {
+            lock (m_lock) {
                 EnsureConnectionOpen();
                 Log.Debug("保存壁纸记录: {FolderPath}", wallpaper.FolderPath);
                 using var command = m_connection.CreateCommand();
@@ -908,8 +729,7 @@ namespace WallpaperEngine.Data {
             command.CommandText = "SELECT Id FROM Wallpapers WHERE FolderPath = @path";
             command.Parameters.AddWithValue("@path", folderPath);
             var wallpaperId = command.ExecuteScalar() as string;
-            if (!string.IsNullOrEmpty(wallpaperId))
-            {
+            if (!string.IsNullOrEmpty(wallpaperId)) {
                 // 删除收藏记录（通过WallpaperId）
                 command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = @wallpaperId";
                 command.Parameters.Clear();
@@ -928,8 +748,7 @@ namespace WallpaperEngine.Data {
         /// </summary>
         public void Dispose()
         {
-            lock (m_lock)
-            {
+            lock (m_lock) {
                 Log.Debug("关闭数据库连接");
                 m_connection?.Close();
                 m_connection?.Dispose();
@@ -1099,10 +918,8 @@ namespace WallpaperEngine.Data {
             command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
 
             using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
-                collections.Add(new WallpaperCollection
-                {
+            while (reader.Read()) {
+                collections.Add(new WallpaperCollection {
                     Id = reader["Id"].ToString(),
                     Name = reader["Name"].ToString(),
                     CreatedDate = reader["CreatedDate"] != DBNull.Value && DateTime.TryParse(reader["CreatedDate"].ToString(), out var createdDateParsed)
@@ -1313,8 +1130,7 @@ namespace WallpaperEngine.Data {
         /// <param name="id">要删除的分类ID</param>
         public void DeleteCategory(int id)
         {
-            lock (m_lock)
-            {
+            lock (m_lock) {
                 EnsureConnectionOpen();
                 Log.Information("删除分类ID: {Id}", id);
                 using var transaction = m_connection.BeginTransaction();
@@ -1328,8 +1144,7 @@ namespace WallpaperEngine.Data {
                     deleteCmd.CommandText = "DELETE FROM Categories WHERE Id = @id AND IsDefault = 0";
                     deleteCmd.Parameters.AddWithValue("@id", id);
                     var rowsAffected = deleteCmd.ExecuteNonQuery();
-                    if (rowsAffected == 0)
-                    {
+                    if (rowsAffected == 0) {
                         Log.Warning("尝试删除默认分类或分类不存在: {Id}", id);
                     }
 
@@ -1357,8 +1172,7 @@ namespace WallpaperEngine.Data {
                 updateCmd.Parameters.AddWithValue("@id", id);
                 updateCmd.Parameters.AddWithValue("@newName", newName);
                 var rowsAffected = updateCmd.ExecuteNonQuery();
-                if (rowsAffected == 0)
-                {
+                if (rowsAffected == 0) {
                     Log.Warning("尝试重命名默认分类或分类不存在: {Id}", id);
                     // 对于默认分类，不重命名
                     transaction.Commit();
@@ -1393,16 +1207,12 @@ namespace WallpaperEngine.Data {
             var stats = new Dictionary<string, int>();
 
             // 为每个分类查询壁纸数量
-            foreach (var category in allCategories)
-            {
+            foreach (var category in allCategories) {
                 var categoryId = GetCategoryIdByName(category);
                 int count;
-                if (categoryId >= 0)
-                {
+                if (categoryId >= 0) {
                     count = GetCategoryWallpaperCount(categoryId);
-                }
-                else
-                {
+                } else {
                     // 虚拟分类或不存在
                     count = 0;
                 }
@@ -1420,22 +1230,16 @@ namespace WallpaperEngine.Data {
         public int GetCategoryWallpaperCount(int categoryId)
         {
             // 虚拟分类处理
-            if (CategoryConstants.IsVirtualCategoryId(categoryId))
-            {
+            if (CategoryConstants.IsVirtualCategoryId(categoryId)) {
                 using var virtualCmd = m_connection.CreateCommand();
-                if (categoryId == CategoryConstants.ALL_CATEGORIES_ID)
-                {
+                if (categoryId == CategoryConstants.ALL_CATEGORIES_ID) {
                     // "所有分类" - 返回所有壁纸总数
                     virtualCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers";
-                }
-                else if (categoryId == CategoryConstants.UNCATEGORIZED_ID)
-                {
+                } else if (categoryId == CategoryConstants.UNCATEGORIZED_ID) {
                     // "未分类" - 返回 CategoryId = 1 的壁纸数量
                     virtualCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE CategoryId = @categoryId";
                     virtualCmd.Parameters.AddWithValue("@categoryId", categoryId);
-                }
-                else
-                {
+                } else {
                     // 其他虚拟分类（目前没有）
                     return 0;
                 }
@@ -1460,8 +1264,7 @@ namespace WallpaperEngine.Data {
             using var command = m_connection.CreateCommand();
             command.CommandText = "SELECT Id, Name, IsDefault FROM Categories ORDER BY IsDefault DESC, Name";
             using var reader = command.ExecuteReader();
-            while (reader.Read())
-            {
+            while (reader.Read()) {
                 var id = Convert.ToInt32(reader["Id"]);
                 var name = reader["Name"].ToString();
                 var isDefault = Convert.ToBoolean(reader["IsDefault"]);
@@ -1516,8 +1319,7 @@ namespace WallpaperEngine.Data {
         /// </summary>
         public void MigrateWallpaperIds()
         {
-            lock (m_lock)
-            {
+            lock (m_lock) {
                 EnsureConnectionOpen();
                 Log.Information("开始迁移壁纸ID");
 
@@ -1526,20 +1328,16 @@ namespace WallpaperEngine.Data {
                 using var command = m_connection.CreateCommand();
                 command.CommandText = "SELECT Id, FolderPath FROM Wallpapers";
                 using var reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    wallpapers.Add(new WallpaperItem
-                    {
+                while (reader.Read()) {
+                    wallpapers.Add(new WallpaperItem {
                         Id = reader["Id"].ToString(),
                         FolderPath = reader["FolderPath"].ToString()
                     });
                 }
 
                 int updatedCount = 0;
-                foreach (var wallpaper in wallpapers)
-                {
-                    try
-                    {
+                foreach (var wallpaper in wallpapers) {
+                    try {
                         var projectFile = Path.Combine(wallpaper.FolderPath, "project.json");
                         if (!File.Exists(projectFile))
                             continue;
@@ -1550,17 +1348,14 @@ namespace WallpaperEngine.Data {
                             continue;
 
                         // 如果wallpaperId为空，则使用数据库中的Id
-                        if (string.IsNullOrEmpty(project.WallpaperId))
-                        {
+                        if (string.IsNullOrEmpty(project.WallpaperId)) {
                             project.WallpaperId = wallpaper.Id;
                             var updatedJson = Newtonsoft.Json.JsonConvert.SerializeObject(project, Newtonsoft.Json.Formatting.Indented);
                             File.WriteAllText(projectFile, updatedJson);
                             updatedCount++;
                             Log.Debug("更新壁纸ID: {FolderPath} -> {Id}", wallpaper.FolderPath, wallpaper.Id);
                         }
-                    }
-                    catch (Exception ex)
-                    {
+                    } catch (Exception ex) {
                         Log.Warning("迁移壁纸ID失败 {FolderPath}: {Message}", wallpaper.FolderPath, ex.Message);
                     }
                 }
