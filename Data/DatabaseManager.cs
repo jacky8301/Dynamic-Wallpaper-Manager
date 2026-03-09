@@ -640,67 +640,119 @@ namespace WallpaperEngine.Data {
             )";
             command.ExecuteNonQuery();
 
-            // 创建合集-壁纸关联表
+            // 创建合集-壁纸关联表（新结构）
             command.CommandText = @"
-            CREATE TABLE IF NOT EXISTS CollectionItems (
+            CREATE TABLE IF NOT EXISTS CollectionItems_new (
                 CollectionId TEXT NOT NULL,
-                WallpaperFolderPath TEXT NOT NULL,
-                WallpaperId TEXT,
+                WallpaperId TEXT NOT NULL,
                 AddedDate TEXT NOT NULL,
-                PRIMARY KEY (CollectionId, WallpaperFolderPath)
+                PRIMARY KEY (CollectionId, WallpaperId)
             )";
             command.ExecuteNonQuery();
 
-            // 检查并添加WallpaperId列到CollectionItems表（兼容旧版本数据库）
-            bool collectionItemsWallpaperIdColumnExists = false;
+            // 检查现有CollectionItems表是否有WallpaperFolderPath列
+            bool hasWallpaperFolderPathColumn = false;
             try
             {
-                // 首先检查WallpaperId列是否已存在
                 command.CommandText = "PRAGMA table_info(CollectionItems)";
                 using (var reader = command.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        var columnName = reader.GetString(1); // name column
-                        if (columnName.Equals("WallpaperId", StringComparison.OrdinalIgnoreCase))
+                        var columnName = reader.GetString(1);
+                        if (columnName.Equals("WallpaperFolderPath", StringComparison.OrdinalIgnoreCase))
                         {
-                            collectionItemsWallpaperIdColumnExists = true;
+                            hasWallpaperFolderPathColumn = true;
                             break;
                         }
                     }
                 }
-
-                if (!collectionItemsWallpaperIdColumnExists)
-                {
-                    Log.Information("CollectionItems表缺少WallpaperId列，正在添加...");
-                    command.CommandText = "ALTER TABLE CollectionItems ADD COLUMN WallpaperId TEXT";
-                    command.ExecuteNonQuery();
-                    Log.Information("已成功添加WallpaperId列到CollectionItems表");
-                    collectionItemsWallpaperIdColumnExists = true;
-                }
-                else
-                {
-                    Log.Debug("CollectionItems表WallpaperId列已存在");
-                }
             }
             catch (Exception ex)
             {
-                Log.Warning("检查或添加CollectionItems表WallpaperId列时出错: {Error}", ex.Message);
-                // 继续执行，后续操作可能会失败
+                // 表可能不存在，忽略错误
+                Log.Debug("检查CollectionItems表结构时出错: {Error}", ex.Message);
             }
 
-            // 更新现有CollectionItems记录的WallpaperId（如果为空）
-            if (collectionItemsWallpaperIdColumnExists)
+            // 如果存在WallpaperFolderPath列，需要迁移数据到新表
+            if (hasWallpaperFolderPathColumn)
             {
+                Log.Information("CollectionItems表存在WallpaperFolderPath列，正在迁移到新结构...");
+
+                // 备份现有数据（包括WallpaperId为空的记录，尝试从Wallpapers表查找）
+                var backupData = new List<(string CollectionId, string WallpaperId, string AddedDate)>();
                 command.CommandText = @"
-                UPDATE CollectionItems
-                SET WallpaperId = (SELECT Id FROM Wallpapers WHERE Wallpapers.FolderPath = CollectionItems.WallpaperFolderPath)
-                WHERE WallpaperId IS NULL";
+                    SELECT ci.CollectionId,
+                           COALESCE(ci.WallpaperId, w.Id) as WallpaperId,
+                           ci.AddedDate
+                    FROM CollectionItems ci
+                    LEFT JOIN Wallpapers w ON w.FolderPath = ci.WallpaperFolderPath
+                    WHERE ci.WallpaperId IS NOT NULL OR w.Id IS NOT NULL";
+                using (var reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        backupData.Add((
+                            reader.GetString(0),
+                            reader.GetString(1),
+                            reader.GetString(2)
+                        ));
+                    }
+                }
+                Log.Information("找到 {Count} 个合集记录需要迁移", backupData.Count);
+
+                // 删除旧表
+                command.CommandText = "DROP TABLE IF EXISTS CollectionItems";
                 command.ExecuteNonQuery();
-                Log.Information("已更新现有CollectionItems记录的WallpaperId");
+
+                // 重命名新表为CollectionItems
+                command.CommandText = "ALTER TABLE CollectionItems_new RENAME TO CollectionItems";
+                command.ExecuteNonQuery();
+
+                // 恢复数据
+                foreach (var (collectionId, wallpaperId, addedDate) in backupData)
+                {
+                    command.CommandText = @"
+                    INSERT OR IGNORE INTO CollectionItems (CollectionId, WallpaperId, AddedDate)
+                    VALUES (@collectionId, @wallpaperId, @addedDate)";
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@collectionId", collectionId);
+                    command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+                    command.Parameters.AddWithValue("@addedDate", addedDate);
+                    command.ExecuteNonQuery();
+                }
+                Log.Information("CollectionItems表迁移完成，已移除WallpaperFolderPath列");
+            }
+            else
+            {
+                // 表不存在或已经是新结构，确保使用正确的表名
+                // 检查CollectionItems表是否存在，如果不存在则创建
+                command.CommandText = "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='CollectionItems'";
+                var tableExists = Convert.ToInt64(command.ExecuteScalar()) > 0;
+
+                if (!tableExists)
+                {
+                    // 创建新表
+                    command.CommandText = @"
+                    CREATE TABLE CollectionItems (
+                        CollectionId TEXT NOT NULL,
+                        WallpaperId TEXT NOT NULL,
+                        AddedDate TEXT NOT NULL,
+                        PRIMARY KEY (CollectionId, WallpaperId)
+                    )";
+                    command.ExecuteNonQuery();
+                    Log.Information("已创建CollectionItems表（新结构）");
+                }
+                else
+                {
+                    // 表已存在且没有WallpaperFolderPath列，可能是新结构
+                    // 确保WallpaperId列存在（理论上应该存在）
+                    // 如果表存在但结构可能不完整，我们信任现有结构
+                    Log.Debug("CollectionItems表已存在，跳过创建");
+                }
             }
 
-            // 为CollectionItems.WallpaperId创建索引
+            // 为WallpaperId创建索引
             try
             {
                 command.CommandText = "CREATE INDEX IF NOT EXISTS IX_CollectionItems_WallpaperId ON CollectionItems(WallpaperId)";
@@ -1005,22 +1057,11 @@ namespace WallpaperEngine.Data {
             Log.Debug("添加壁纸到合集: {CollectionId}, {WallpaperId}", collectionId, wallpaperId);
             using var command = m_connection.CreateCommand();
 
-            // 获取壁纸的文件夹路径
-            command.CommandText = "SELECT FolderPath FROM Wallpapers WHERE Id = @wallpaperId";
-            command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
-            var folderPath = command.ExecuteScalar() as string;
-            if (string.IsNullOrEmpty(folderPath))
-            {
-                Log.Warning("未找到壁纸ID对应的文件夹路径: {WallpaperId}", wallpaperId);
-                return;
-            }
-
-            command.Parameters.Clear();
+            // 直接插入，不再需要文件夹路径
             command.CommandText = @"
-                INSERT OR IGNORE INTO CollectionItems (CollectionId, WallpaperFolderPath, WallpaperId, AddedDate)
-                VALUES (@collectionId, @folderPath, @wallpaperId, @addedDate)";
+                INSERT OR IGNORE INTO CollectionItems (CollectionId, WallpaperId, AddedDate)
+                VALUES (@collectionId, @wallpaperId, @addedDate)";
             command.Parameters.AddWithValue("@collectionId", collectionId);
-            command.Parameters.AddWithValue("@folderPath", folderPath);
             command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
             command.Parameters.AddWithValue("@addedDate", DateTime.Now.ToString("O"));
             command.ExecuteNonQuery();

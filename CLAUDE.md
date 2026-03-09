@@ -163,9 +163,9 @@ The application has a comprehensive category management system with the followin
 Each wallpaper is assigned a unique identifier (`Wallpapers.Id`) stored as a TEXT primary key. This ID is:
 - **Generated** when a wallpaper is first scanned, based on the `project.json` file's content or folder path
 - **Persisted** in the `project.json` file itself (in the `wallpaperId` field) to survive folder moves
-- **Used** as the primary foreign key in related tables (`Favorites.WallpaperId`)
+- **Used** as the primary foreign key in related tables (`Favorites.WallpaperId`, `CollectionItems.WallpaperId`)
 
-The system maintains backward compatibility: Database initialization automatically migrates existing data from older schema versions (including removing the `FolderPath` column if present) and ensures the `WallpaperId` column exists.
+The system maintains backward compatibility: Database initialization automatically migrates existing data from older schema versions (including removing the `FolderPath` column from Favorites and the `WallpaperFolderPath` column from CollectionItems if present) and ensures the `WallpaperId` column exists.
 
 ## Database Schema
 
@@ -177,7 +177,8 @@ The `Favorites` table is intentionally normalized — a wallpaper's favorite sta
 - `Wallpapers`: Core wallpaper metadata, including folder path, title, tags, category, file hash, etc. Primary key is `Id` (TEXT), a unique wallpaper identifier.
 - `Favorites`: Records wallpaper favorite status. Uses `WallpaperId` (TEXT) as foreign key to `Wallpapers.Id`. Unique constraint on `WallpaperId`. The table no longer contains a `FolderPath` column.
 - `Categories`: User‑defined category names. Only custom categories are stored; default categories are hardcoded.
-- `Collections` and `CollectionItems`: For grouping wallpapers into user‑defined collections.
+- `Collections`: User‑defined collections with name and creation date. Primary key is `Id` (TEXT).
+- `CollectionItems`: Junction table linking collections to wallpapers. Contains `CollectionId` (TEXT, foreign key to `Collections.Id`), `WallpaperId` (TEXT, foreign key to `Wallpapers.Id`), and `AddedDate` (TEXT). Primary key is (`CollectionId`, `WallpaperId`). The table no longer contains a `WallpaperFolderPath` column.
 - `ScanHistory`: Log of each scan operation with statistics.
 
 Indexes are created on frequently queried columns (`Title`, `Tags`, `Category`, `IsFavorite`, `ScanPath`, etc.). An additional index `IX_Favorites_WallpaperId` exists for `Favorites.WallpaperId`.
