@@ -824,8 +824,8 @@ namespace WallpaperEngine.ViewModels {
                     // 同步详情页分类列表
                     var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
                     if (detailVm != null) {
-                        // 详情页也需要移除这个分类
-                        // 注意：详情页的CategoryList需要更新
+                        // 刷新详情页的分类列表
+                        detailVm.RefreshCategoryList();
                     }
 
                     // 重新加载分类列表以确保一致性

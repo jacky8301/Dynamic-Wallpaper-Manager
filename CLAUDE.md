@@ -116,10 +116,9 @@ When a wallpaper's favorite status changes (via `MainViewModel.ToggleFavoriteCom
 
 The application has a comprehensive category management system with the following characteristics:
 
-- **Default Categories**: Hardcoded default categories (`自然`, `抽象`, `游戏`, `动漫`, `科幻`, `风景`, `建筑`, `动物`) are defined in `_defaultCategories` list in `CategoryManagementViewModel` and `MainViewModel`
-- **Protected Categories**: `所有分类` and `未分类` are protected categories that cannot be renamed or deleted
-- **Custom Categories**: Users can add, rename, and delete custom categories via `CategoryManagementViewModel`
-- **Empty Default Category Cleanup**: Empty default categories (except protected ones) are automatically removed from UI lists when they have no wallpapers
+- **Protected Virtual Categories**: `所有分类` (All Categories, ID=0) and `未分类` (Uncategorized, ID=1) are protected virtual categories that cannot be renamed or deleted. These are not stored in the database but are handled programmatically.
+- **Custom Categories**: Users can add, rename, and delete custom categories via `CategoryManagementViewModel`. All custom categories are stored in the `Categories` table in the database.
+- **No Hardcoded Default Categories**: The application does NOT have hardcoded default categories (such as `自然`, `抽象`, `游戏`, etc.). All categories are user-defined. Wallpapers rely on the `Category` field in `project.json` files; if a category doesn't exist in the database, the wallpaper is set to `未分类`.
 - **Category Statistics**: The system tracks wallpaper counts per category via `DatabaseManager.GetCategoryStatistics()`
 
 **Category Management Workflow**:
@@ -213,6 +212,6 @@ Follow `.editorconfig` conventions:
 - **Database locked**: Ensure no other process is accessing `wallpapers.db`. The application holds a single SQLite connection for its lifetime.
 - **Wallpaper Engine not detected**: The `PreviewService` attempts to locate Wallpaper Engine via the registry; if not found, previews will fail. The path can be set manually in the settings UI.
 - **High memory usage**: The `ImageCache` limits the number of cached images; thumbnails are stored on disk. If memory grows, check for unbounded collections in view‑models.
-- **Category management issues**: Default categories (`自然`, `抽象`, etc.) that are empty may be automatically hidden from UI lists. Protected categories (`所有分类`, `未分类`) cannot be renamed or deleted.
+- **Category management issues**: The application has no hardcoded default categories. All categories are user-defined. Protected virtual categories (`所有分类`, `未分类`) cannot be renamed or deleted.
 - **Single instance conflicts**: If the application appears unresponsive, check for existing instances via Task Manager and terminate them before relaunching.
 - **Database schema errors**: If you encounter "table Favorites has no column named WallpaperId", delete the database file (`%USERPROFILE%\DynamicWallpaperManager\wallpapers.db`) and restart the application. The database will be recreated with the correct schema. The application includes automatic migration logic, but in rare cases manual cleanup may be needed.

@@ -344,12 +344,13 @@ namespace WallpaperEngine.ViewModels {
         {
             try {
                 var customCategories = _dbManager.GetCustomCategories();
-                // 默认分类列表（仅包含受保护虚拟分类"未分类"，硬编码默认分类已移除）
+                // 受保护虚拟分类列表（在详情页下拉列表中显示的分类）
+                // 注意：只包含"未分类"，不包含"所有分类"，因为"所有分类"不是壁纸的有效分类
                 var defaultCategories = new HashSet<string>
                 {
                     "未分类" // 受保护虚拟分类
                 };
-                // 注意：硬编码默认分类已移除，不再添加到默认分类列表
+                // 注意：硬编码的默认分类（如自然、抽象等）已移除，不再添加到默认分类列表
 
                 // 找出需要移除的自定义分类（存在于CategoryList中但不在数据库且不是默认分类）
                 var categoriesToRemove = new List<string>();
@@ -376,6 +377,14 @@ namespace WallpaperEngine.ViewModels {
             } catch (Exception ex) {
                 Log.Warning($"加载自定义分类失败: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 公共方法：刷新分类列表（供其他视图模型调用）
+        /// </summary>
+        public void RefreshCategoryList()
+        {
+            LoadCustomCategories();
         }
 
         /// <summary>

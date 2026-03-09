@@ -204,6 +204,14 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
+        /// 公共方法：刷新分类列表（供其他视图模型调用）
+        /// </summary>
+        public void RefreshCategoryList()
+        {
+            LoadCustomCategories();
+        }
+
+        /// <summary>
         /// 更新分类统计信息（壁纸数量）
         /// </summary>
         private void UpdateCategoryStats()

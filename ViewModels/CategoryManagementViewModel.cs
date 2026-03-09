@@ -21,7 +21,7 @@ namespace WallpaperEngine.ViewModels
         private readonly DatabaseManager _dbManager;
 
         /// <summary>
-        /// 硬编码的默认分类列表（与 MainViewModel 保持一致）
+        /// 受保护的虚拟分类列表（所有分类、未分类），不是硬编码的默认分类
         /// </summary>
         private readonly List<string> _defaultCategories = new()
         {
@@ -29,7 +29,7 @@ namespace WallpaperEngine.ViewModels
         };
 
         /// <summary>
-        /// 分类列表（包含默认分类和自定义分类）
+        /// 分类列表（包含受保护的虚拟分类和自定义分类）
         /// </summary>
         [ObservableProperty]
         private ObservableCollection<CategoryItem> _categories = new();
@@ -89,18 +89,20 @@ namespace WallpaperEngine.ViewModels
 
                     // 构建 CategoryItem 列表
                     var categoryItems = new List<CategoryItem>();
-                    var defaultCategorySet = new HashSet<string>(CategoryConstants.DefaultCategories);
+                    // 注意：没有硬编码默认分类，所有自定义分类都不是默认分类
                     foreach (var category in allCategories)
                     {
                         var count = categoryStats.ContainsKey(category) ? categoryStats[category] : 0;
                         var isProtected = CategoryItem.IsProtectedCategory(category);
-                        // 排除空的默认分类（不受保护的）
+                        // 排除空的受保护虚拟分类（实际只有"所有分类"和"未分类"，都是受保护的）
+                        // 注意：这里没有硬编码默认分类需要排除
                         if (_defaultCategories.Contains(category) && !isProtected && count == 0)
                             continue;
 
                         // 获取分类ID
                         var categoryId = _dbManager.GetCategoryIdByName(category);
-                        var isDefault = defaultCategorySet.Contains(category);
+                        // 没有硬编码默认分类，所以isDefault始终为false
+                        var isDefault = false;
                         categoryItems.Add(new CategoryItem(categoryId, category, count, isProtected, isDefault));
                     }
 
@@ -141,14 +143,14 @@ namespace WallpaperEngine.ViewModels
         }
 
         /// <summary>
-        /// 构建完整的分类列表（默认分类 + 数据库中的自定义分类）
+        /// 构建完整的分类列表（受保护的虚拟分类 + 数据库中的自定义分类）
         /// </summary>
         /// <returns>所有分类的列表</returns>
         private List<string> BuildCategoryList()
         {
             var allCategories = new List<string>(_defaultCategories);
 
-            // 注意：硬编码的默认分类已移除，不再添加到分类列表
+            // 注意：硬编码的默认分类已移除，_defaultCategories只包含受保护的虚拟分类
 
             // 从数据库获取自定义分类
             try
@@ -313,10 +315,8 @@ namespace WallpaperEngine.ViewModels
                 var mainVm = Ioc.Default.GetService<MainViewModel>();
                 if (mainVm != null)
                 {
-                    // 使用反射调用私有方法 LoadCustomCategories
-                    var method = typeof(MainViewModel).GetMethod("LoadCustomCategories",
-                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    method?.Invoke(mainVm, null);
+                    // 调用公共方法 RefreshCategoryList
+                    mainVm.RefreshCategoryList();
                 }
             }
             catch (Exception ex)
@@ -335,9 +335,8 @@ namespace WallpaperEngine.ViewModels
                 var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
                 if (detailVm != null)
                 {
-                    var method = typeof(WallpaperDetailViewModel).GetMethod("LoadCustomCategories",
-                        BindingFlags.NonPublic | BindingFlags.Instance);
-                    method?.Invoke(detailVm, null);
+                    // 调用公共方法 RefreshCategoryList
+                    detailVm.RefreshCategoryList();
                 }
             }
             catch (Exception ex)

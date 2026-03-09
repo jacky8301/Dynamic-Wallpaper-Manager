@@ -3,7 +3,8 @@ using System.Collections.Generic;
 namespace WallpaperEngine.Models
 {
     /// <summary>
-    /// 分类常量定义，包括虚拟分类ID和默认分类列表
+    /// 分类常量定义，包括虚拟分类ID和受保护分类
+    /// 注意：没有硬编码的默认分类列表（如自然、抽象等），所有分类都是用户自定义的
     /// </summary>
     public static class CategoryConstants
     {

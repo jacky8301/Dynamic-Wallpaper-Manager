@@ -266,8 +266,10 @@ namespace WallpaperEngine.Data {
                         )";
                     backupCmd.ExecuteNonQuery();
 
-                    // 插入默认分类
-                    int defaultCategoryId = 2; // ID 1 是"未分类"，从2开始
+                    // 插入硬编码默认分类（当前列表为空，因为已移除硬编码默认分类）
+                    // 注意：ID 1 是虚拟分类"未分类"，但虚拟分类不存储在数据库中
+                    // 实际的自定义分类ID从1开始自动递增
+                    int defaultCategoryId = 2; // 为硬编码默认分类预留的起始ID（如果将来需要）
                     foreach (var categoryName in CategoryConstants.DefaultCategories) {
                         using var insertCmd = m_connection.CreateCommand();
                         insertCmd.CommandText = @"
@@ -1200,7 +1202,7 @@ namespace WallpaperEngine.Data {
         /// <summary>
         /// 获取所有分类的壁纸数量统计
         /// </summary>
-        /// <param name="allCategories">所有需要统计的分类列表（包括默认分类和自定义分类）</param>
+        /// <param name="allCategories">所有需要统计的分类列表（包括虚拟分类和自定义分类）</param>
         /// <returns>分类名称到壁纸数量的字典</returns>
         public Dictionary<string, int> GetCategoryStatistics(List<string> allCategories)
         {
@@ -1255,7 +1257,8 @@ namespace WallpaperEngine.Data {
         }
 
         /// <summary>
-        /// 获取所有分类（包括默认分类和自定义分类）
+        /// 获取所有数据库中的分类（自定义分类）
+        /// 注意：不包含虚拟分类（所有分类、未分类），调用者需要手动添加虚拟分类
         /// </summary>
         /// <returns>分类项列表</returns>
         public List<CategoryItem> GetAllCategories()
