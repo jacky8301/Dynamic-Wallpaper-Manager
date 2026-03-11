@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows.Data;
 using WallpaperEngine.Data;
+using WallpaperEngine.Events;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
 
@@ -21,6 +22,7 @@ namespace WallpaperEngine.ViewModels {
         private readonly ISettingsService _settingsService;
         private readonly IDataContextService _dataContextService;
         private readonly IWallpaperFileService _wallpaperFileService;
+        private readonly ICategoryService _categoryService;
 
         /// <summary>待删除的壁纸项</summary>
         [ObservableProperty]
@@ -135,7 +137,8 @@ namespace WallpaperEngine.ViewModels {
         /// </summary>
         /// <param name="dataContextService">数据上下文服务，用于跨视图共享壁纸选中状态</param>
         /// <param name="wallpaperFileService">壁纸文件服务，用于文件系统操作</param>
-        public MainViewModel(IDataContextService dataContextService, IWallpaperFileService wallpaperFileService)
+        /// <param name="categoryService">分类服务</param>
+        public MainViewModel(IDataContextService dataContextService, IWallpaperFileService wallpaperFileService, ICategoryService categoryService)
         {
             _dbManager = Ioc.Default.GetService<DatabaseManager>();
             _scanner = new WallpaperScanner(_dbManager!);
@@ -156,6 +159,10 @@ namespace WallpaperEngine.ViewModels {
             _previewService = new PreviewService(_settingsService);
             _dataContextService = dataContextService;
             _wallpaperFileService = wallpaperFileService;
+            _categoryService = categoryService;
+
+            // 订阅分类变更事件
+            _categoryService.CategoryChanged += OnCategoryChanged;
 
             // 加载自定义分类
             LoadCustomCategories();
@@ -173,27 +180,18 @@ namespace WallpaperEngine.ViewModels {
         /// <summary>
         /// 从数据库加载所有分类（包括默认分类）并同步到分类列表
         /// </summary>
-        private void LoadCustomCategories()
+        private async Task LoadCustomCategoriesAsync()
         {
             try {
-                // 先清空分类列表
+                // 从分类服务获取所有分类（包括虚拟分类和数据库分类）
+                var allCategories = await _categoryService.GetAllCategoriesAsync();
+
+                // 清空并更新分类列表
                 Categories.Clear();
-
-                // 添加虚拟分类："所有分类" (ID = 0)
-                Categories.Add(new CategoryItem(CategoryConstants.ALL_CATEGORIES_ID, "所有分类", 0, true));
-
-                // 添加虚拟分类："未分类" (ID = 1)
-                Categories.Add(new CategoryItem(CategoryConstants.UNCATEGORIZED_ID, "未分类", 0, true));
-
-                // 从数据库加载所有分类（包括默认分类和自定义分类）
-                var allCategories = _dbManager.GetAllCategories();
                 foreach (var category in allCategories)
                 {
                     Categories.Add(category);
                 }
-
-                // 更新分类统计信息（壁纸数量）
-                UpdateCategoryStats();
 
                 // 同步选中分类项
                 var matchedCategory = Categories.FirstOrDefault(c => c.Id == SelectedCategoryId);
@@ -201,6 +199,15 @@ namespace WallpaperEngine.ViewModels {
             } catch (Exception ex) {
                 Log.Error($"加载分类失败: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 同步包装方法，用于向后兼容
+        /// </summary>
+        private void LoadCustomCategories()
+        {
+            // 异步加载，不等待完成
+            _ = LoadCustomCategoriesAsync();
         }
 
         /// <summary>
@@ -245,40 +252,57 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
+        /// 分类变更事件处理程序
+        /// </summary>
+        /// <param name="sender">事件发送者</param>
+        /// <param name="e">事件参数</param>
+        private async void OnCategoryChanged(object? sender, CategoryChangedEventArgs e)
+        {
+            // 当分类发生变化时，刷新分类列表
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                LoadCustomCategories();
+            });
+        }
+
+        /// <summary>
         /// 详情页新增分类时的回调，同步分类到主视图分类列表
         /// </summary>
         /// <param name="sender">事件发送者</param>
         /// <param name="category">新增的分类名称</param>
-        public void OnCategoryAdded(object? sender, string category)
+        public async void OnCategoryAdded(object? sender, string category)
         {
-            // 检查分类是否已存在（按名称）
-            if (!Categories.Any(c => c.Name == category)) {
-                // 从数据库获取分类ID，如果不存在则添加
-                var categoryId = _dbManager.GetCategoryIdByName(category);
-                if (categoryId < 0)
-                {
-                    // 分类不存在，添加它
-                    categoryId = _dbManager.AddCategory(category);
-                }
+            try
+            {
+                // 检查分类是否已存在（按名称）
+                if (!Categories.Any(c => c.Name == category)) {
+                    // 使用分类服务添加分类
+                    var categoryId = await _categoryService.AddCategoryAsync(category);
 
-                if (categoryId > 0)
-                {
-                    // 获取壁纸数量
-                    var count = _dbManager.GetCategoryWallpaperCount(categoryId);
-                    var isProtected = CategoryConstants.IsProtectedCategory(category);
-                    // 添加到分类列表（插入到虚拟分类之后）
-                    var newCategory = new CategoryItem(categoryId, category, count, isProtected);
-                    // 找到插入位置（在虚拟分类之后）
-                    int insertIndex = 2; // "所有分类"(0) 和 "未分类"(1) 之后
-                    if (insertIndex <= Categories.Count)
+                    if (categoryId > 0)
                     {
-                        Categories.Insert(insertIndex, newCategory);
-                    }
-                    else
-                    {
-                        Categories.Add(newCategory);
+                        // 获取分类项
+                        var categoryItem = await _categoryService.GetCategoryByIdAsync(categoryId);
+                        if (categoryItem != null)
+                        {
+                            // 添加到分类列表（插入到虚拟分类之后）
+                            // 找到插入位置（在虚拟分类之后）
+                            int insertIndex = 2; // "所有分类"(0) 和 "未分类"(1) 之后
+                            if (insertIndex <= Categories.Count)
+                            {
+                                Categories.Insert(insertIndex, categoryItem);
+                            }
+                            else
+                            {
+                                Categories.Add(categoryItem);
+                            }
+                        }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"处理新增分类事件失败: {ex.Message}");
             }
         }
 

@@ -28,8 +28,9 @@ namespace WallpaperEngine {
             wallpaperDbPath = Path.Combine(wallpaperDbPath, "wallpapers.db");
             Ioc.Default.ConfigureServices(
                 new ServiceCollection()
-                    // 在这里注册你的服务               
+                    // 在这里注册你的服务
                     .AddSingleton<DatabaseManager>(new DatabaseManager(wallpaperDbPath))
+                    .AddSingleton<ICategoryService, CategoryService>()
                     .AddSingleton<ISettingsService, SettingsService>()
                     .AddSingleton<IDataContextService, DataContextService>()
                     .AddSingleton<IWallpaperFileService, WallpaperFileService>()

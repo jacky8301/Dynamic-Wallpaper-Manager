@@ -19,6 +19,7 @@ namespace WallpaperEngine.ViewModels
     public partial class CategoryManagementViewModel : ObservableObject
     {
         private readonly DatabaseManager _dbManager;
+        private readonly ICategoryService _categoryService;
 
         /// <summary>
         /// 受保护的虚拟分类列表（所有分类、未分类），不是硬编码的默认分类
@@ -59,12 +60,14 @@ namespace WallpaperEngine.ViewModels
         private bool _isLoading;
 
         /// <summary>
-        /// 构造函数，注入数据库管理器
+        /// 构造函数，注入数据库管理器和分类服务
         /// </summary>
         /// <param name="dbManager">数据库管理器</param>
-        public CategoryManagementViewModel(DatabaseManager dbManager)
+        /// <param name="categoryService">分类服务</param>
+        public CategoryManagementViewModel(DatabaseManager dbManager, ICategoryService categoryService)
         {
             _dbManager = dbManager;
+            _categoryService = categoryService;
         }
 
         /// <summary>
@@ -78,45 +81,49 @@ namespace WallpaperEngine.ViewModels
             {
                 await Task.Run(() =>
                 {
-                    // 构建完整的分类列表
-                    var allCategories = BuildCategoryList();
-
-                    // 获取分类统计信息
-                    var categoryStats = _dbManager.GetCategoryStatistics(allCategories);
+                    // 获取数据库中的所有分类（包括默认分类和自定义分类）
+                    var dbCategories = _dbManager.GetAllCategories();
 
                     // 计算壁纸总数
                     var totalWallpapers = _dbManager.GetTotalWallpaperCount();
 
-                    // 构建 CategoryItem 列表
-                    var categoryItems = new List<CategoryItem>();
-                    // 注意：没有硬编码默认分类，所有自定义分类都不是默认分类
-                    foreach (var category in allCategories)
-                    {
-                        var count = categoryStats.ContainsKey(category) ? categoryStats[category] : 0;
-                        var isProtected = CategoryItem.IsProtectedCategory(category);
-                        // 排除空的受保护虚拟分类（实际只有"所有分类"和"未分类"，都是受保护的）
-                        // 注意：这里没有硬编码默认分类需要排除
-                        if (_defaultCategories.Contains(category) && !isProtected && count == 0)
-                            continue;
+                    // 构建完整的分类列表（虚拟分类 + 数据库分类）
+                    var allCategoryItems = new List<CategoryItem>();
 
-                        // 获取分类ID
-                        var categoryId = _dbManager.GetCategoryIdByName(category);
-                        // 没有硬编码默认分类，所以isDefault始终为false
-                        var isDefault = false;
-                        categoryItems.Add(new CategoryItem(categoryId, category, count, isProtected, isDefault));
-                    }
+                    // 添加虚拟分类："所有分类" (ID = 0)
+                    var allCategoriesCount = _dbManager.GetCategoryWallpaperCount(CategoryConstants.ALL_CATEGORIES_ID);
+                    allCategoryItems.Add(new CategoryItem(CategoryConstants.ALL_CATEGORIES_ID, "所有分类", allCategoriesCount, true, false));
 
-                    // 按分类名称排序（受保护分类在前）
-                    categoryItems = categoryItems
-                        .OrderByDescending(c => c.IsProtected) // 受保护分类在前
-                        .ThenBy(c => c.Name)
+                    // 添加虚拟分类："未分类" (ID = 1)
+                    var uncategorizedCount = _dbManager.GetCategoryWallpaperCount(CategoryConstants.UNCATEGORIZED_ID);
+                    allCategoryItems.Add(new CategoryItem(CategoryConstants.UNCATEGORIZED_ID, "未分类", uncategorizedCount, true, false));
+
+                    // 添加数据库中的分类（包括默认分类和自定义分类）
+                    allCategoryItems.AddRange(dbCategories);
+
+                    // 过滤：排除空的非默认自定义分类（允许空的默认分类和虚拟分类显示）
+                    var filteredCategoryItems = allCategoryItems
+                        .Where(c =>
+                            // 总是包含虚拟分类
+                            CategoryConstants.IsVirtualCategoryId(c.Id) ||
+                            // 总是包含默认分类（即使为空）
+                            c.IsDefault ||
+                            // 包含非默认分类，但必须有壁纸
+                            (!c.IsDefault && !CategoryConstants.IsVirtualCategoryId(c.Id) && c.WallpaperCount > 0))
+                        .ToList();
+
+                    // 按分类类型和名称排序：虚拟分类在前，然后是默认分类，最后是自定义分类
+                    var sortedCategoryItems = filteredCategoryItems
+                        .OrderByDescending(c => CategoryConstants.IsVirtualCategoryId(c.Id)) // 虚拟分类在前
+                        .ThenByDescending(c => c.IsDefault) // 默认分类其次
+                        .ThenBy(c => c.Name) // 按名称排序
                         .ToList();
 
                     // 更新 UI 线程上的集合
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
                         Categories.Clear();
-                        foreach (var item in categoryItems)
+                        foreach (var item in sortedCategoryItems)
                         {
                             Categories.Add(item);
                         }

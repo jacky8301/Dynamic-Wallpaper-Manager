@@ -5,6 +5,7 @@ using Serilog;
 using System.Collections.ObjectModel;
 using System.Linq;
 using WallpaperEngine.Data;
+using WallpaperEngine.Events;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
 
@@ -15,6 +16,7 @@ namespace WallpaperEngine.ViewModels {
     public partial class WallpaperDetailViewModel : ObservableObject {
         private readonly DatabaseManager _dbManager;
         private readonly IDataContextService _dataContextService;
+        private readonly ICategoryService _categoryService;
         private WallpaperItem _originalItem;
 
         /// <summary>当前显示的壁纸项</summary>
@@ -117,12 +119,17 @@ namespace WallpaperEngine.ViewModels {
         /// 初始化壁纸详情视图模型，订阅壁纸变更事件并初始化命令
         /// </summary>
         /// <param name="dataContextService">数据上下文服务，用于监听当前壁纸变更</param>
-        public WallpaperDetailViewModel(IDataContextService dataContextService)
+        /// <param name="categoryService">分类服务</param>
+        public WallpaperDetailViewModel(IDataContextService dataContextService, ICategoryService categoryService)
         {
             _dbManager = Ioc.Default.GetRequiredService<DatabaseManager>();
             _dataContextService = dataContextService;
+            _categoryService = categoryService;
             // 订阅状态变化事件
             _dataContextService.CurrentWallpaperChanged += OnCurrentWallpaperChanged;
+
+            // 订阅分类变更事件
+            _categoryService.CategoryChanged += OnCategoryChanged;
 
             // 初始化命令
             StartEditCommand = new RelayCommand(StartEdit);
@@ -338,25 +345,38 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
+        /// 分类变更事件处理程序
+        /// </summary>
+        /// <param name="sender">事件发送者</param>
+        /// <param name="e">事件参数</param>
+        private async void OnCategoryChanged(object? sender, CategoryChangedEventArgs e)
+        {
+            // 当分类发生变化时，刷新分类列表
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                LoadCustomCategories();
+            });
+        }
+
+        /// <summary>
         /// 从数据库加载自定义分类并同步到分类列表
         /// </summary>
-        private void LoadCustomCategories()
+        private async Task LoadCustomCategoriesAsync()
         {
             try {
-                var customCategories = _dbManager.GetCustomCategories();
+                var customCategories = await _categoryService.GetCustomCategoriesAsync();
                 // 受保护虚拟分类列表（在详情页下拉列表中显示的分类）
                 // 注意：只包含"未分类"，不包含"所有分类"，因为"所有分类"不是壁纸的有效分类
                 var defaultCategories = new HashSet<string>
                 {
                     "未分类" // 受保护虚拟分类
                 };
-                // 注意：硬编码的默认分类（如自然、抽象等）已移除，不再添加到默认分类列表
 
                 // 找出需要移除的自定义分类（存在于CategoryList中但不在数据库且不是默认分类）
                 var categoriesToRemove = new List<string>();
                 foreach (var category in CategoryList)
                 {
-                    if (!defaultCategories.Contains(category) && !customCategories.Contains(category))
+                    if (!defaultCategories.Contains(category) && !customCategories.Any(c => c.Name == category))
                     {
                         categoriesToRemove.Add(category);
                     }
@@ -369,14 +389,23 @@ namespace WallpaperEngine.ViewModels {
                 }
 
                 // 添加新的自定义分类
-                foreach (var category in customCategories) {
-                    if (!CategoryList.Contains(category)) {
-                        CategoryList.Add(category);
+                foreach (var categoryItem in customCategories) {
+                    if (!CategoryList.Contains(categoryItem.Name)) {
+                        CategoryList.Add(categoryItem.Name);
                     }
                 }
             } catch (Exception ex) {
                 Log.Warning($"加载自定义分类失败: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// 同步包装方法，用于向后兼容
+        /// </summary>
+        private void LoadCustomCategories()
+        {
+            // 异步加载，不等待完成
+            _ = LoadCustomCategoriesAsync();
         }
 
         /// <summary>
@@ -400,9 +429,17 @@ namespace WallpaperEngine.ViewModels {
                 return;
             }
 
-            _dbManager.AddCategory(name);
-            CategoryList.Add(name);
-            CategoryAdded?.Invoke(this, name);
+            try
+            {
+                await _categoryService.AddCategoryAsync(name);
+                CategoryList.Add(name);
+                CategoryAdded?.Invoke(this, name);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"添加分类失败: {ex.Message}");
+                await MaterialDialogService.ShowErrorAsync($"添加分类失败: {ex.Message}", "错误");
+            }
         }
 
         /// <summary>

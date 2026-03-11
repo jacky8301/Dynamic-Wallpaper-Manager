@@ -3,8 +3,34 @@ using System.Collections.Generic;
 namespace WallpaperEngine.Models
 {
     /// <summary>
+    /// 默认分类定义，包含分类名称和匹配标签
+    /// </summary>
+    public class DefaultCategoryDefinition
+    {
+        /// <summary>
+        /// 分类名称
+        /// </summary>
+        public string Name { get; }
+
+        /// <summary>
+        /// 匹配标签列表
+        /// </summary>
+        public string[] MatchingTags { get; }
+
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="name">分类名称</param>
+        /// <param name="matchingTags">匹配标签列表</param>
+        public DefaultCategoryDefinition(string name, string[] matchingTags)
+        {
+            Name = name;
+            MatchingTags = matchingTags;
+        }
+    }
+
+    /// <summary>
     /// 分类常量定义，包括虚拟分类ID和受保护分类
-    /// 注意：没有硬编码的默认分类列表（如自然、抽象等），所有分类都是用户自定义的
     /// </summary>
     public static class CategoryConstants
     {
@@ -19,10 +45,22 @@ namespace WallpaperEngine.Models
         public const int UNCATEGORIZED_ID = 1;
 
         /// <summary>
-        /// 默认分类列表（不包括虚拟分类）
-        /// 注意：此列表已置空，不再有硬编码的默认分类
+        /// 默认分类定义列表（不包括虚拟分类）
+        /// 包含10个合理的默认分类，基于Wallpaper Engine常见标签
         /// </summary>
-        public static readonly List<string> DefaultCategories = new();
+        public static readonly List<DefaultCategoryDefinition> DefaultCategories = new()
+        {
+            new DefaultCategoryDefinition("自然", new[] { "nature", "landscape", "forest", "water", "mountain" }),
+            new DefaultCategoryDefinition("抽象", new[] { "abstract", "pattern", "geometric", "minimal", "art" }),
+            new DefaultCategoryDefinition("游戏", new[] { "game", "gaming", "character", "fantasy", "rpg" }),
+            new DefaultCategoryDefinition("动漫", new[] { "anime", "manga", "cartoon", "japanese", "kawaii" }),
+            new DefaultCategoryDefinition("科幻", new[] { "sci-fi", "space", "future", "cyberpunk", "technology" }),
+            new DefaultCategoryDefinition("风景", new[] { "scenery", "cityscape", "sunset", "beach", "sky" }),
+            new DefaultCategoryDefinition("建筑", new[] { "architecture", "building", "interior", "modern", "urban" }),
+            new DefaultCategoryDefinition("动物", new[] { "animal", "wildlife", "pet", "bird", "insect" }),
+            new DefaultCategoryDefinition("人物", new[] { "people", "portrait", "human", "face", "figure" }),
+            new DefaultCategoryDefinition("车辆", new[] { "vehicle", "car", "motorcycle", "aircraft", "ship" })
+        };
 
         /// <summary>
         /// 受保护的分类名称列表
@@ -80,6 +118,50 @@ namespace WallpaperEngine.Models
                 "未分类" => UNCATEGORIZED_ID,
                 _ => -1
             };
+        }
+
+        /// <summary>
+        /// 获取默认分类名称列表（用于向后兼容）
+        /// </summary>
+        /// <returns>默认分类名称列表</returns>
+        public static List<string> GetDefaultCategoryNames()
+        {
+            return DefaultCategories.Select(d => d.Name).ToList();
+        }
+
+        /// <summary>
+        /// 根据分类名称查找匹配的默认分类定义
+        /// </summary>
+        /// <param name="categoryName">分类名称</param>
+        /// <returns>默认分类定义，如果不存在则返回null</returns>
+        public static DefaultCategoryDefinition? FindDefaultCategoryByName(string categoryName)
+        {
+            return DefaultCategories.FirstOrDefault(d => d.Name == categoryName);
+        }
+
+        /// <summary>
+        /// 根据标签获取推荐的默认分类
+        /// </summary>
+        /// <param name="tags">标签列表</param>
+        /// <returns>推荐的默认分类列表，按匹配程度排序</returns>
+        public static List<DefaultCategoryDefinition> SuggestCategoriesByTags(IEnumerable<string> tags)
+        {
+            var tagSet = new HashSet<string>(tags.Select(t => t.ToLowerInvariant()));
+            var suggestions = new List<(DefaultCategoryDefinition Definition, int MatchCount)>();
+
+            foreach (var category in DefaultCategories)
+            {
+                var matchCount = category.MatchingTags.Count(tag => tagSet.Contains(tag.ToLowerInvariant()));
+                if (matchCount > 0)
+                {
+                    suggestions.Add((category, matchCount));
+                }
+            }
+
+            return suggestions
+                .OrderByDescending(s => s.MatchCount)
+                .Select(s => s.Definition)
+                .ToList();
         }
     }
 }

@@ -3,6 +3,7 @@ using Serilog;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
+using System.Linq;
 using WallpaperEngine.Models;
 
 namespace WallpaperEngine.Data {
@@ -270,13 +271,13 @@ namespace WallpaperEngine.Data {
                     // 注意：ID 1 是虚拟分类"未分类"，但虚拟分类不存储在数据库中
                     // 实际的自定义分类ID从1开始自动递增
                     int defaultCategoryId = 2; // 为硬编码默认分类预留的起始ID（如果将来需要）
-                    foreach (var categoryName in CategoryConstants.DefaultCategories) {
+                    foreach (var defaultCategory in CategoryConstants.DefaultCategories) {
                         using var insertCmd = m_connection.CreateCommand();
                         insertCmd.CommandText = @"
                             INSERT OR IGNORE INTO Categories (Id, Name, IsDefault)
                             VALUES (@id, @name, 1)";
                         insertCmd.Parameters.AddWithValue("@id", defaultCategoryId);
-                        insertCmd.Parameters.AddWithValue("@name", categoryName);
+                        insertCmd.Parameters.AddWithValue("@name", defaultCategory.Name);
                         insertCmd.ExecuteNonQuery();
                         defaultCategoryId++;
                     }
@@ -327,13 +328,13 @@ namespace WallpaperEngine.Data {
                     alterCmd.ExecuteNonQuery();
 
                     // 更新默认分类
-                    foreach (var categoryName in CategoryConstants.DefaultCategories) {
+                    foreach (var defaultCategory in CategoryConstants.DefaultCategories) {
                         alterCmd.CommandText = @"
                             UPDATE Wallpapers
                             SET CategoryId = (SELECT Id FROM Categories WHERE Name = @name)
                             WHERE Category = @name AND CategoryId = 1";
                         alterCmd.Parameters.Clear();
-                        alterCmd.Parameters.AddWithValue("@name", categoryName);
+                        alterCmd.Parameters.AddWithValue("@name", defaultCategory.Name);
                         alterCmd.ExecuteNonQuery();
                     }
 
