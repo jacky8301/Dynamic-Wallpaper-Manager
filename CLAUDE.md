@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Dynamic Wallpaper Manager is a WPF desktop application for managing wallpapers from the Wallpaper Engine ecosystem. It scans wallpaper directories, parses `project.json` files, and provides a UI for previewing, organizing (favorites/collections), and applying wallpapers.
 
+The application features a comprehensive category system with intelligent suggestions, centralized category management service, and 10 sensible default categories to help users get started.
+
 ## Build Commands
 
 ```bash
@@ -78,6 +80,7 @@ Services are registered in `App.xaml.cs` using `Ioc.Default.ConfigureServices()`
 | Service | Scope | Purpose |
 |---------|-------|---------|
 | `DatabaseManager` | Singleton | SQLite data access |
+| `ICategoryService` | Singleton | Centralized category management with caching and events |
 | `ISettingsService` | Singleton | Settings persistence |
 | `IDataContextService` | Singleton | Cross-ViewModel data sharing via events |
 | `IWallpaperFileService` | Singleton | File system operations |
@@ -88,6 +91,7 @@ ViewModels are also registered as singletons for state persistence.
 ### Event-Based Communication
 
 - `IDataContextService.CurrentWallpaperChanged` — Broadcasts when the currently selected wallpaper changes
+- `ICategoryService.CategoryChanged` — Notifies when categories are added, renamed, deleted, or refreshed (centralized event system)
 - `WallpaperDetailViewModel.CategoryAdded` — Notifies when a new category is created
 - `MainViewModel.LoadWallpapersCompleted` — Signals when wallpaper loading is finished
 
@@ -106,7 +110,7 @@ When a wallpaper's favorite status changes (via `MainViewModel.ToggleFavoriteCom
 
 1. Reads `project.json` in each folder to extract metadata
 2. Generates or reads existing wallpaper ID from the `project.json` file
-3. Auto-categorizes based on tags (nature, abstract, game, anime, etc.)
+3. Uses category from `project.json` file; if empty or "未分类", sets to "未分类". Category names are mapped to IDs via the centralized category service
 4. Compares with database records for incremental updates
 5. Reports progress via `IProgress<ScanProgress>`
 6. Saves scan record to `ScanHistory` table
@@ -114,18 +118,22 @@ When a wallpaper's favorite status changes (via `MainViewModel.ToggleFavoriteCom
 
 ### Category Management System
 
-The application has a comprehensive category management system with the following characteristics:
+The application features a centralized category management system with intelligent suggestions and sensible defaults:
 
 - **Protected Virtual Categories**: `所有分类` (All Categories, ID=0) and `未分类` (Uncategorized, ID=1) are protected virtual categories that cannot be renamed or deleted. These are not stored in the database but are handled programmatically.
-- **Custom Categories**: Users can add, rename, and delete custom categories via `CategoryManagementViewModel`. All custom categories are stored in the `Categories` table in the database.
-- **No Hardcoded Default Categories**: The application does NOT have hardcoded default categories (such as `自然`, `抽象`, `游戏`, etc.). All categories are user-defined. Wallpapers rely on the `Category` field in `project.json` files; if a category doesn't exist in the database, the wallpaper is set to `未分类`.
-- **Category Statistics**: The system tracks wallpaper counts per category via `DatabaseManager.GetCategoryStatistics()`
+- **Default Categories**: The system provides 10 sensible default categories to help users get started: 自然, 抽象, 游戏, 动漫, 科幻, 风景, 建筑, 动物, 人物, 车辆. Each default category includes matching tags for intelligent suggestions (e.g., "自然" matches nature, landscape, forest tags).
+- **Custom Categories**: Users can add, rename, and delete custom categories via `CategoryManagementViewModel`. All custom categories are stored in the `Categories` table in the database with `IsDefault` flag to distinguish from user-defined categories.
+- **Centralized Category Service**: `ICategoryService` provides a unified interface for all category operations with event-driven synchronization. It manages category caching and broadcasts `CategoryChanged` events to keep all view models synchronized.
+- **Category Statistics**: The system tracks wallpaper counts per category via `DatabaseManager.GetCategoryStatistics()` and `ICategoryService.GetCategoryStatisticsAsync()`.
+- **Intelligent Suggestions**: `CategoryConstants.SuggestCategoriesByTags()` can recommend categories based on wallpaper tags using the default category matching rules.
 
 **Category Management Workflow**:
-- `CategoryManagementViewModel` provides UI for managing categories (add, rename, delete)
-- `MainViewModel` maintains category list for filtering and display
-- `CategoryItem` model represents category with name, count, and protected status
-- Category renaming updates all related wallpaper records in database via `DatabaseManager.RenameCategory()`
+- `ICategoryService` is the central authority for all category operations, providing caching and event notification
+- `CategoryManagementViewModel` provides UI for managing categories (add, rename, delete) using the category service
+- `MainViewModel` and `WallpaperDetailViewModel` subscribe to `CategoryChanged` events to keep their category lists synchronized
+- `CategoryItem` model represents category with name, count, protected status, and default status
+- Category operations use the centralized service which handles database updates and event broadcasting
+- Default categories are automatically created on first run if they don't exist
 
 ### Image Caching and Thumbnail Generation
 

@@ -50,16 +50,16 @@ namespace WallpaperEngine.Models
         /// </summary>
         public static readonly List<DefaultCategoryDefinition> DefaultCategories = new()
         {
-            new DefaultCategoryDefinition("自然", new[] { "nature", "landscape", "forest", "water", "mountain" }),
-            new DefaultCategoryDefinition("抽象", new[] { "abstract", "pattern", "geometric", "minimal", "art" }),
-            new DefaultCategoryDefinition("游戏", new[] { "game", "gaming", "character", "fantasy", "rpg" }),
-            new DefaultCategoryDefinition("动漫", new[] { "anime", "manga", "cartoon", "japanese", "kawaii" }),
-            new DefaultCategoryDefinition("科幻", new[] { "sci-fi", "space", "future", "cyberpunk", "technology" }),
-            new DefaultCategoryDefinition("风景", new[] { "scenery", "cityscape", "sunset", "beach", "sky" }),
-            new DefaultCategoryDefinition("建筑", new[] { "architecture", "building", "interior", "modern", "urban" }),
-            new DefaultCategoryDefinition("动物", new[] { "animal", "wildlife", "pet", "bird", "insect" }),
-            new DefaultCategoryDefinition("人物", new[] { "people", "portrait", "human", "face", "figure" }),
-            new DefaultCategoryDefinition("车辆", new[] { "vehicle", "car", "motorcycle", "aircraft", "ship" })
+            new DefaultCategoryDefinition("自然", new[] { "nature", "landscape", "forest", "water", "mountain", "自然", "风景", "森林", "水", "山", "山水", "大自然" }),
+            new DefaultCategoryDefinition("抽象", new[] { "abstract", "pattern", "geometric", "minimal", "art", "抽象", "图案", "几何", "极简", "艺术", "现代艺术" }),
+            new DefaultCategoryDefinition("游戏", new[] { "game", "gaming", "character", "fantasy", "rpg", "游戏", "电竞", "角色", "幻想", "角色扮演", "游戏角色" }),
+            new DefaultCategoryDefinition("动漫", new[] { "anime", "manga", "cartoon", "japanese", "kawaii", "动漫", "漫画", "卡通", "日本", "可爱", "二次元" }),
+            new DefaultCategoryDefinition("科幻", new[] { "sci-fi", "space", "future", "cyberpunk", "technology", "科幻", "太空", "未来", "赛博朋克", "科技", "未来主义" }),
+            new DefaultCategoryDefinition("风景", new[] { "scenery", "cityscape", "sunset", "beach", "sky", "风景", "城市风光", "日落", "海滩", "天空", "景观" }),
+            new DefaultCategoryDefinition("建筑", new[] { "architecture", "building", "interior", "modern", "urban", "建筑", "建筑物", "室内", "现代", "都市", "建筑设计" }),
+            new DefaultCategoryDefinition("动物", new[] { "animal", "wildlife", "pet", "bird", "insect", "动物", "野生动物", "宠物", "鸟类", "昆虫", "动物世界" }),
+            new DefaultCategoryDefinition("人物", new[] { "people", "portrait", "human", "face", "figure", "人物", "肖像", "人类", "面孔", "形象", "人像" }),
+            new DefaultCategoryDefinition("车辆", new[] { "vehicle", "car", "motorcycle", "aircraft", "ship", "车辆", "汽车", "摩托车", "飞机", "船只", "交通工具" })
         };
 
         /// <summary>
