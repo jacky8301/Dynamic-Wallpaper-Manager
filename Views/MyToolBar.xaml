@@ -39,23 +39,8 @@
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding Name}"
-                                       Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                <TextBlock.ContextMenu>
-                                    <ContextMenu
-                                        Visibility="{Binding Converter={StaticResource ProtectedCategoryToVisibilityConverter}}">
-                                        <MenuItem
-                                            Header="✏️ 重命名"
-                                            Command="{Binding PlacementTarget.Tag.RenameCategoryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                            CommandParameter="{Binding Name}" />
-                                        <Separator />
-                                        <MenuItem
-                                            Header="🗑️ 删除分类"
-                                            Foreground="Red"
-                                            Command="{Binding PlacementTarget.Tag.DeleteCategoryCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
-                                            CommandParameter="{Binding Name}" />
-                                    </ContextMenu>
-                                </TextBlock.ContextMenu>
-                            </TextBlock>
+                                       Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
