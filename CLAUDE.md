@@ -84,9 +84,9 @@ Services are registered in `App.xaml.cs` using `Ioc.Default.ConfigureServices()`
 | `ISettingsService` | Singleton | Settings persistence |
 | `IDataContextService` | Singleton | Cross-ViewModel data sharing via events |
 | `IWallpaperFileService` | Singleton | File system operations |
-| `MaterialDialogService` | Singleton | Material Design dialog wrapper |
-
 ViewModels are also registered as singletons for state persistence.
+
+`MaterialDialogService` is a static utility class (not registered in DI) that provides standardized dialog boxes (confirmation, input, error).
 
 ### Event-Based Communication
 
@@ -161,7 +161,7 @@ The application features a centralized category management system with intellige
 | Item | Location |
 |------|----------|
 | Database | `%USERPROFILE%\DynamicWallpaperManager\wallpapers.db` |
-| Logs | `log/dynamic_wallpaper_manager.log` (rolling daily, 30-day retention) |
+| Logs | `log/dynamic_wallpaper_manager.log` (relative to working directory, rolling daily, 30-day retention) |
 | Settings | `%APPDATA%\DynamicWallpaperManager\settings.json` |
 | Thumbnail Cache | `%USERPROFILE%\DynamicWallpaperManager\thumbnails\` |
 
