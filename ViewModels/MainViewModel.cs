@@ -132,6 +132,9 @@ namespace WallpaperEngine.ViewModels {
         /// <summary>壁纸合集列表，用于右键菜单快速添加</summary>
         public ObservableCollection<WallpaperCollection> Collections { get; } = new ObservableCollection<WallpaperCollection>();
 
+        /// <summary>右键菜单用的分类列表（排除虚拟分类：所有分类、未分类）</summary>
+        public ObservableCollection<CategoryItem> MenuCategories { get; } = new ObservableCollection<CategoryItem>();
+
         /// <summary>
         /// 初始化主视图模型，注入服务并加载初始数据
         /// </summary>
@@ -188,9 +191,14 @@ namespace WallpaperEngine.ViewModels {
 
                 // 清空并更新分类列表
                 Categories.Clear();
+                MenuCategories.Clear();
                 foreach (var category in allCategories)
                 {
                     Categories.Add(category);
+                    if (!CategoryConstants.IsVirtualCategoryId(category.Id))
+                    {
+                        MenuCategories.Add(category);
+                    }
                 }
 
                 // 同步选中分类项

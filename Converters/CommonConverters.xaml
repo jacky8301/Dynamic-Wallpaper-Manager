@@ -15,4 +15,5 @@
     <local:CollectionCountConverter x:Key="CollectionCountConverter" />
     <local:IsInCollectionConverter x:Key="IsInCollectionConverter" />
     <local:CollectionMenuHeaderConverter x:Key="CollectionMenuHeaderConverter" />
+    <local:AddToCategoryConverter x:Key="AddToCategoryConverter" />
 </ResourceDictionary>

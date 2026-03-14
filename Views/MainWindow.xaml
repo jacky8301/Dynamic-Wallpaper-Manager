@@ -289,6 +289,38 @@
                                                                 </Style>
                                                             </MenuItem.Style>
                                                         </MenuItem>
+                                                        <MenuItem Header="🏷️ 添加到分类">
+                                                            <MenuItem.ItemsSource>
+                                                                <Binding Path="DataContext.MenuCategories" Source="{x:Reference mainWindow}" />
+                                                            </MenuItem.ItemsSource>
+                                                            <MenuItem.ItemContainerStyle>
+                                                                <Style TargetType="MenuItem">
+                                                                    <Setter Property="Header" Value="{Binding Name}" />
+                                                                    <Setter Property="Command" Value="{Binding DataContext.AddToSpecificCategoryCommand, Source={x:Reference mainWindow}}" />
+                                                                    <Setter Property="CommandParameter">
+                                                                        <Setter.Value>
+                                                                            <MultiBinding Converter="{StaticResource AddToCategoryConverter}">
+                                                                                <Binding Path="PlacementTarget.Tag" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                                                                <Binding Path="Id" />
+                                                                            </MultiBinding>
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                    <Setter Property="Padding" Value="8,4" />
+                                                                    <Setter Property="Margin" Value="0,2" />
+                                                                </Style>
+                                                            </MenuItem.ItemContainerStyle>
+                                                            <MenuItem.Style>
+                                                                <Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="MenuItem">
+                                                                    <Setter Property="IsEnabled" Value="True" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding DataContext.MenuCategories.Count, Source={x:Reference mainWindow}}" Value="0">
+                                                                            <Setter Property="IsEnabled" Value="False" />
+                                                                            <Setter Property="Header" Value="🏷️ 添加到分类（无可用分类）" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </MenuItem.Style>
+                                                        </MenuItem>
                                                         <Separator />
                                                         <MenuItem
                                                             Command="{Binding DataContext.DeleteWallpaperCommand, Source={x:Reference mainWindow}}"

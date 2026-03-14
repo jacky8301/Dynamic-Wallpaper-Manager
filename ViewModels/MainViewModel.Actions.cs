@@ -660,7 +660,123 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
-        /// 将壁纸添加到合集命令，弹出合集选择对话框（保留原功能，以备后用）
+        /// 将选中的壁纸添加到指定分类，已有分类（非"未分类"）的壁纸将被跳过
+        /// </summary>
+        /// <param name="parameter">包含壁纸对象和分类ID的参数数组</param>
+        [RelayCommand]
+        private async Task AddToSpecificCategory(object parameter)
+        {
+            if (parameter is not object[] args || args.Length != 2)
+                return;
+
+            int categoryId;
+            if (args[1] is int id)
+                categoryId = id;
+            else if (args[1] is IConvertible convertible)
+                categoryId = convertible.ToInt32(null);
+            else
+                return;
+
+            // 确定要操作的壁纸列表
+            List<WallpaperItem> wallpapersToAdd = new List<WallpaperItem>();
+            if (SelectedWallpapers.Count > 0)
+            {
+                wallpapersToAdd.AddRange(SelectedWallpapers);
+            }
+            else if (args[0] is WallpaperItem wp)
+            {
+                wallpapersToAdd.Add(wp);
+            }
+
+            if (wallpapersToAdd.Count == 0)
+                return;
+
+            var targetCategory = Categories.FirstOrDefault(c => c.Id == categoryId);
+            if (targetCategory == null)
+                return;
+
+            try
+            {
+                int addedCount = 0;
+                int skippedCount = 0;
+                foreach (var wallpaper in wallpapersToAdd)
+                {
+                    // 已有分类（非"未分类"）的壁纸跳过
+                    if (wallpaper.CategoryId != CategoryConstants.UNCATEGORIZED_ID)
+                    {
+                        skippedCount++;
+                        continue;
+                    }
+
+                    wallpaper.CategoryId = categoryId;
+                    wallpaper.Category = targetCategory.Name;
+                    _dbManager.UpdateWallpaper(wallpaper);
+                    addedCount++;
+                }
+
+                if (addedCount > 0)
+                {
+                    string message;
+                    if (wallpapersToAdd.Count == 1)
+                    {
+                        message = $"已将壁纸「{wallpapersToAdd[0].Project?.Title}」添加到分类「{targetCategory.Name}」。";
+                    }
+                    else
+                    {
+                        message = $"已将 {addedCount} 个壁纸添加到分类「{targetCategory.Name}」。";
+                        if (skippedCount > 0)
+                        {
+                            message += $"\n{skippedCount} 个壁纸已有分类，已跳过。";
+                        }
+                    }
+                    await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                        Message = message,
+                        Title = "成功",
+                        ShowCancelButton = false,
+                        DialogType = DialogType.Information
+                    });
+
+                    // 刷新分类统计和视图
+                    LoadCustomCategories();
+                    WallpapersView.Refresh();
+
+                    // 刷新详情页
+                    var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
+                    if (detailVm?.CurrentWallpaper != null)
+                    {
+                        foreach (var wp2 in wallpapersToAdd)
+                        {
+                            if (wp2.Id == detailVm.CurrentWallpaper.Id)
+                            {
+                                _dataContextService.CurrentWallpaper = wp2;
+                                break;
+                            }
+                        }
+                    }
+                }
+                else if (skippedCount > 0)
+                {
+                    await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                        Message = $"所有选中的壁纸已有分类，无需操作。",
+                        Title = "提示",
+                        ShowCancelButton = false,
+                        DialogType = DialogType.Information
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning($"添加壁纸到分类失败: {ex.Message}");
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = $"添加壁纸到分类失败: {ex.Message}",
+                    Title = "错误",
+                    ShowCancelButton = false,
+                    DialogType = DialogType.Error
+                });
+            }
+        }
+
+        /// <summary>
         /// </summary>
         /// <param name="parameter">壁纸对象</param>
         [RelayCommand]
