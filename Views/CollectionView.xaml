@@ -62,10 +62,16 @@
                                             Command="{Binding PlacementTarget.Tag.DeleteCollectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
                                     </ContextMenu>
                                 </Border.ContextMenu>
-                                <TextBlock
-                                    Text="{Binding Name}"
-                                    FontSize="14"
-                                    TextTrimming="CharacterEllipsis" />
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock
+                                        Text="{Binding Name}"
+                                        FontSize="14"
+                                        TextTrimming="CharacterEllipsis" />
+                                    <TextBlock
+                                        Text="{Binding WallpaperCount, StringFormat=' ({0})'}"
+                                        FontSize="14"
+                                        Foreground="Gray" />
+                                </StackPanel>
                             </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>

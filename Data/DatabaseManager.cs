@@ -752,12 +752,17 @@ namespace WallpaperEngine.Data {
         {
             var collections = new List<WallpaperCollection>();
             using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT Id, Name, CreatedDate FROM Collections ORDER BY CreatedDate DESC";
+            command.CommandText = @"
+                SELECT c.Id, c.Name, c.CreatedDate,
+                       (SELECT COUNT(1) FROM CollectionItems ci WHERE ci.CollectionId = c.Id) AS WallpaperCount
+                FROM Collections c
+                ORDER BY c.CreatedDate DESC";
             using var reader = command.ExecuteReader();
             while (reader.Read()) {
                 collections.Add(new WallpaperCollection {
                     Id = reader["Id"].ToString(),
                     Name = reader["Name"].ToString(),
+                    WallpaperCount = Convert.ToInt32(reader["WallpaperCount"]),
                     CreatedDate = reader["CreatedDate"] != DBNull.Value && DateTime.TryParse(reader["CreatedDate"].ToString(), out var createdDateParsed)
                         ? createdDateParsed
                         : DateTime.MinValue

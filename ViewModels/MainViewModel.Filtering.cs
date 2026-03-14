@@ -118,6 +118,18 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
+        /// 重置分类筛选到"所有分类"
+        /// </summary>
+        [RelayCommand]
+        private void ResetCategory()
+        {
+            if (SelectedCategoryId != CategoryConstants.ALL_CATEGORIES_ID)
+            {
+                SelectedCategoryId = CategoryConstants.ALL_CATEGORIES_ID;
+            }
+        }
+
+        /// <summary>
         /// 清除搜索命令，重置搜索文本、分类和标签页，重新加载壁纸
         /// </summary>
         [RelayCommand]

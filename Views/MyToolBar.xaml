@@ -59,6 +59,16 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+                <!--  重置分类按钮  -->
+                <Button
+                    Width="30"
+                    Height="30"
+                    Margin="5,0,0,0"
+                    Command="{Binding ResetCategoryCommand}"
+                    ToolTip="重置为所有分类"
+                    Style="{StaticResource MaterialDesignIconButton}">
+                    <materialDesign:PackIcon Kind="FilterRemove" Width="16" Height="16" />
+                </Button>
                 <!--  分类管理按钮  -->
                 <Button
                     Width="30"

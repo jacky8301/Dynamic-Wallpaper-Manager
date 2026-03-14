@@ -169,6 +169,7 @@ namespace WallpaperEngine.ViewModels {
             try {
                 _dbManager.RemoveFromCollection(SelectedCollection.Id, wallpaper.Id);
                 CollectionWallpapers.Remove(wallpaper);
+                SelectedCollection.WallpaperCount--;
             } catch (Exception ex) {
                 Log.Error($"从合集移除壁纸失败: {ex.Message}");
             }

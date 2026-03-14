@@ -17,6 +17,12 @@ namespace WallpaperEngine.Models {
         private string _name = string.Empty;
 
         /// <summary>
+        /// 合集中的壁纸数量
+        /// </summary>
+        [ObservableProperty]
+        private int _wallpaperCount;
+
+        /// <summary>
         /// 合集创建日期
         /// </summary>
         public DateTime CreatedDate { get; set; } = DateTime.Now;

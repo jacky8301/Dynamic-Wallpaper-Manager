@@ -189,20 +189,33 @@ namespace WallpaperEngine.ViewModels {
                 // 从分类服务获取所有分类（包括虚拟分类和数据库分类）
                 var allCategories = await _categoryService.GetAllCategoriesAsync();
 
-                // 清空并更新分类列表
-                Categories.Clear();
-                MenuCategories.Clear();
-                foreach (var category in allCategories)
+                // 保存当前选中的分类ID，防止Clear触发绑定重置
+                int savedCategoryId = SelectedCategoryId;
+
+                // 防止Clear/Add过程中的绑定联动重置SelectedCategoryId
+                _updatingSelection = true;
+                try
                 {
-                    Categories.Add(category);
-                    if (!CategoryConstants.IsVirtualCategoryId(category.Id))
+                    // 清空并更新分类列表
+                    Categories.Clear();
+                    MenuCategories.Clear();
+                    foreach (var category in allCategories)
                     {
-                        MenuCategories.Add(category);
+                        Categories.Add(category);
+                        if (!CategoryConstants.IsVirtualCategoryId(category.Id))
+                        {
+                            MenuCategories.Add(category);
+                        }
                     }
                 }
+                finally
+                {
+                    _updatingSelection = false;
+                }
 
-                // 同步选中分类项
-                var matchedCategory = Categories.FirstOrDefault(c => c.Id == SelectedCategoryId);
+                // 恢复选中分类
+                SelectedCategoryId = savedCategoryId;
+                var matchedCategory = Categories.FirstOrDefault(c => c.Id == savedCategoryId);
                 SelectedCategory = matchedCategory;
             } catch (Exception ex) {
                 Log.Error($"加载分类失败: {ex.Message}");
@@ -267,10 +280,8 @@ namespace WallpaperEngine.ViewModels {
         private async void OnCategoryChanged(object? sender, CategoryChangedEventArgs e)
         {
             // 当分类发生变化时，刷新分类列表
-            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
             {
-                LoadCustomCategories();
-
                 // 分类重命名时，更新所有该分类下壁纸的分类名称
                 if (e.ChangeType == CategoryChangeType.Renamed && !string.IsNullOrEmpty(e.OldCategoryName) && !string.IsNullOrEmpty(e.CategoryName))
                 {
@@ -296,8 +307,12 @@ namespace WallpaperEngine.ViewModels {
                             wallpaper.Project.Category = "未分类";
                         }
                     }
-                    WallpapersView.Refresh();
                 }
+
+                // 等待分类列表加载完成后再刷新视图
+                await LoadCustomCategoriesAsync();
+                WallpapersView.Refresh();
+                OnPropertyChanged(nameof(WallpaperCount));
             });
         }
 

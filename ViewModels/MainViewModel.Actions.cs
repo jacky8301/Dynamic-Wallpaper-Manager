@@ -594,6 +594,7 @@ namespace WallpaperEngine.ViewModels {
 
                     _dbManager.AddToCollection(collectionId, wallpaper.Id);
                     addedCount++;
+                    collection.WallpaperCount++;
                     Log.Information($"成功将壁纸{wallpaper.Project?.Title} 添加到合集{collection.Name}");
                 }
 
@@ -740,7 +741,7 @@ namespace WallpaperEngine.ViewModels {
                     LoadCustomCategories();
                     WallpapersView.Refresh();
 
-                    // 刷新详情页
+                    // 刷新详情页：先置空再赋值，强制触发 CurrentWallpaperChanged 事件
                     var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
                     if (detailVm?.CurrentWallpaper != null)
                     {
@@ -748,6 +749,7 @@ namespace WallpaperEngine.ViewModels {
                         {
                             if (wp2.Id == detailVm.CurrentWallpaper.Id)
                             {
+                                _dataContextService.CurrentWallpaper = null;
                                 _dataContextService.CurrentWallpaper = wp2;
                                 break;
                             }
@@ -811,6 +813,8 @@ namespace WallpaperEngine.ViewModels {
                         return;
                     }
                     _dbManager.AddToCollection(selected.Id, wallpaper.Id);
+                    // 更新合集壁纸数量
+                    selected.WallpaperCount++;
                     // 刷新合集页面（如果当前正在查看该合集）
                     var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
                     if (collectionVm?.SelectedCollection?.Id == selected.Id) {
