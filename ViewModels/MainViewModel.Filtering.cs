@@ -26,10 +26,9 @@ namespace WallpaperEngine.ViewModels {
                                wallpaper.Project.Tags.Any(t => t.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
 
             bool matchesCategory = SelectedCategoryId == CategoryConstants.ALL_CATEGORIES_ID || wallpaper.CategoryId == SelectedCategoryId;
-            bool matchesFavorites = !ShowFavoritesOnly || wallpaper.IsFavorite;
             bool matchesAdultFilter = !HideAdultContent || (wallpaper.Project.ContentRating != "Mature" && wallpaper.Project.ContentRating != "Questionable");
 
-            return matchesSearch && matchesCategory && matchesFavorites && matchesAdultFilter;
+            return matchesSearch && matchesCategory && matchesAdultFilter;
         }
 
         /// <summary>搜索文本变更时刷新壁纸视图</summary>
@@ -76,26 +75,31 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
-        /// <summary>收藏筛选状态变更时刷新壁纸视图</summary>
-        partial void OnShowFavoritesOnlyChanged(bool value)
-        {
-            WallpapersView.Refresh();
-            OnPropertyChanged(nameof(WallpaperCount));
-        }
         /// <summary>成人内容过滤状态变更时刷新壁纸视图</summary>
         partial void OnHideAdultContentChanged(bool value)
         {
             WallpapersView.Refresh();
             OnPropertyChanged(nameof(WallpaperCount));
         }
-        /// <summary>标签页切换时同步收藏筛选状态</summary>
+        /// <summary>标签页切换时切换活跃视图</summary>
         partial void OnCurrentTabChanged(int value)
         {
-            ShowFavoritesOnly = value == 1;
             // 切换标签页时清空选中状态，使每个标签页的选中列表独立
             ClearSelection();
             SelectedWallpaper = null;
             _lastSelectedItem = null;
+
+            OnPropertyChanged(nameof(WallpaperCount));
+
+            // 切换到收藏页面时通知 FavoriteViewModel 加载数据
+            if (value == 1)
+            {
+                var favoriteVm = Ioc.Default.GetService<FavoriteViewModel>();
+                if (favoriteVm != null)
+                {
+                    _ = favoriteVm.LoadFavoritesAsync();
+                }
+            }
 
             // 切换到合集页面时，如果没有选中合集，则自动选中第一个合集
             if (value == 2)

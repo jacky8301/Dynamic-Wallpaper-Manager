@@ -97,7 +97,7 @@ namespace WallpaperEngine.ViewModels {
             } finally {
                 IsScanning = false;
                 SelectedCategoryId = CategoryConstants.ALL_CATEGORIES_ID;
-                ShowFavoritesOnly = false;
+                CurrentTab = 0;
                 SearchText = string.Empty;
                 _dbManager.SaveScanRecord(CurrentScanFolder, NewFoundCount, UpdatedCount, SkippedCount);
                 Log.Information("扫描完成, 新增: {NewCount}, 更新: {UpdatedCount}, 跳过: {SkippedCount}", NewFoundCount, UpdatedCount, SkippedCount);

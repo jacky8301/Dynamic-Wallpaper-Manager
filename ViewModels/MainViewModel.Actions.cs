@@ -260,77 +260,37 @@ namespace WallpaperEngine.ViewModels {
             Log.Information("ToggleFavorite命令触发，参数类型: {ParameterType}, SelectedWallpapers.Count: {Count}",
                 parameter?.GetType().Name ?? "null", SelectedWallpapers.Count);
 
-            // 调试参数内容
             WallpaperItem? parameterWallpaper = null;
             if (parameter is WallpaperItem wp)
             {
                 parameterWallpaper = wp;
                 Log.Information("参数是WallpaperItem: {Title}, IsFavorite: {IsFavorite}", wp.Project?.Title, wp.IsFavorite);
             }
-            else if (parameter != null)
-            {
-                Log.Information("参数不是WallpaperItem，而是: {Type}", parameter.GetType().FullName);
-            }
 
-            // 如果参数是壁纸项
             if (parameterWallpaper != null)
             {
-                // 检查参数壁纸是否在选中列表中，且选中数量大于1
-                // 这种情况通常是右键菜单：用户选中了多个壁纸，然后右键点击其中一个打开菜单
                 bool isParameterInSelected = SelectedWallpapers.Contains(parameterWallpaper);
 
                 if (isParameterInSelected && SelectedWallpapers.Count > 1)
                 {
-                    // 收藏菜单场景：参数壁纸在选中列表中，且选中多个壁纸
-                    // 操作所有选中壁纸（优化选中项）
-                    bool anyUnfavorited = false;
                     foreach (var wallpaperItem in SelectedWallpapers.ToList())
                     {
-                        bool wasFavorite = wallpaperItem.IsFavorite;
                         ToggleSingleFavorite(wallpaperItem);
-                        if (!wallpaperItem.IsFavorite) // 切换后不再是收藏状态
-                        {
-                            anyUnfavorited = true;
-                        }
-                    }
-                    // 如果当前仅显示收藏，且有壁纸被取消收藏，刷新视图
-                    if (ShowFavoritesOnly && anyUnfavorited)
-                    {
-                        WallpapersView.Refresh();
                     }
                 }
                 else
                 {
-                    // 收藏按钮场景：参数壁纸不在选中列表中，或只有一个选中项
-                    // 只操作参数壁纸，并选中它（优化参数传入）
                     ToggleSingleFavorite(parameterWallpaper);
-                    // 点击收藏按钮时，使点击的壁纸变成选中壁纸（清空其他选中项）
                     HandleWallpaperSelection(parameterWallpaper, false, false);
-                    // 如果当前仅显示收藏，且取消了收藏，刷新视图
-                    if (ShowFavoritesOnly && !parameterWallpaper.IsFavorite) {
-                        WallpapersView.Refresh();
-                    }
                 }
                 return;
             }
 
-            // 如果没有参数但有选中的壁纸（例如从工具栏触发），使用选中的壁纸列表
             if (SelectedWallpapers.Count > 0)
             {
-                bool anyUnfavorited = false;
                 foreach (var wallpaperItem in SelectedWallpapers.ToList())
                 {
-                    bool wasFavorite = wallpaperItem.IsFavorite;
                     ToggleSingleFavorite(wallpaperItem);
-                    if (!wallpaperItem.IsFavorite) // 切换后不再是收藏状态
-                    {
-                        anyUnfavorited = true;
-                    }
-                }
-                // 如果当前仅显示收藏，且有壁纸被取消收藏，刷新视图
-                if (ShowFavoritesOnly && anyUnfavorited)
-                {
-                    WallpapersView.Refresh();
                 }
                 return;
             }
@@ -355,6 +315,28 @@ namespace WallpaperEngine.ViewModels {
             } catch (Exception ex) {
                 Log.Warning($"更新收藏状态失败: {ex.Message}");
                 wallpaper.IsFavorite = !wallpaper.IsFavorite;
+                return;
+            }
+
+            // 同步到 FavoriteViewModel
+            var favoriteVm = Ioc.Default.GetService<FavoriteViewModel>();
+            if (favoriteVm != null)
+            {
+                if (wallpaper.IsFavorite)
+                {
+                    if (!favoriteVm.FavoriteWallpapers.Any(w => w.Id == wallpaper.Id))
+                    {
+                        favoriteVm.FavoriteWallpapers.Add(wallpaper);
+                    }
+                }
+                else
+                {
+                    var favoriteItem = favoriteVm.FavoriteWallpapers.FirstOrDefault(w => w.Id == wallpaper.Id);
+                    if (favoriteItem != null)
+                    {
+                        favoriteVm.FavoriteWallpapers.Remove(favoriteItem);
+                    }
+                }
             }
 
             // 同步收藏状态到合集视图中的壁纸实例
@@ -365,7 +347,6 @@ namespace WallpaperEngine.ViewModels {
                 if (collectionWallpaper != null) {
                     collectionWallpaper.IsFavorite = wallpaper.IsFavorite;
                     collectionWallpaper.FavoritedDate = wallpaper.FavoritedDate;
-                    Log.Information("已同步收藏状态到合集视图");
                 }
             }
         }

@@ -150,14 +150,14 @@
                         </Border>
                         <!--  内容区域  -->
                         <Grid Grid.Row="2">
-                            <!--  Tab 0/1: 壁纸列表 + 详情  -->
+                            <!--  Tab 0: 全部壁纸列表 + 详情  -->
                             <Grid>
                                 <Grid.Style>
                                     <Style TargetType="Grid">
-                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding CurrentTab, Converter={StaticResource EqualToTwoConverter}}" Value="True">
-                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            <DataTrigger Binding="{Binding CurrentTab, Converter={StaticResource EqualToZeroConverter}}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -173,7 +173,7 @@
                                     HorizontalContentAlignment="Stretch"
                                     Background="Transparent"
                                     BorderThickness="0"
-                                    ItemsSource="{Binding Wallpapers}"
+                                    ItemsSource="{Binding WallpapersView}"
                                     ScrollViewer.CanContentScroll="True"
                                     ScrollViewer.IsDeferredScrollingEnabled="False"
                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -343,7 +343,7 @@
                                                             Margin="5"
                                                             FontWeight="Bold"
                                                             Foreground="White"
-                                                            Height="15"                                                           
+                                                            Height="15"
                                                             Text="{Binding Project.Title, Mode=TwoWay}"
                                                             TextWrapping="Wrap" />
                                                     </Border>
@@ -368,6 +368,19 @@
                                     <views:WallpaperDetailView />
                                 </Border>
                             </Grid>
+                            <!--  Tab 1: 收藏壁纸  -->
+                            <views:FavoriteView x:Name="FavoriteViewPanel">
+                                <views:FavoriteView.Style>
+                                    <Style TargetType="views:FavoriteView">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.CurrentTab, ElementName=mainWindow, Converter={StaticResource EqualToOneConverter}}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </views:FavoriteView.Style>
+                            </views:FavoriteView>
                             <!--  Tab 2: 壁纸合集  -->
                             <views:CollectionView x:Name="CollectionViewPanel">
                                 <views:CollectionView.Style>

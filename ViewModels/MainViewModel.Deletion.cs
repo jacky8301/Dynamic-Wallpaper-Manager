@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
 using System.IO;
@@ -174,6 +175,16 @@ namespace WallpaperEngine.ViewModels {
                 if (success) {
                     Log.Information("壁纸删除成功: {Title}", wallpaper.Project.Title);
                     Wallpapers.Remove(wallpaper);
+                    // 同时从 FavoriteViewModel 中移除
+                    var favoriteVm = Ioc.Default.GetService<FavoriteViewModel>();
+                    if (favoriteVm != null)
+                    {
+                        var favoriteItem = favoriteVm.FavoriteWallpapers.FirstOrDefault(w => w.Id == wallpaper.Id);
+                        if (favoriteItem != null)
+                        {
+                            favoriteVm.FavoriteWallpapers.Remove(favoriteItem);
+                        }
+                    }
                     if (SelectedWallpaper == wallpaper) {
                         SelectedWallpaper = null;
                         _dataContextService.CurrentWallpaper = null;

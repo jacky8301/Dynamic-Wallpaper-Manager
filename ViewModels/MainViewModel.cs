@@ -63,10 +63,6 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private CategoryItem? _selectedCategory;
 
-        /// <summary>是否仅显示收藏的壁纸</summary>
-        [ObservableProperty]
-        private bool _showFavoritesOnly;
-
         /// <summary>是否隐藏成人内容（ContentRating 为 Mature 或 Questionable）</summary>
         [ObservableProperty]
         private bool _hideAdultContent;
@@ -156,7 +152,6 @@ namespace WallpaperEngine.ViewModels {
             Wallpapers.CollectionChanged += OnWallpapersCollectionChanged;
 
             SelectedCategoryId = CategoryConstants.ALL_CATEGORIES_ID;
-            ShowFavoritesOnly = false;
             SearchText = string.Empty;
             CheckLastScanTime();
             LoadScanHistory();
@@ -419,6 +414,13 @@ namespace WallpaperEngine.ViewModels {
 
                 // 加载壁纸总数
                 await LoadTotalWallpaperCountAsync();
+
+                // 通知 FavoriteViewModel 刷新数据
+                var favoriteVm = Ioc.Default.GetService<FavoriteViewModel>();
+                if (favoriteVm != null)
+                {
+                    await favoriteVm.LoadFavoritesAsync();
+                }
 
                 OnEventLoadWallpapersCompleted();
             } catch (OperationCanceledException) {
