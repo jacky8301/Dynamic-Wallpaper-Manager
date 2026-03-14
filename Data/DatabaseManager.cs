@@ -1174,6 +1174,26 @@ namespace WallpaperEngine.Data {
         }
 
         /// <summary>
+        /// 获取指定分类下所有壁纸的文件夹路径
+        /// </summary>
+        /// <param name="categoryId">分类ID</param>
+        /// <returns>壁纸文件夹路径列表</returns>
+        public List<string> GetWallpaperFolderPathsByCategoryId(int categoryId)
+        {
+            var paths = new List<string>();
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "SELECT FolderPath FROM Wallpapers WHERE CategoryId = @categoryId";
+            command.Parameters.AddWithValue("@categoryId", categoryId);
+            using var reader = command.ExecuteReader();
+            while (reader.Read()) {
+                var path = reader["FolderPath"]?.ToString();
+                if (!string.IsNullOrEmpty(path))
+                    paths.Add(path);
+            }
+            return paths;
+        }
+
+        /// <summary>
         /// 获取数据库中壁纸的总数量（不考虑筛选条件）
         /// </summary>
         /// <returns>壁纸总数</returns>

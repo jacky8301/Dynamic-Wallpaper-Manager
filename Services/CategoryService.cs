@@ -1,7 +1,9 @@
 using CommunityToolkit.Mvvm.DependencyInjection;
+using Newtonsoft.Json;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using WallpaperEngine.Data;
@@ -220,6 +222,9 @@ namespace WallpaperEngine.Services
                 var oldName = existingCategory.Name;
                 _dbManager.RenameCategory(categoryId, newName);
 
+                // 更新该分类下所有壁纸的 project.json 文件
+                await UpdateProjectJsonCategoryAsync(categoryId, newName);
+
                 // 清除缓存
                 lock (_syncLock)
                 {
@@ -237,6 +242,47 @@ namespace WallpaperEngine.Services
             {
                 Log.Error($"重命名分类失败: {ex.Message}");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// 更新指定分类下所有壁纸的 project.json 文件中的分类名称
+        /// </summary>
+        /// <param name="categoryId">分类ID</param>
+        /// <param name="newCategoryName">新分类名称</param>
+        private async Task UpdateProjectJsonCategoryAsync(int categoryId, string newCategoryName)
+        {
+            try
+            {
+                var folderPaths = _dbManager.GetWallpaperFolderPathsByCategoryId(categoryId);
+                Log.Information("开始更新 {Count} 个壁纸的 project.json 分类为: {NewName}", folderPaths.Count, newCategoryName);
+
+                foreach (var folderPath in folderPaths)
+                {
+                    var projectFile = Path.Combine(folderPath, "project.json");
+                    if (!File.Exists(projectFile))
+                        continue;
+
+                    try
+                    {
+                        var json = await File.ReadAllTextAsync(projectFile);
+                        var project = JsonConvert.DeserializeObject<WallpaperProject>(json);
+                        if (project == null)
+                            continue;
+
+                        project.Category = newCategoryName;
+                        var updatedJson = JsonConvert.SerializeObject(project, Formatting.Indented);
+                        await File.WriteAllTextAsync(projectFile, updatedJson);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning("更新 project.json 分类失败 {ProjectFile}: {Message}", projectFile, ex.Message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("批量更新 project.json 分类失败: {Message}", ex.Message);
             }
         }
 
