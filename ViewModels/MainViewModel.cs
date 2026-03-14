@@ -361,7 +361,7 @@ namespace WallpaperEngine.ViewModels {
                 Log.Debug("LoadWallpapers from db start");
                 var results = _dbManager.SearchWallpapers(SearchText,
                     SelectedCategoryId,
-                    ShowFavoritesOnly,
+                    false,
                     HideAdultContent);
                 Log.Debug("LoadWallpapers from db finish");
                 return results;

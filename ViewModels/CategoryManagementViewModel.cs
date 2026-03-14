@@ -101,19 +101,8 @@ namespace WallpaperEngine.ViewModels
                     // 添加数据库中的分类（包括默认分类和自定义分类）
                     allCategoryItems.AddRange(dbCategories);
 
-                    // 过滤：排除空的非默认自定义分类（允许空的默认分类和虚拟分类显示）
-                    var filteredCategoryItems = allCategoryItems
-                        .Where(c =>
-                            // 总是包含虚拟分类
-                            CategoryConstants.IsVirtualCategoryId(c.Id) ||
-                            // 总是包含默认分类（即使为空）
-                            c.IsDefault ||
-                            // 包含非默认分类，但必须有壁纸
-                            (!c.IsDefault && !CategoryConstants.IsVirtualCategoryId(c.Id) && c.WallpaperCount > 0))
-                        .ToList();
-
                     // 按分类类型和名称排序：虚拟分类在前，然后是默认分类，最后是自定义分类
-                    var sortedCategoryItems = filteredCategoryItems
+                    var sortedCategoryItems = allCategoryItems
                         .OrderByDescending(c => CategoryConstants.IsVirtualCategoryId(c.Id)) // 虚拟分类在前
                         .ThenByDescending(c => c.IsDefault) // 默认分类其次
                         .ThenBy(c => c.Name) // 按名称排序
