@@ -201,7 +201,7 @@ namespace WallpaperEngine.Services {
                 {
                     // 将分类名称转换为ID
                     var categoryId = _dbManager.GetCategoryIdByName(project.Category);
-                    wallpaperItem.CategoryId = categoryId >= 0 ? categoryId : CategoryConstants.UNCATEGORIZED_ID;
+                    wallpaperItem.CategoryId = categoryId != null ? categoryId : CategoryConstants.UNCATEGORIZED_ID;
                     wallpaperItem.Category = project.Category;
                 }
                 _dbManager.SaveWallpaper(wallpaperItem);

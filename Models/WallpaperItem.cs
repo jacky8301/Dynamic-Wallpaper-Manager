@@ -31,7 +31,7 @@ namespace WallpaperEngine.Models {
         /// <summary>
         /// 壁纸分类ID
         /// </summary>
-        public int CategoryId { get; set; } = CategoryConstants.UNCATEGORIZED_ID;
+        public string CategoryId { get; set; } = CategoryConstants.UNCATEGORIZED_ID;
 
         /// <summary>
         /// 壁纸分类名称
@@ -292,7 +292,7 @@ namespace WallpaperEngine.Models {
 
             // 检查是否为虚拟分类
             var virtualId = CategoryConstants.GetVirtualCategoryId(value);
-            if (virtualId >= 0)
+            if (virtualId != null)
             {
                 CategoryId = virtualId;
                 return;

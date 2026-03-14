@@ -37,12 +37,12 @@ namespace WallpaperEngine.Models
         /// <summary>
         /// "所有分类"虚拟分类ID
         /// </summary>
-        public const int ALL_CATEGORIES_ID = 0;
+        public const string ALL_CATEGORIES_ID = "00000000-0000-0000-0000-000000000000";
 
         /// <summary>
         /// "未分类"虚拟分类ID
         /// </summary>
-        public const int UNCATEGORIZED_ID = 1;
+        public const string UNCATEGORIZED_ID = "00000000-0000-0000-0000-000000000001";
 
         /// <summary>
         /// 默认分类定义列表（不包括虚拟分类）
@@ -85,7 +85,7 @@ namespace WallpaperEngine.Models
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>是否为虚拟分类</returns>
-        public static bool IsVirtualCategoryId(int categoryId)
+        public static bool IsVirtualCategoryId(string categoryId)
         {
             return categoryId == ALL_CATEGORIES_ID || categoryId == UNCATEGORIZED_ID;
         }
@@ -95,28 +95,25 @@ namespace WallpaperEngine.Models
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>虚拟分类名称，如果不是虚拟分类则返回null</returns>
-        public static string? GetVirtualCategoryName(int categoryId)
+        public static string? GetVirtualCategoryName(string categoryId)
         {
-            return categoryId switch
-            {
-                ALL_CATEGORIES_ID => "所有分类",
-                UNCATEGORIZED_ID => "未分类",
-                _ => null
-            };
+            if (categoryId == ALL_CATEGORIES_ID) return "所有分类";
+            if (categoryId == UNCATEGORIZED_ID) return "未分类";
+            return null;
         }
 
         /// <summary>
         /// 根据虚拟分类名称获取ID
         /// </summary>
         /// <param name="categoryName">虚拟分类名称</param>
-        /// <returns>虚拟分类ID，如果不是虚拟分类则返回-1</returns>
-        public static int GetVirtualCategoryId(string categoryName)
+        /// <returns>虚拟分类ID，如果不是虚拟分类则返回null</returns>
+        public static string? GetVirtualCategoryId(string categoryName)
         {
             return categoryName switch
             {
                 "所有分类" => ALL_CATEGORIES_ID,
                 "未分类" => UNCATEGORIZED_ID,
-                _ => -1
+                _ => null
             };
         }
 

@@ -39,7 +39,7 @@ namespace WallpaperEngine.ViewModels {
             OnPropertyChanged(nameof(WallpaperCount));
         }
         /// <summary>选中分类变更时刷新壁纸视图</summary>
-        partial void OnSelectedCategoryIdChanged(int value)
+        partial void OnSelectedCategoryIdChanged(string value)
         {
             if (!_updatingSelection)
             {

@@ -105,7 +105,7 @@ namespace WallpaperEngine.Data {
                     : DateTime.MinValue;
             }
 
-            var categoryId = reader["CategoryId"] != DBNull.Value ? Convert.ToInt32(reader["CategoryId"]) : CategoryConstants.UNCATEGORIZED_ID;
+            var categoryId = reader["CategoryId"] != DBNull.Value ? reader["CategoryId"].ToString() ?? CategoryConstants.UNCATEGORIZED_ID : CategoryConstants.UNCATEGORIZED_ID;
             var categoryName = GetCategoryNameById(categoryId) ?? "未分类";
 
             return new WallpaperItem {
@@ -258,37 +258,43 @@ namespace WallpaperEngine.Data {
                     ";
                     backupCmd.ExecuteNonQuery();
 
-                    // 创建新Categories表
+                    // 创建新Categories表（TEXT主键）
                     backupCmd.CommandText = @"
                         CREATE TABLE Categories (
-                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Id TEXT PRIMARY KEY,
                             Name TEXT UNIQUE NOT NULL,
                             IsDefault BOOLEAN DEFAULT 0
                         )";
                     backupCmd.ExecuteNonQuery();
 
-                    // 插入硬编码默认分类（当前列表为空，因为已移除硬编码默认分类）
-                    // 注意：ID 1 是虚拟分类"未分类"，但虚拟分类不存储在数据库中
-                    // 实际的自定义分类ID从1开始自动递增
-                    int defaultCategoryId = 2; // 为硬编码默认分类预留的起始ID（如果将来需要）
+                    // 插入默认分类，使用GUID
                     foreach (var defaultCategory in CategoryConstants.DefaultCategories) {
                         using var insertCmd = m_connection.CreateCommand();
                         insertCmd.CommandText = @"
                             INSERT OR IGNORE INTO Categories (Id, Name, IsDefault)
                             VALUES (@id, @name, 1)";
-                        insertCmd.Parameters.AddWithValue("@id", defaultCategoryId);
+                        insertCmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
                         insertCmd.Parameters.AddWithValue("@name", defaultCategory.Name);
                         insertCmd.ExecuteNonQuery();
-                        defaultCategoryId++;
                     }
 
-                    // 从备份恢复自定义分类
-                    backupCmd.CommandText = @"
-                        INSERT OR IGNORE INTO Categories (Name, IsDefault)
-                        SELECT Name, 0 FROM Categories_Backup
-                        WHERE Name NOT IN (SELECT Name FROM Categories)
-                    ";
-                    backupCmd.ExecuteNonQuery();
+                    // 从备份恢复自定义分类（使用GUID）
+                    backupCmd.CommandText = "SELECT Name FROM Categories_Backup WHERE Name NOT IN (SELECT Name FROM Categories)";
+                    var customNames = new List<string>();
+                    using (var reader = backupCmd.ExecuteReader()) {
+                        while (reader.Read()) {
+                            customNames.Add(reader["Name"].ToString() ?? string.Empty);
+                        }
+                    }
+                    foreach (var name in customNames) {
+                        using var insertCmd = m_connection.CreateCommand();
+                        insertCmd.CommandText = @"
+                            INSERT OR IGNORE INTO Categories (Id, Name, IsDefault)
+                            VALUES (@id, @name, 0)";
+                        insertCmd.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+                        insertCmd.Parameters.AddWithValue("@name", name);
+                        insertCmd.ExecuteNonQuery();
+                    }
 
                     // 删除备份表
                     backupCmd.CommandText = "DROP TABLE IF EXISTS Categories_Backup";
@@ -314,7 +320,7 @@ namespace WallpaperEngine.Data {
                     // 添加CategoryId列（如果不存在）
                     using var alterCmd = m_connection.CreateCommand();
                     alterCmd.CommandText = @"
-                        ALTER TABLE Wallpapers ADD COLUMN CategoryId INTEGER DEFAULT 1;
+                        ALTER TABLE Wallpapers ADD COLUMN CategoryId TEXT DEFAULT '00000000-0000-0000-0000-000000000001';
                         CREATE INDEX IF NOT EXISTS IX_Wallpapers_CategoryId ON Wallpapers(CategoryId);
                     ";
                     alterCmd.ExecuteNonQuery();
@@ -322,29 +328,21 @@ namespace WallpaperEngine.Data {
                     // 迁移Category到CategoryId
                     // 首先更新虚拟分类
                     alterCmd.CommandText = @"
-                        UPDATE Wallpapers SET CategoryId = 0 WHERE Category = '所有分类';
-                        UPDATE Wallpapers SET CategoryId = 1 WHERE Category = '未分类';
+                        UPDATE Wallpapers SET CategoryId = @allCatId WHERE Category = '所有分类';
+                        UPDATE Wallpapers SET CategoryId = @uncatId WHERE Category = '未分类';
                     ";
+                    alterCmd.Parameters.AddWithValue("@allCatId", CategoryConstants.ALL_CATEGORIES_ID);
+                    alterCmd.Parameters.AddWithValue("@uncatId", CategoryConstants.UNCATEGORIZED_ID);
                     alterCmd.ExecuteNonQuery();
 
-                    // 更新默认分类
-                    foreach (var defaultCategory in CategoryConstants.DefaultCategories) {
-                        alterCmd.CommandText = @"
-                            UPDATE Wallpapers
-                            SET CategoryId = (SELECT Id FROM Categories WHERE Name = @name)
-                            WHERE Category = @name AND CategoryId = 1";
-                        alterCmd.Parameters.Clear();
-                        alterCmd.Parameters.AddWithValue("@name", defaultCategory.Name);
-                        alterCmd.ExecuteNonQuery();
-                    }
-
-                    // 更新自定义分类
+                    // 更新默认分类和自定义分类
                     alterCmd.CommandText = @"
                         UPDATE Wallpapers
                         SET CategoryId = (SELECT Id FROM Categories WHERE Name = Wallpapers.Category)
-                        WHERE CategoryId = 1 AND Category NOT IN ('所有分类', '未分类')
+                        WHERE Category NOT IN ('所有分类', '未分类')
                           AND Category IN (SELECT Name FROM Categories)
                     ";
+                    alterCmd.Parameters.Clear();
                     alterCmd.ExecuteNonQuery();
 
                     Log.Information("Wallpapers表Category列迁移完成");
@@ -355,6 +353,180 @@ namespace WallpaperEngine.Data {
             } catch (Exception ex) {
                 transaction.Rollback();
                 Log.Error(ex, "分类ID系统迁移失败");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 将Categories.Id从INTEGER迁移到TEXT(GUID)，同时更新Wallpapers.CategoryId
+        /// </summary>
+        private void MigrateCategoryIdToGuid()
+        {
+            // 检查Categories.Id的类型
+            bool isIntegerId = false;
+            using (var checkCmd = m_connection.CreateCommand()) {
+                checkCmd.CommandText = "PRAGMA table_info(Categories)";
+                using var reader = checkCmd.ExecuteReader();
+                while (reader.Read()) {
+                    if (reader["name"].ToString() == "Id" && reader["type"].ToString().ToUpper().Contains("INT")) {
+                        isIntegerId = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!isIntegerId) return;
+
+            Log.Information("开始迁移Categories.Id从INTEGER到TEXT(GUID)");
+
+            using var transaction = m_connection.BeginTransaction();
+            try {
+                // 1. 读取现有分类，建立 old_int_id -> new_guid 映射
+                var idMapping = new Dictionary<long, string>();
+                using (var readCmd = m_connection.CreateCommand()) {
+                    readCmd.CommandText = "SELECT Id, Name, IsDefault FROM Categories";
+                    using var reader = readCmd.ExecuteReader();
+                    while (reader.Read()) {
+                        var oldId = Convert.ToInt64(reader["Id"]);
+                        var newGuid = Guid.NewGuid().ToString();
+                        idMapping[oldId] = newGuid;
+                    }
+                }
+
+                // 2. 创建新的Categories表
+                using var cmd = m_connection.CreateCommand();
+                cmd.CommandText = "ALTER TABLE Categories RENAME TO Categories_Old";
+                cmd.ExecuteNonQuery();
+
+                cmd.CommandText = @"
+                    CREATE TABLE Categories (
+                        Id TEXT PRIMARY KEY,
+                        Name TEXT UNIQUE NOT NULL,
+                        IsDefault BOOLEAN DEFAULT 0
+                    )";
+                cmd.ExecuteNonQuery();
+
+                // 3. 迁移数据到新表
+                using (var readCmd = m_connection.CreateCommand()) {
+                    readCmd.CommandText = "SELECT Id, Name, IsDefault FROM Categories_Old";
+                    using var reader = readCmd.ExecuteReader();
+                    while (reader.Read()) {
+                        var oldId = Convert.ToInt64(reader["Id"]);
+                        var name = reader["Name"].ToString();
+                        var isDefault = Convert.ToBoolean(reader["IsDefault"]);
+                        var newGuid = idMapping[oldId];
+
+                        using var insertCmd = m_connection.CreateCommand();
+                        insertCmd.CommandText = @"
+                            INSERT INTO Categories (Id, Name, IsDefault)
+                            VALUES (@id, @name, @isDefault)";
+                        insertCmd.Parameters.AddWithValue("@id", newGuid);
+                        insertCmd.Parameters.AddWithValue("@name", name);
+                        insertCmd.Parameters.AddWithValue("@isDefault", isDefault);
+                        insertCmd.ExecuteNonQuery();
+                    }
+                }
+
+                cmd.CommandText = "DROP TABLE Categories_Old";
+                cmd.ExecuteNonQuery();
+
+                // 4. 检查Wallpapers.CategoryId是否为INTEGER类型
+                bool wallpaperCategoryIsInt = false;
+                cmd.CommandText = "PRAGMA table_info(Wallpapers)";
+                using (var reader = cmd.ExecuteReader()) {
+                    while (reader.Read()) {
+                        if (reader["name"].ToString() == "CategoryId" && reader["type"].ToString().ToUpper().Contains("INT")) {
+                            wallpaperCategoryIsInt = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (wallpaperCategoryIsInt) {
+                    // 5. 重建Wallpapers表，将CategoryId从INTEGER改为TEXT
+                    // 先创建带正确schema的新表
+                    cmd.CommandText = $@"
+                        CREATE TABLE Wallpapers_New (
+                            Id TEXT PRIMARY KEY,
+                            FolderPath TEXT UNIQUE,
+                            FolderName TEXT,
+                            Title TEXT,
+                            Description TEXT,
+                            FileName TEXT,
+                            PreviewFile TEXT,
+                            WallpaperType TEXT,
+                            Tags TEXT,
+                            IsFavorite INTEGER DEFAULT 0,
+                            CategoryId TEXT DEFAULT '{CategoryConstants.UNCATEGORIZED_ID}',
+                            AddedDate TEXT,
+                            ContentRating TEXT,
+                            Visibility TEXT,
+                            FavoritedDate TEXT,
+                            LastUpdated TEXT,
+                            LastScanned TEXT,
+                            FolderLastModified TEXT,
+                            FileSize INTEGER,
+                            FileHash TEXT
+                        )";
+                    cmd.Parameters.Clear();
+                    cmd.ExecuteNonQuery();
+
+                    // 复制数据，同时映射CategoryId
+                    // 先复制所有数据，CategoryId暂时设为UNCATEGORIZED
+                    cmd.CommandText = $@"
+                        INSERT INTO Wallpapers_New
+                        (Id, FolderPath, FolderName, Title, Description, FileName, PreviewFile,
+                         WallpaperType, Tags, IsFavorite, CategoryId, AddedDate, ContentRating,
+                         Visibility, FavoritedDate, LastUpdated, LastScanned, FolderLastModified, FileSize, FileHash)
+                        SELECT Id, FolderPath, FolderName, Title, Description, FileName, PreviewFile,
+                         WallpaperType, Tags, IsFavorite, '{CategoryConstants.UNCATEGORIZED_ID}', AddedDate, ContentRating,
+                         Visibility, FavoritedDate, LastUpdated, LastScanned, FolderLastModified, FileSize, FileHash
+                        FROM Wallpapers";
+                    cmd.ExecuteNonQuery();
+
+                    // 映射虚拟分类ID: 0 -> ALL_CATEGORIES_ID
+                    cmd.CommandText = "UPDATE Wallpapers_New SET CategoryId = @allCatId WHERE Id IN (SELECT Id FROM Wallpapers WHERE CategoryId = 0)";
+                    cmd.Parameters.Clear();
+                    cmd.Parameters.AddWithValue("@allCatId", CategoryConstants.ALL_CATEGORIES_ID);
+                    cmd.ExecuteNonQuery();
+
+                    // 映射虚拟分类ID: 1 -> UNCATEGORIZED_ID (已经是默认值，但显式更新确保正确)
+                    cmd.CommandText = "UPDATE Wallpapers_New SET CategoryId = @uncatId WHERE Id IN (SELECT Id FROM Wallpapers WHERE CategoryId = 1)";
+                    cmd.Parameters.Clear();
+                    cmd.Parameters.AddWithValue("@uncatId", CategoryConstants.UNCATEGORIZED_ID);
+                    cmd.ExecuteNonQuery();
+
+                    // 映射数据库中的分类ID
+                    foreach (var mapping in idMapping) {
+                        cmd.CommandText = "UPDATE Wallpapers_New SET CategoryId = @newId WHERE Id IN (SELECT Id FROM Wallpapers WHERE CategoryId = @oldId)";
+                        cmd.Parameters.Clear();
+                        cmd.Parameters.AddWithValue("@newId", mapping.Value);
+                        cmd.Parameters.AddWithValue("@oldId", mapping.Key);
+                        cmd.ExecuteNonQuery();
+                    }
+
+                    cmd.CommandText = "DROP TABLE Wallpapers";
+                    cmd.ExecuteNonQuery();
+
+                    cmd.CommandText = "ALTER TABLE Wallpapers_New RENAME TO Wallpapers";
+                    cmd.ExecuteNonQuery();
+
+                    // 重建索引
+                    cmd.CommandText = @"
+                        CREATE INDEX IF NOT EXISTS IX_Wallpapers_Title ON Wallpapers(Title);
+                        CREATE INDEX IF NOT EXISTS IX_Wallpapers_Tags ON Wallpapers(Tags);
+                        CREATE INDEX IF NOT EXISTS IX_Wallpapers_CategoryId ON Wallpapers(CategoryId);
+                        CREATE INDEX IF NOT EXISTS IX_Wallpapers_IsFavorite ON Wallpapers(IsFavorite);
+                        CREATE INDEX IF NOT EXISTS IX_Wallpapers_LastModified ON Wallpapers(FolderLastModified DESC)";
+                    cmd.Parameters.Clear();
+                    cmd.ExecuteNonQuery();
+                }
+
+                transaction.Commit();
+                Log.Information("Categories.Id从INTEGER到TEXT(GUID)迁移完成");
+            } catch (Exception ex) {
+                transaction.Rollback();
+                Log.Error(ex, "Categories.Id迁移到GUID失败");
                 throw;
             }
         }
@@ -383,7 +555,7 @@ namespace WallpaperEngine.Data {
                     WallpaperType TEXT,
                     Tags TEXT,
                     IsFavorite INTEGER DEFAULT 0,
-                    CategoryId INTEGER DEFAULT 1,
+                    CategoryId TEXT DEFAULT '00000000-0000-0000-0000-000000000001',
                     AddedDate TEXT,
                     ContentRating TEXT,
                     Visibility TEXT,
@@ -527,7 +699,7 @@ namespace WallpaperEngine.Data {
             // 创建分类表（使用ID作为主键）
             command.CommandText = @"
             CREATE TABLE IF NOT EXISTS Categories (
-                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Id TEXT PRIMARY KEY,
                 Name TEXT UNIQUE NOT NULL,
                 IsDefault BOOLEAN DEFAULT 0
             )";
@@ -576,7 +748,10 @@ namespace WallpaperEngine.Data {
             // 迁移分类到ID系统
             MigrateCategoriesToIdSystem();
 
-            // 将所有默认分类标记转为普通分类（IsDefault = 0）
+            // 迁移Categories.Id从INTEGER到TEXT(GUID)
+            MigrateCategoryIdToGuid();
+
+            // 将所有默认分类标记转为普通分类��IsDefault = 0）
             command.CommandText = "UPDATE Categories SET IsDefault = 0 WHERE IsDefault = 1";
             command.ExecuteNonQuery();
 
@@ -651,7 +826,7 @@ namespace WallpaperEngine.Data {
         /// <param name="favoritesOnly">是否仅返回已收藏的壁纸</param>
         /// <param name="hideAdultContent">是否隐藏成人内容（ContentRating 为 Mature 或 Questionable）</param>
         /// <returns>匹配的壁纸列表，最多返回 1000 条</returns>
-        public List<WallpaperItem> SearchWallpapers(string searchTerm, int categoryId = 0, bool favoritesOnly = false, bool hideAdultContent = false)
+        public List<WallpaperItem> SearchWallpapers(string searchTerm, string categoryId = "", bool favoritesOnly = false, bool hideAdultContent = false)
         {
             Log.Debug("搜索壁纸, 关键词: {SearchTerm}, 分类ID: {CategoryId}, 仅收藏: {FavoritesOnly}, 隐藏成人内容: {HideAdultContent}", searchTerm, categoryId, favoritesOnly, hideAdultContent);
             var wallpapers = new List<WallpaperItem>();
@@ -662,7 +837,7 @@ namespace WallpaperEngine.Data {
                 whereClause += " AND (w.Title LIKE @search OR w.Description LIKE @search OR w.Tags LIKE @search)";
                 command.Parameters.AddWithValue("@search", $"%{searchTerm}%");
             }
-            if (categoryId != 0) {
+            if (!string.IsNullOrEmpty(categoryId) && categoryId != CategoryConstants.ALL_CATEGORIES_ID) {
                 whereClause += " AND w.CategoryId = @categoryId";
                 command.Parameters.AddWithValue("@categoryId", categoryId);
             }
@@ -1104,23 +1279,33 @@ namespace WallpaperEngine.Data {
         /// </summary>
         /// <param name="name">分类名称</param>
         /// <returns>新分类的ID，如果已存在则返回现有分类的ID</returns>
-        public int AddCategory(string name)
+        public string AddCategory(string name)
         {
             Log.Information("添加分类: {Name}", name);
             using var command = m_connection.CreateCommand();
-            command.CommandText = @"
-                INSERT OR IGNORE INTO Categories (Name, IsDefault) VALUES (@name, 0);
-                SELECT Id FROM Categories WHERE Name = @name";
+            // 先检查是否已存在
+            command.CommandText = "SELECT Id FROM Categories WHERE Name = @name";
             command.Parameters.AddWithValue("@name", name);
-            var result = command.ExecuteScalar();
-            return result != null ? Convert.ToInt32(result) : -1;
+            var existing = command.ExecuteScalar();
+            if (existing != null)
+                return existing.ToString();
+
+            // 生成新GUID并插入
+            var newId = Guid.NewGuid().ToString();
+            command.CommandText = @"
+                INSERT INTO Categories (Id, Name, IsDefault) VALUES (@id, @name, 0)";
+            command.Parameters.Clear();
+            command.Parameters.AddWithValue("@id", newId);
+            command.Parameters.AddWithValue("@name", name);
+            command.ExecuteNonQuery();
+            return newId;
         }
 
         /// <summary>
         /// 删除自定义分类，并将该分类下的所有壁纸重置为"未分类"
         /// </summary>
         /// <param name="id">要删除的分类ID</param>
-        public void DeleteCategory(int id)
+        public void DeleteCategory(string id)
         {
             lock (m_lock) {
                 EnsureConnectionOpen();
@@ -1128,8 +1313,9 @@ namespace WallpaperEngine.Data {
                 using var transaction = m_connection.BeginTransaction();
                 try {
                     using var updateCmd = m_connection.CreateCommand();
-                    updateCmd.CommandText = "UPDATE Wallpapers SET CategoryId = 1 WHERE CategoryId = @id";
+                    updateCmd.CommandText = "UPDATE Wallpapers SET CategoryId = @uncategorizedId WHERE CategoryId = @id";
                     updateCmd.Parameters.AddWithValue("@id", id);
+                    updateCmd.Parameters.AddWithValue("@uncategorizedId", CategoryConstants.UNCATEGORIZED_ID);
                     updateCmd.ExecuteNonQuery();
 
                     using var deleteCmd = m_connection.CreateCommand();
@@ -1153,7 +1339,7 @@ namespace WallpaperEngine.Data {
         /// </summary>
         /// <param name="id">要重命名的分类ID</param>
         /// <param name="newName">新分类名称</param>
-        public void RenameCategory(int id, string newName)
+        public void RenameCategory(string id, string newName)
         {
             Log.Information("重命名分类ID: {Id} -> {NewName}", id, newName);
             using var transaction = m_connection.BeginTransaction();
@@ -1183,7 +1369,7 @@ namespace WallpaperEngine.Data {
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>壁纸文件夹路径列表</returns>
-        public List<string> GetWallpaperFolderPathsByCategoryId(int categoryId)
+        public List<string> GetWallpaperFolderPathsByCategoryId(string categoryId)
         {
             var paths = new List<string>();
             using var command = m_connection.CreateCommand();
@@ -1222,7 +1408,7 @@ namespace WallpaperEngine.Data {
             foreach (var category in allCategories) {
                 var categoryId = GetCategoryIdByName(category);
                 int count;
-                if (categoryId >= 0) {
+                if (categoryId != null) {
                     count = GetCategoryWallpaperCount(categoryId);
                 } else {
                     // 虚拟分类或不存在
@@ -1239,7 +1425,7 @@ namespace WallpaperEngine.Data {
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>该分类下的壁纸数量</returns>
-        public int GetCategoryWallpaperCount(int categoryId)
+        public int GetCategoryWallpaperCount(string categoryId)
         {
             // 虚拟分类处理
             if (CategoryConstants.IsVirtualCategoryId(categoryId)) {
@@ -1248,7 +1434,7 @@ namespace WallpaperEngine.Data {
                     // "所有分类" - 返回所有壁纸总数
                     virtualCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers";
                 } else if (categoryId == CategoryConstants.UNCATEGORIZED_ID) {
-                    // "未分类" - 返回 CategoryId = 1 的壁纸数量
+                    // "未分类" - 返回未分类的壁纸数量
                     virtualCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE CategoryId = @categoryId";
                     virtualCmd.Parameters.AddWithValue("@categoryId", categoryId);
                 } else {
@@ -1278,12 +1464,12 @@ namespace WallpaperEngine.Data {
             command.CommandText = "SELECT Id, Name, IsDefault FROM Categories ORDER BY IsDefault DESC, Name";
             using var reader = command.ExecuteReader();
             while (reader.Read()) {
-                var id = Convert.ToInt32(reader["Id"]);
+                var id = reader["Id"].ToString() ?? string.Empty;
                 var name = reader["Name"].ToString() ?? string.Empty;
                 var isDefault = Convert.ToBoolean(reader["IsDefault"]);
                 var isProtected = CategoryConstants.IsProtectedCategory(name);
                 // 获取壁纸数量
-                var count = GetCategoryWallpaperCount(id);
+                var count = id != null ? GetCategoryWallpaperCount(id) : 0;
                 categories.Add(new CategoryItem(id, name, count, isProtected, isDefault));
             }
             return categories;
@@ -1294,7 +1480,7 @@ namespace WallpaperEngine.Data {
         /// </summary>
         /// <param name="id">分类ID</param>
         /// <returns>分类名称，如果不存在则返回null</returns>
-        public string? GetCategoryNameById(int id)
+        public string? GetCategoryNameById(string id)
         {
             // 检查虚拟分类
             var virtualName = CategoryConstants.GetVirtualCategoryName(id);
@@ -1312,19 +1498,19 @@ namespace WallpaperEngine.Data {
         /// 根据分类名称获取分类ID
         /// </summary>
         /// <param name="name">分类名称</param>
-        /// <returns>分类ID，如果不存在则返回-1</returns>
-        public int GetCategoryIdByName(string name)
+        /// <returns>分类ID，如果不存在则返回null</returns>
+        public string? GetCategoryIdByName(string name)
         {
             // 检查虚拟分类
             var virtualId = CategoryConstants.GetVirtualCategoryId(name);
-            if (virtualId >= 0)
+            if (virtualId != null)
                 return virtualId;
 
             using var command = m_connection.CreateCommand();
             command.CommandText = "SELECT Id FROM Categories WHERE Name = @name";
             command.Parameters.AddWithValue("@name", name);
             var result = command.ExecuteScalar();
-            return result != null ? Convert.ToInt32(result) : -1;
+            return result?.ToString();
         }
 
         /// <summary>

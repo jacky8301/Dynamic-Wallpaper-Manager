@@ -64,7 +64,7 @@ namespace WallpaperEngine.Services
                 foreach (var defaultCategory in CategoryConstants.DefaultCategories)
                 {
                     var categoryId = _dbManager.GetCategoryIdByName(defaultCategory.Name);
-                    if (categoryId < 0)
+                    if (categoryId == null)
                     {
                         // 分类不存在，创建它
                         _dbManager.AddCategory(defaultCategory.Name);
@@ -126,7 +126,7 @@ namespace WallpaperEngine.Services
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>分类项，如果不存在则返回null</returns>
-        public async Task<CategoryItem?> GetCategoryByIdAsync(int categoryId)
+        public async Task<CategoryItem?> GetCategoryByIdAsync(string categoryId)
         {
             var allCategories = await GetAllCategoriesAsync();
             return allCategories.FirstOrDefault(c => c.Id == categoryId);
@@ -148,7 +148,7 @@ namespace WallpaperEngine.Services
         /// </summary>
         /// <param name="categoryName">分类名称</param>
         /// <returns>新分类的ID</returns>
-        public async Task<int> AddCategoryAsync(string categoryName)
+        public async Task<string> AddCategoryAsync(string categoryName)
         {
             if (string.IsNullOrWhiteSpace(categoryName))
                 throw new ArgumentException("分类名称不能为空", nameof(categoryName));
@@ -194,7 +194,7 @@ namespace WallpaperEngine.Services
         /// <param name="categoryId">分类ID</param>
         /// <param name="newName">新分类名称</param>
         /// <returns>是否成功</returns>
-        public async Task<bool> RenameCategoryAsync(int categoryId, string newName)
+        public async Task<bool> RenameCategoryAsync(string categoryId, string newName)
         {
             if (string.IsNullOrWhiteSpace(newName))
                 throw new ArgumentException("新分类名称不能为空", nameof(newName));
@@ -250,7 +250,7 @@ namespace WallpaperEngine.Services
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <param name="newCategoryName">新分类名称</param>
-        private async Task UpdateProjectJsonCategoryAsync(int categoryId, string newCategoryName)
+        private async Task UpdateProjectJsonCategoryAsync(string categoryId, string newCategoryName)
         {
             try
             {
@@ -291,7 +291,7 @@ namespace WallpaperEngine.Services
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>是否成功</returns>
-        public async Task<bool> DeleteCategoryAsync(int categoryId)
+        public async Task<bool> DeleteCategoryAsync(string categoryId)
         {
             await InitializeAsync();
 
@@ -358,7 +358,7 @@ namespace WallpaperEngine.Services
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>壁纸数量</returns>
-        public async Task<int> GetCategoryWallpaperCountAsync(int categoryId)
+        public async Task<int> GetCategoryWallpaperCountAsync(string categoryId)
         {
             return await Task.Run(() => _dbManager.GetCategoryWallpaperCount(categoryId));
         }
@@ -378,7 +378,7 @@ namespace WallpaperEngine.Services
 
             // 触发事件
             CategoryChanged?.Invoke(this, new CategoryChangedEventArgs(
-                CategoryChangeType.Refreshed, -1));
+                CategoryChangeType.Refreshed, ""));
         }
 
         /// <summary>
@@ -397,7 +397,7 @@ namespace WallpaperEngine.Services
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>是否有效</returns>
-        public async Task<bool> IsValidCategoryIdAsync(int categoryId)
+        public async Task<bool> IsValidCategoryIdAsync(string categoryId)
         {
             var category = await GetCategoryByIdAsync(categoryId);
             return category != null;
@@ -409,7 +409,7 @@ namespace WallpaperEngine.Services
         public void NotifyStatsUpdated()
         {
             CategoryChanged?.Invoke(this, new CategoryChangedEventArgs(
-                CategoryChangeType.StatsUpdated, -1));
+                CategoryChangeType.StatsUpdated, ""));
         }
     }
 }

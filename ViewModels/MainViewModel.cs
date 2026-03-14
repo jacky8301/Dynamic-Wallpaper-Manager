@@ -51,9 +51,9 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private string _searchText = string.Empty;
 
-        /// <summary>当前选中的分类ID（0表示"所有分类"）</summary>
+        /// <summary>当前选中的分类ID（"00000000-0000-0000-0000-000000000000"表示"所有分类"）</summary>
         [ObservableProperty]
-        private int _selectedCategoryId = CategoryConstants.ALL_CATEGORIES_ID;
+        private string _selectedCategoryId = CategoryConstants.ALL_CATEGORIES_ID;
 
         /// <summary>当前选中的分类项</summary>
         [ObservableProperty]
@@ -190,7 +190,7 @@ namespace WallpaperEngine.ViewModels {
                 var allCategories = await _categoryService.GetAllCategoriesAsync();
 
                 // 保存当前选中的分类ID，防止Clear触发绑定重置
-                int savedCategoryId = SelectedCategoryId;
+                string savedCategoryId = SelectedCategoryId;
 
                 // 防止Clear/Add过程中的绑定联动重置SelectedCategoryId
                 _updatingSelection = true;
@@ -330,7 +330,7 @@ namespace WallpaperEngine.ViewModels {
                     // 使用分类服务添加分类
                     var categoryId = await _categoryService.AddCategoryAsync(category);
 
-                    if (categoryId > 0)
+                    if (!string.IsNullOrEmpty(categoryId))
                     {
                         // 获取分类项
                         var categoryItem = await _categoryService.GetCategoryByIdAsync(categoryId);

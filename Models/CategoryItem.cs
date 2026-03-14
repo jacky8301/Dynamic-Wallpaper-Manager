@@ -10,7 +10,7 @@ namespace WallpaperEngine.Models
         /// <summary>
         /// 分类ID
         /// </summary>
-        public int Id { get; set; }
+        public string Id { get; set; } = "";
 
         /// <summary>
         /// 分类名称
@@ -40,7 +40,7 @@ namespace WallpaperEngine.Models
         /// <param name="count">壁纸数量</param>
         /// <param name="isProtected">是否为受保护分类</param>
         /// <param name="isDefault">是否为默认分类</param>
-        public CategoryItem(int id, string name, int count, bool isProtected = false, bool isDefault = false)
+        public CategoryItem(string id, string name, int count, bool isProtected = false, bool isDefault = false)
         {
             Id = id;
             Name = name;
@@ -57,7 +57,7 @@ namespace WallpaperEngine.Models
         /// <param name="isProtected">是否为受保护分类</param>
         public CategoryItem(string name, int count, bool isProtected = false)
         {
-            Id = -1;
+            Id = "";
             Name = name;
             WallpaperCount = count;
             IsProtected = isProtected;

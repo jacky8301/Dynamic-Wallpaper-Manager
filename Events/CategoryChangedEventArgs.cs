@@ -15,7 +15,7 @@ namespace WallpaperEngine.Events
         /// <summary>
         /// 受影响的分类ID
         /// </summary>
-        public int CategoryId { get; }
+        public string CategoryId { get; }
 
         /// <summary>
         /// 分类名称（对于重命名操作是新名称）
@@ -34,7 +34,7 @@ namespace WallpaperEngine.Events
         /// <param name="categoryId">分类ID</param>
         /// <param name="categoryName">分类名称</param>
         /// <param name="oldCategoryName">旧分类名称（仅用于重命名）</param>
-        public CategoryChangedEventArgs(CategoryChangeType changeType, int categoryId, string? categoryName = null, string? oldCategoryName = null)
+        public CategoryChangedEventArgs(CategoryChangeType changeType, string categoryId, string? categoryName = null, string? oldCategoryName = null)
         {
             ChangeType = changeType;
             CategoryId = categoryId;

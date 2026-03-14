@@ -670,12 +670,13 @@ namespace WallpaperEngine.ViewModels {
             if (parameter is not object[] args || args.Length != 2)
                 return;
 
-            int categoryId;
-            if (args[1] is int id)
+            string categoryId;
+            if (args[1] is string id)
                 categoryId = id;
-            else if (args[1] is IConvertible convertible)
-                categoryId = convertible.ToInt32(null);
             else
+                categoryId = args[1]?.ToString() ?? "";
+
+            if (string.IsNullOrEmpty(categoryId))
                 return;
 
             // 确定要操作的壁纸列表
@@ -847,7 +848,7 @@ namespace WallpaperEngine.ViewModels {
 
             // 获取分类ID
             var categoryId = _dbManager.GetCategoryIdByName(category);
-            if (categoryId <= 0 || CategoryConstants.IsVirtualCategoryId(categoryId))
+            if (string.IsNullOrEmpty(categoryId) || CategoryConstants.IsVirtualCategoryId(categoryId))
             {
                 // 虚拟分类或不存在
                 return;
@@ -909,7 +910,7 @@ namespace WallpaperEngine.ViewModels {
 
             // 获取分类ID
             var categoryId = _dbManager.GetCategoryIdByName(category);
-            if (categoryId <= 0 || CategoryConstants.IsVirtualCategoryId(categoryId))
+            if (string.IsNullOrEmpty(categoryId) || CategoryConstants.IsVirtualCategoryId(categoryId))
             {
                 // 虚拟分类或不存在
                 return;

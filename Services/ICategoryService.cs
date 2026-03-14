@@ -33,7 +33,7 @@ namespace WallpaperEngine.Services
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>分类项，如果不存在则返回null</returns>
-        Task<CategoryItem?> GetCategoryByIdAsync(int categoryId);
+        Task<CategoryItem?> GetCategoryByIdAsync(string categoryId);
 
         /// <summary>
         /// 根据分类名称获取分类项
@@ -47,7 +47,7 @@ namespace WallpaperEngine.Services
         /// </summary>
         /// <param name="categoryName">分类名称</param>
         /// <returns>新分类的ID</returns>
-        Task<int> AddCategoryAsync(string categoryName);
+        Task<string> AddCategoryAsync(string categoryName);
 
         /// <summary>
         /// 重命名分类
@@ -55,14 +55,14 @@ namespace WallpaperEngine.Services
         /// <param name="categoryId">分类ID</param>
         /// <param name="newName">新分类名称</param>
         /// <returns>是否成功</returns>
-        Task<bool> RenameCategoryAsync(int categoryId, string newName);
+        Task<bool> RenameCategoryAsync(string categoryId, string newName);
 
         /// <summary>
         /// 删除分类
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>是否成功</returns>
-        Task<bool> DeleteCategoryAsync(int categoryId);
+        Task<bool> DeleteCategoryAsync(string categoryId);
 
         /// <summary>
         /// 获取分类统计信息
@@ -75,7 +75,7 @@ namespace WallpaperEngine.Services
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>壁纸数量</returns>
-        Task<int> GetCategoryWallpaperCountAsync(int categoryId);
+        Task<int> GetCategoryWallpaperCountAsync(string categoryId);
 
         /// <summary>
         /// 刷新分类列表（从数据库重新加载）
@@ -94,6 +94,6 @@ namespace WallpaperEngine.Services
         /// </summary>
         /// <param name="categoryId">分类ID</param>
         /// <returns>是否有效</returns>
-        Task<bool> IsValidCategoryIdAsync(int categoryId);
+        Task<bool> IsValidCategoryIdAsync(string categoryId);
     }
 }

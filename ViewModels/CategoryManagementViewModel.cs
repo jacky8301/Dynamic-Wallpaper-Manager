@@ -210,7 +210,7 @@ namespace WallpaperEngine.ViewModels
             var oldName = SelectedCategory.Name;
             var categoryId = SelectedCategory.Id;
             // 检查是否为虚拟分类或无效ID
-            if (CategoryConstants.IsVirtualCategoryId(categoryId) || categoryId <= 0)
+            if (CategoryConstants.IsVirtualCategoryId(categoryId) || string.IsNullOrEmpty(categoryId))
             {
                 await MaterialDialogService.ShowErrorAsync("无法重命名虚拟分类或无效分类", "错误");
                 return;
@@ -255,7 +255,7 @@ namespace WallpaperEngine.ViewModels
             var wallpaperCount = SelectedCategory.WallpaperCount;
 
             // 检查是否为虚拟分类或无效ID
-            if (CategoryConstants.IsVirtualCategoryId(categoryId) || categoryId <= 0)
+            if (CategoryConstants.IsVirtualCategoryId(categoryId) || string.IsNullOrEmpty(categoryId))
             {
                 await MaterialDialogService.ShowErrorAsync("无法删除虚拟分类或无效分类", "错误");
                 return;

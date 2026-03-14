@@ -59,11 +59,11 @@ namespace WallpaperEngine.ViewModels {
 
                     // 更新分类ID
                     var categoryId = CategoryConstants.GetVirtualCategoryId(categoryToSave);
-                    if (categoryId < 0)
+                    if (categoryId == null)
                     {
                         // 非虚拟分类，从数据库获取ID
                         categoryId = _dbManager.GetCategoryIdByName(categoryToSave);
-                        if (categoryId < 0)
+                        if (categoryId == null)
                         {
                             // 分类不存在，创建它
                             categoryId = _dbManager.AddCategory(categoryToSave);
