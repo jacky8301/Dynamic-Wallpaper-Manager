@@ -311,6 +311,7 @@
                                                             Margin="5"
                                                             FontWeight="Bold"
                                                             Foreground="White"
+                                                            Height="15"                                                           
                                                             Text="{Binding Project.Title, Mode=TwoWay}"
                                                             TextWrapping="Wrap" />
                                                     </Border>
