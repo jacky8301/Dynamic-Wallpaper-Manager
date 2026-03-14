@@ -745,14 +745,6 @@ namespace WallpaperEngine.Data {
                 Log.Warning("创建CollectionItems.WallpaperId索引失败: {Error}", ex.Message);
             }
 
-            // 迁移分类到ID系统
-            MigrateCategoriesToIdSystem();
-
-            // 迁移Categories.Id从INTEGER到TEXT(GUID)
-            MigrateCategoryIdToGuid();
-
-            // 将所有默认分类标记转为普通分类��IsDefault = 0）
-            command.CommandText = "UPDATE Categories SET IsDefault = 0 WHERE IsDefault = 1";
             command.ExecuteNonQuery();
 
             Log.Information("数据库初始化完成");
@@ -1469,7 +1461,7 @@ namespace WallpaperEngine.Data {
                 var isDefault = Convert.ToBoolean(reader["IsDefault"]);
                 var isProtected = CategoryConstants.IsProtectedCategory(name);
                 // 获取壁纸数量
-                var count = id != null ? GetCategoryWallpaperCount(id) : 0;
+                var count = GetCategoryWallpaperCount(id);
                 categories.Add(new CategoryItem(id, name, count, isProtected, isDefault));
             }
             return categories;

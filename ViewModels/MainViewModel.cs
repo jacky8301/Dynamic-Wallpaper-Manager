@@ -4,6 +4,7 @@ using Serilog;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Windows.Data;
 using WallpaperEngine.Data;
 using WallpaperEngine.Events;
@@ -23,6 +24,9 @@ namespace WallpaperEngine.ViewModels {
         private readonly IDataContextService _dataContextService;
         private readonly IWallpaperFileService _wallpaperFileService;
         private readonly ICategoryService _categoryService;
+
+        /// <summary>用于取消上一次壁纸加载操作，防止并发加载导致界面空白</summary>
+        private CancellationTokenSource? _loadWallpapersCts;
 
         /// <summary>待删除的壁纸项</summary>
         [ObservableProperty]
@@ -381,39 +385,65 @@ namespace WallpaperEngine.ViewModels {
         /// </summary>
         public async Task LoadWallpapersAsync()
         {
+            // 取消上一次未完成的加载操作，防止并发加载导致界面空白
+            _loadWallpapersCts?.Cancel();
+            var cts = new CancellationTokenSource();
+            _loadWallpapersCts = cts;
+
             try {
-                var wallpapers = await Task.Run(() => LoadWallpapers());
+                // 在UI线程上捕获当前筛选状态，避免后台线程读取到变化中的值
+                string searchText = SearchText;
+                string categoryId = SelectedCategoryId;
+                bool hideAdult = HideAdultContent;
+
+                var wallpapers = await Task.Run(() => {
+                    cts.Token.ThrowIfCancellationRequested();
+                    return LoadWallpapers(searchText, categoryId, hideAdult);
+                }, cts.Token);
+
+                cts.Token.ThrowIfCancellationRequested();
+
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => {
+                    if (cts.Token.IsCancellationRequested) return;
+
                     Wallpapers.Clear();
                     if (wallpapers != null) {
                         foreach (var wallpaper in wallpapers) {
                             Wallpapers.Add(wallpaper);
                         }
                     }
+                    WallpapersView.Refresh();
                 });
+
+                if (cts.Token.IsCancellationRequested) return;
 
                 // 加载壁纸总数
                 await LoadTotalWallpaperCountAsync();
 
                 OnEventLoadWallpapersCompleted();
+            } catch (OperationCanceledException) {
+                // 加载被取消，忽略
             } catch (Exception ex) {
                 Log.Fatal($"加载壁纸列表失败: {ex.Message}");
             }
         }
 
         /// <summary>
-        /// 从数据库加载壁纸列表，根据当前搜索和筛选条件查询
+        /// 从数据库加载壁纸列表，使用传入的筛选条件查询
         /// </summary>
+        /// <param name="searchText">搜索文本</param>
+        /// <param name="categoryId">分类ID</param>
+        /// <param name="hideAdultContent">是否隐藏成人内容</param>
         /// <returns>壁纸项列表，加载失败时返回null</returns>
-        private async Task<List<WallpaperItem>> LoadWallpapers()
+        private async Task<List<WallpaperItem>> LoadWallpapers(string searchText, string categoryId, bool hideAdultContent)
         {
             List<WallpaperItem> wallpapers = new();
             try {
                 Log.Debug("LoadWallpapers from db start");
-                var results = _dbManager.SearchWallpapers(SearchText,
-                    SelectedCategoryId,
+                var results = _dbManager.SearchWallpapers(searchText,
+                    categoryId,
                     false,
-                    HideAdultContent);
+                    hideAdultContent);
                 Log.Debug("LoadWallpapers from db finish");
                 return results;
             } catch (Exception ex) {
