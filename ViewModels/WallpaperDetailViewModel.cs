@@ -355,6 +355,17 @@ namespace WallpaperEngine.ViewModels {
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
                 LoadCustomCategories();
+
+                // 分类重命名时，同步更新当前壁纸的分类显示
+                if (e.ChangeType == CategoryChangeType.Renamed && !string.IsNullOrEmpty(e.OldCategoryName) && !string.IsNullOrEmpty(e.CategoryName))
+                {
+                    if (CurrentWallpaper != null && CurrentWallpaper.Category == e.OldCategoryName)
+                    {
+                        CurrentWallpaper.Category = e.CategoryName;
+                        CurrentWallpaper.Project.Category = e.CategoryName;
+                        SelectedCategory = e.CategoryName;
+                    }
+                }
             });
         }
 
