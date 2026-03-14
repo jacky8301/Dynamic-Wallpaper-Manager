@@ -516,22 +516,6 @@ namespace WallpaperEngine.Data {
             } else {
                 Log.Warning("无法迁移旧收藏数据，因为Favorites表缺少WallpaperId列");
             }
-
-            // 更新现有收藏记录的WallpaperId（如果为空） - 已移除，因为Favorites表不再包含FolderPath列
-
-            // 迁移Favorites表：如果存在FolderPath列，则重建表以移除该列
-            bool hasFolderPathColumn = false;
-            command.CommandText = "PRAGMA table_info(Favorites)";
-            using (var reader = command.ExecuteReader()) {
-                while (reader.Read()) {
-                    var columnName = reader.GetString(1);
-                    if (columnName.Equals("FolderPath", StringComparison.OrdinalIgnoreCase)) {
-                        hasFolderPathColumn = true;
-                        break;
-                    }
-                }
-            }
-
             // 为WallpaperId创建索引
             try {
                 command.CommandText = "CREATE INDEX IF NOT EXISTS IX_Favorites_WallpaperId ON Favorites(WallpaperId)";
