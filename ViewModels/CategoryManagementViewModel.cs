@@ -5,7 +5,6 @@ using Serilog;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
@@ -186,16 +185,10 @@ namespace WallpaperEngine.ViewModels
 
                 try
                 {
-                    _dbManager.AddCategory(categoryName);
+                    await _categoryService.AddCategoryAsync(categoryName);
 
                     // 重新加载分类列表
                     await LoadCategoriesAsync();
-
-                    // 通知 MainViewModel 刷新分类列表
-                    RefreshMainViewModelCategories();
-
-                    // 通知 WallpaperDetailViewModel 刷新分类列表
-                    RefreshWallpaperDetailViewModelCategories();
                 }
                 catch (Exception ex)
                 {
@@ -235,16 +228,10 @@ namespace WallpaperEngine.ViewModels
 
                 try
                 {
-                    _dbManager.RenameCategory(categoryId, newName);
+                    await _categoryService.RenameCategoryAsync(categoryId, newName);
 
                     // 重新加载分类列表
                     await LoadCategoriesAsync();
-
-                    // 通知 MainViewModel 刷新分类列表
-                    RefreshMainViewModelCategories();
-
-                    // 通知 WallpaperDetailViewModel 刷新分类列表
-                    RefreshWallpaperDetailViewModelCategories();
                 }
                 catch (Exception ex)
                 {
@@ -282,16 +269,10 @@ namespace WallpaperEngine.ViewModels
             {
                 try
                 {
-                    _dbManager.DeleteCategory(categoryId);
+                    await _categoryService.DeleteCategoryAsync(categoryId);
 
                     // 重新加载分类列表
                     await LoadCategoriesAsync();
-
-                    // 通知 MainViewModel 刷新分类列表
-                    RefreshMainViewModelCategories();
-
-                    // 通知 WallpaperDetailViewModel 刷新分类列表
-                    RefreshWallpaperDetailViewModelCategories();
                 }
                 catch (Exception ex)
                 {
@@ -301,44 +282,5 @@ namespace WallpaperEngine.ViewModels
             }
         }
 
-        /// <summary>
-        /// 通知 MainViewModel 刷新分类列表
-        /// </summary>
-        private void RefreshMainViewModelCategories()
-        {
-            try
-            {
-                var mainVm = Ioc.Default.GetService<MainViewModel>();
-                if (mainVm != null)
-                {
-                    // 调用公共方法 RefreshCategoryList
-                    mainVm.RefreshCategoryList();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"通知 MainViewModel 刷新分类列表失败: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 通知 WallpaperDetailViewModel 刷新分类列表
-        /// </summary>
-        private void RefreshWallpaperDetailViewModelCategories()
-        {
-            try
-            {
-                var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
-                if (detailVm != null)
-                {
-                    // 调用公共方法 RefreshCategoryList
-                    detailVm.RefreshCategoryList();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning($"通知 WallpaperDetailViewModel 刷新分类列表失败: {ex.Message}");
-            }
-        }
     }
 }
