@@ -1254,7 +1254,7 @@ namespace WallpaperEngine.Data {
             using var reader = command.ExecuteReader();
             while (reader.Read()) {
                 var id = Convert.ToInt32(reader["Id"]);
-                var name = reader["Name"].ToString();
+                var name = reader["Name"].ToString() ?? string.Empty;
                 var isDefault = Convert.ToBoolean(reader["IsDefault"]);
                 var isProtected = CategoryConstants.IsProtectedCategory(name);
                 // 获取壁纸数量

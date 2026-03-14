@@ -36,18 +36,19 @@ namespace WallpaperEngine.Services
         /// <summary>
         /// 初始化分类服务
         /// </summary>
-        private async Task InitializeAsync()
+        private Task InitializeAsync()
         {
-            if (_isInitialized) return;
+            if (_isInitialized) return Task.CompletedTask;
 
             lock (_syncLock)
             {
-                if (_isInitialized) return;
+                if (_isInitialized) return Task.CompletedTask;
 
                 // 确保数据库中有默认分类
                 EnsureDefaultCategories();
                 _isInitialized = true;
             }
+            return Task.CompletedTask;
         }
 
         /// <summary>
