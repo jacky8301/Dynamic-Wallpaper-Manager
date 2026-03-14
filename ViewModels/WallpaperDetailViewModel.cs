@@ -366,6 +366,18 @@ namespace WallpaperEngine.ViewModels {
                         SelectedCategory = e.CategoryName;
                     }
                 }
+
+                // 分类删除时，将当前壁纸重置为"未分类"
+                if (e.ChangeType == CategoryChangeType.Deleted)
+                {
+                    if (CurrentWallpaper != null && CurrentWallpaper.CategoryId == e.CategoryId)
+                    {
+                        CurrentWallpaper.CategoryId = CategoryConstants.UNCATEGORIZED_ID;
+                        CurrentWallpaper.Category = "未分类";
+                        CurrentWallpaper.Project.Category = "未分类";
+                        SelectedCategory = "未分类";
+                    }
+                }
             });
         }
 

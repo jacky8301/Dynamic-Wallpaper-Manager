@@ -309,6 +309,10 @@ namespace WallpaperEngine.Services
             try
             {
                 var categoryName = existingCategory.Name;
+
+                // 删除前，先更新该分类下所有壁纸的 project.json 为"未分类"
+                await UpdateProjectJsonCategoryAsync(categoryId, "未分类");
+
                 _dbManager.DeleteCategory(categoryId);
 
                 // 清除缓存

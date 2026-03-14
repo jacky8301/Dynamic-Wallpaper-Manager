@@ -275,6 +275,21 @@ namespace WallpaperEngine.ViewModels {
                         }
                     }
                 }
+
+                // 分类删除时，将该分类下所有壁纸重置为"未分类"
+                if (e.ChangeType == CategoryChangeType.Deleted && !string.IsNullOrEmpty(e.CategoryName))
+                {
+                    foreach (var wallpaper in Wallpapers)
+                    {
+                        if (wallpaper.CategoryId == e.CategoryId)
+                        {
+                            wallpaper.CategoryId = CategoryConstants.UNCATEGORIZED_ID;
+                            wallpaper.Category = "未分类";
+                            wallpaper.Project.Category = "未分类";
+                        }
+                    }
+                    WallpapersView.Refresh();
+                }
             });
         }
 
