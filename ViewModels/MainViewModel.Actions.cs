@@ -612,10 +612,18 @@ namespace WallpaperEngine.ViewModels {
                     });
                 }
 
-                // 刷新合集页面（如果当前正在查看该合集）
+                // 同步合集页面的壁纸数量
                 var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
-                if (collectionVm?.SelectedCollection?.Id == collectionId) {
-                    collectionVm.LoadCollectionWallpapers();
+                if (collectionVm != null && addedCount > 0) {
+                    var collectionInVm = collectionVm.Collections.FirstOrDefault(c => c.Id == collectionId);
+                    if (collectionInVm != null) {
+                        collectionInVm.WallpaperCount += addedCount;
+                    }
+
+                    // 刷新合集页面的壁纸列表（如果当前正在查看该合集）
+                    if (collectionVm.SelectedCollection?.Id == collectionId) {
+                        collectionVm.LoadCollectionWallpapers();
+                    }
                 }
 
                 // 刷新壁纸详情页的合集信息（如果详情页已打开）
