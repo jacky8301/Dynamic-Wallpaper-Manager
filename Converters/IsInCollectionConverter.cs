@@ -17,10 +17,10 @@ namespace WallpaperEngine.Converters
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            Log.Information($"=== IsInCollectionConverter.Convert called ===");
+            Log.Information("=== IsInCollectionConverter.Convert called ===");
             if (values == null || values.Length < 2)
             {
-                Log.Error($"IsInCollectionConverter: values is null or too short, length: {values?.Length}");
+                Log.Error("IsInCollectionConverter: values is null or too short, length: {Length}", values?.Length);
                 return false;
             }
 
@@ -44,7 +44,7 @@ namespace WallpaperEngine.Converters
                         stringValue = value.ToString() ?? "null";
                     }
                 }
-                Log.Information($"  values[{i}] type: {typeName}, value: {stringValue}");
+                Log.Information("  values[{Index}] type: {TypeName}, value: {StringValue}", i, typeName, stringValue);
             }
 
             // 获取壁纸对象和合集ID
@@ -54,19 +54,19 @@ namespace WallpaperEngine.Converters
             // 处理DependencyProperty.UnsetValue
             if (wallpaperObj == System.Windows.DependencyProperty.UnsetValue)
             {
-                Log.Warning($"IsInCollectionConverter: wallpaperObj is UnsetValue");
+                Log.Warning("IsInCollectionConverter: wallpaperObj is UnsetValue");
                 wallpaperObj = null;
             }
 
             if (collectionIdObj == System.Windows.DependencyProperty.UnsetValue)
             {
-                Log.Warning($"IsInCollectionConverter: collectionIdObj is UnsetValue");
+                Log.Warning("IsInCollectionConverter: collectionIdObj is UnsetValue");
                 collectionIdObj = null;
             }
 
             if (wallpaperObj is not WallpaperItem wallpaper || collectionIdObj is not string collectionId)
             {
-                Log.Warning($"IsInCollectionConverter: Invalid parameter types. WallpaperItem: {wallpaperObj is WallpaperItem}, string: {collectionIdObj is string}");
+                Log.Warning("IsInCollectionConverter: Invalid parameter types. WallpaperItem: {IsWallpaperItem}, string: {IsString}", wallpaperObj is WallpaperItem, collectionIdObj is string);
                 return false;
             }
 
@@ -81,12 +81,12 @@ namespace WallpaperEngine.Converters
                 }
 
                 bool isInCollection = dbManager.IsInCollection(collectionId, wallpaper.Id);
-                Log.Information($"IsInCollectionConverter: Wallpaper {wallpaper.Project?.Title} in collection {collectionId}: {isInCollection}");
+                Log.Information("IsInCollectionConverter: Wallpaper {Title} in collection {CollectionId}: {IsInCollection}", wallpaper.Project?.Title, collectionId, isInCollection);
                 return isInCollection;
             }
             catch (Exception ex)
             {
-                Log.Error($"IsInCollectionConverter: Error checking collection: {ex.Message}");
+                Log.Error(ex, "IsInCollectionConverter: Error checking collection");
                 return false;
             }
         }
