@@ -21,9 +21,9 @@ namespace WallpaperEngine.ViewModels {
             if (obj is not WallpaperItem wallpaper) return false;
 
             bool matchesSearch = string.IsNullOrEmpty(SearchText) ||
-                               wallpaper.Project.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                               wallpaper.Project.Description.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                               wallpaper.Project.Tags.Any(t => t.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+                               (wallpaper.Project.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true) ||
+                               (wallpaper.Project.Description?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) == true) ||
+                               (wallpaper.Project.Tags?.Any(t => t.Contains(SearchText, StringComparison.OrdinalIgnoreCase)) == true);
 
             bool matchesCategory = SelectedCategoryId == CategoryConstants.ALL_CATEGORIES_ID || wallpaper.CategoryId == SelectedCategoryId;
             bool matchesAdultFilter = !HideAdultContent || (wallpaper.Project.ContentRating != "Mature" && wallpaper.Project.ContentRating != "Questionable");

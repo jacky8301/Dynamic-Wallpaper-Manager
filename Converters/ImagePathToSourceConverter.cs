@@ -22,17 +22,17 @@ namespace WallpaperEngine.Converters {
                     Log.Warning("Image path is null, empty, or does not exist: {ImagePath}. Using default image.", value);
                     return GetDefaultImage();
                 }
-                if (ImageCache._cache.TryGetValue(imagePath, out var cachedImage)) {
+                if (ImageCache.TryGetValue(imagePath, out var cachedImage)) {
                     return cachedImage;
                 }
                 // 磁盘缓存命中 → 存入内存缓存 → 返回
                 var diskCached = ThumbnailDiskCache.TryLoad(imagePath);
                 if (diskCached != null) {
-                    ImageCache._cache[imagePath] = diskCached;
+                    ImageCache.Set(imagePath, diskCached);
                     return diskCached;
                 }
                 var bitmap = ImageLoader.LoadImage(imagePath);
-                ImageCache._cache[imagePath] = bitmap;
+                ImageCache.Set(imagePath, bitmap);
                 // 异步写入磁盘缓存（不阻塞返回）
                 if (bitmap != null) {
                     var bitmapToCache = bitmap;
@@ -47,11 +47,11 @@ namespace WallpaperEngine.Converters {
 
         private static object GetDefaultImage()
         {
-            if (ImageCache._cache.TryGetValue(_defaultPath, out var cachedDefault)) {
+            if (ImageCache.TryGetValue(_defaultPath, out var cachedDefault)) {
                 return cachedDefault;
             }
             var defaulBitmap = ImageLoader.LoadImage(_defaultPath);
-            ImageCache._cache[_defaultPath] = defaulBitmap;
+            ImageCache.Set(_defaultPath, defaulBitmap);
             return defaulBitmap;
         }
 

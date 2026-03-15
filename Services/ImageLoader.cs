@@ -18,18 +18,18 @@ namespace WallpaperEngine.Services {
             try {
                 return LoadImageWithUri(filePath);
             } catch (Exception ex) {
-                Log.Warning($"加载图片失败 {filePath}: {ex.Message}");
+                Log.Warning(ex, "加载图片失败 {FilePath}", filePath);
                 return null;
             }
         }
         /// <summary>
-        /// 通过 URI 方式加载图片，设置解码宽度为 200 像素以节省内存，加载后冻结以释放文件锁
+        /// 通过 URI 方式加载图片，设置解码宽度为 200 像素以节省���存，加载后冻结以释放文件锁
         /// </summary>
         /// <param name="filePath">图片文件的绝对路径</param>
         /// <returns>加载成功返回冻结的 BitmapImage，文件不存在时返回 null</returns>
         public static BitmapImage LoadImageWithUri(string filePath)
         {
-            Log.Debug("LoadImageWithUri Start, filePath:" + filePath);
+            Log.Debug("LoadImageWithUri Start, filePath: {FilePath}", filePath);
             if (!File.Exists(filePath)) { return null; }
             BitmapImage bitmap = new BitmapImage();
             bitmap.BeginInit();
@@ -39,7 +39,7 @@ namespace WallpaperEngine.Services {
             bitmap.UriSource = new Uri(filePath, UriKind.Absolute);
             bitmap.EndInit();
             bitmap.Freeze();  // 冻结可确保文件被释放
-            Log.Debug("LoadImageWithUri finish, filePath:" + filePath);
+            Log.Debug("LoadImageWithUri finish, filePath: {FilePath}", filePath);
             return bitmap;
         }
         /// <summary>
@@ -56,7 +56,7 @@ namespace WallpaperEngine.Services {
                 byte[] imageData = File.ReadAllBytes(filePath);
                 return LoadImageToBytes(imageData);
             } catch (Exception ex) {
-                Log.Warning($"加载图片失败 {filePath}: {ex.Message}");
+                Log.Warning(ex, "加载图片失败 {FilePath}", filePath);
                 return null;
             }
         }

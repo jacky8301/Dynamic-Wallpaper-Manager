@@ -14,21 +14,29 @@ namespace WallpaperEngine.Views {
     /// <summary>
     /// 壁纸预览窗口，支持视频播放和图片预览，包含播放控制和进度条功能
     /// </summary>
-    public partial class PreviewWindow : Window {
+    public partial class PreviewWindow : Window, System.ComponentModel.INotifyPropertyChanged {
         private readonly WallpaperItem _wallpaper;
-        private readonly Window _parentWindow;
         private DispatcherTimer? _progressTimer;
         private bool _isDraggingProgress;
         private bool _isUpdatingProgress;
+        private ImageSource _previewImage;
+
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
         public string WallpaperTitle => _wallpaper?.Project.Title ?? "壁纸预览";
-        public ImageSource PreviewImage { get; private set; }
+        public ImageSource PreviewImage {
+            get => _previewImage;
+            private set {
+                _previewImage = value;
+                PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(PreviewImage)));
+            }
+        }
 
         public PreviewWindow(WallpaperItem wallpaper)
         {
             _wallpaper = wallpaper;
             InitializeComponent();
-            _parentWindow = System.Windows.Application.Current.MainWindow;
+            DataContext = this;
             _ = LoadPreview();
         }
         // 窗口按钮事件处理
@@ -172,8 +180,9 @@ namespace WallpaperEngine.Views {
 
         private void ApplyButton_Click(object sender, RoutedEventArgs e)
         {
-            var vm = _parentWindow.DataContext as MainViewModel;
-            vm.ApplyWallpaperCommand.Execute(_wallpaper);
+            var mainWindow = System.Windows.Application.Current.MainWindow;
+            var vm = mainWindow?.DataContext as MainViewModel;
+            vm?.ApplyWallpaperCommand.Execute(_wallpaper);
         }
 
         private void PreviewVideo_MediaOpened(object sender, RoutedEventArgs e)

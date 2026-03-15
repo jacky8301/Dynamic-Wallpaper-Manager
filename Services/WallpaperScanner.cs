@@ -12,12 +12,12 @@ namespace WallpaperEngine.Services {
     public class WallpaperScanner {
         private readonly DatabaseManager _dbManager;
         private CancellationTokenSource _cancellationTokenSource;
-
+        private readonly object _ctsLock = new object();
 
         /// <summary>
         /// 初始化壁纸扫描器
         /// </summary>
-        /// <param name="dbManager">数据库管理器实例，用于持久化壁纸数据</param>
+        /// <param name="dbManager">数据库管理器实例，用于���久化壁纸数据</param>
         public WallpaperScanner(DatabaseManager dbManager)
         {
             _dbManager = dbManager;
@@ -30,7 +30,9 @@ namespace WallpaperEngine.Services {
         public void CancelScan()
         {
             Log.Information("取消壁纸扫描");
-            _cancellationTokenSource.Cancel();
+            lock (_ctsLock) {
+                _cancellationTokenSource.Cancel();
+            }
         }
 
         /// <summary>
@@ -49,9 +51,11 @@ namespace WallpaperEngine.Services {
                 throw new DirectoryNotFoundException($"目录不存在: {rootFolderPath}");
             }
 
-            if (_cancellationTokenSource.IsCancellationRequested) {
-                _cancellationTokenSource.Dispose();
-                _cancellationTokenSource = new CancellationTokenSource();
+            lock (_ctsLock) {
+                if (_cancellationTokenSource.IsCancellationRequested) {
+                    _cancellationTokenSource.Dispose();
+                    _cancellationTokenSource = new CancellationTokenSource();
+                }
             }
 
             var cancellationToken = _cancellationTokenSource.Token;
@@ -100,7 +104,7 @@ namespace WallpaperEngine.Services {
                                 SkippedCount = skippedCount
                             });
                         } catch (Exception ex) {
-                            Log.Warning($"处理壁纸文件夹失败 {folder}: {ex.Message}");
+                            Log.Warning("处理壁纸文件夹失败 {Folder}: {ErrorMessage}", folder, ex.Message);
                         }
                     }
 
@@ -202,12 +206,12 @@ namespace WallpaperEngine.Services {
                     // 将分类名称转换为ID
                     var categoryId = _dbManager.GetCategoryIdByName(project.Category);
                     wallpaperItem.CategoryId = categoryId != null ? categoryId : CategoryConstants.UNCATEGORIZED_ID;
-                    wallpaperItem.Category = project.Category;
+                    wallpaperItem.Category = categoryId != null ? project.Category : "未分类";
                 }
                 _dbManager.SaveWallpaper(wallpaperItem);
                 return isNew ? ScanResultType.New : ScanResultType.Updated;
             } catch (Exception ex) {
-                Log.Fatal($"Error processing folder {folderPath}: {ex.Message}");
+                Log.Error("Error processing folder {FolderPath}: {Message}", folderPath, ex.Message);
                 return ScanResultType.Skipped;
             }
         }

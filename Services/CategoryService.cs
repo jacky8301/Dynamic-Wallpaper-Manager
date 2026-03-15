@@ -19,7 +19,7 @@ namespace WallpaperEngine.Services
     {
         private readonly DatabaseManager _dbManager;
         private List<CategoryItem> _cachedCategories = new();
-        private bool _isInitialized = false;
+        private volatile bool _isInitialized = false;
         private readonly object _syncLock = new object();
 
         /// <summary>
@@ -74,7 +74,7 @@ namespace WallpaperEngine.Services
             }
             catch (Exception ex)
             {
-                Log.Error($"确保默认分类时出错: {ex.Message}");
+                Log.Error(ex, "确保默认分类时出错");
             }
         }
 
@@ -183,7 +183,7 @@ namespace WallpaperEngine.Services
             }
             catch (Exception ex)
             {
-                Log.Error($"添加分类失败: {ex.Message}");
+                Log.Error(ex, "添加分类失败");
                 throw;
             }
         }
@@ -240,7 +240,7 @@ namespace WallpaperEngine.Services
             }
             catch (Exception ex)
             {
-                Log.Error($"重命名分类失败: {ex.Message}");
+                Log.Error(ex, "重命名分类失败");
                 throw;
             }
         }
@@ -330,7 +330,7 @@ namespace WallpaperEngine.Services
             }
             catch (Exception ex)
             {
-                Log.Error($"删除分类失败: {ex.Message}");
+                Log.Error(ex, "删除分类失败");
                 throw;
             }
         }

@@ -135,7 +135,7 @@ namespace WallpaperEngine.ViewModels {
                     OnPropertyChanged(nameof(WallpaperCount));
                 });
             } catch (Exception ex) {
-                Log.Warning($"加载收藏壁纸列表失败: {ex.Message}");
+                Log.Warning(ex, "加载收藏壁纸列表失败");
             }
         }
 
@@ -431,7 +431,7 @@ namespace WallpaperEngine.ViewModels {
             try {
                 _dbManager.ToggleFavorite(wallpaper.Id, wallpaper.IsFavorite);
             } catch (Exception ex) {
-                Log.Warning($"更新收藏状态失败: {ex.Message}");
+                Log.Warning(ex, "更新收藏状态失败");
                 wallpaper.IsFavorite = !wallpaper.IsFavorite;
                 return;
             }
@@ -677,7 +677,7 @@ namespace WallpaperEngine.ViewModels {
                     collectionVm.LoadCollectionWallpapers();
                 }
             } catch (Exception ex) {
-                Log.Warning($"添加壁纸到合集失败: {ex.Message}");
+                Log.Warning(ex, "添加壁纸到合集失败");
             }
         }
 
@@ -765,7 +765,7 @@ namespace WallpaperEngine.ViewModels {
             }
             catch (Exception ex)
             {
-                Log.Warning($"添加壁纸到分类失败: {ex.Message}");
+                Log.Warning(ex, "添加壁纸到分类失败");
             }
         }
 
@@ -931,7 +931,7 @@ namespace WallpaperEngine.ViewModels {
                 var matchedCategory = Categories.FirstOrDefault(c => c.Id == savedCategoryId);
                 SelectedCategory = matchedCategory;
             } catch (Exception ex) {
-                Log.Error($"加载分类失败: {ex.Message}");
+                Log.Error(ex, "加载分类失败");
             }
         }
 
@@ -949,7 +949,7 @@ namespace WallpaperEngine.ViewModels {
                     Collections.Add(collection);
                 }
             } catch (Exception ex) {
-                Log.Warning($"加载合集列表失败: {ex.Message}");
+                Log.Warning(ex, "加载合集列表失败");
             }
         }
 
@@ -1015,7 +1015,7 @@ namespace WallpaperEngine.ViewModels {
             }
             catch (Exception ex)
             {
-                Log.Error($"处理新增分类事件失败: {ex.Message}");
+                Log.Error(ex, "处理新增分类事件失败");
             }
         }
 

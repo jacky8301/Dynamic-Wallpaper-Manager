@@ -140,7 +140,7 @@ namespace WallpaperEngine.Models {
                 return Directory.GetFiles(FolderPath, "*.*", SearchOption.AllDirectories)
                     .Sum(file => new FileInfo(file).Length);
             } catch (Exception ex) {
-                Log.Warning($"计算文件夹大小失败 {FolderPath}: {ex.Message}");
+                Log.Warning(ex, "计算文件夹大小失败 {FolderPath}", FolderPath);
                 return 0;
             }
         }
@@ -250,7 +250,7 @@ namespace WallpaperEngine.Models {
                         IdentifyContentFile();
                     });
                 } catch (Exception ex) {
-                    Log.Error($"加载文件列表失败: {ex.Message}");
+                    Log.Error(ex, "加载文件列表失败");
                 }
             });
         }

@@ -57,7 +57,7 @@ namespace WallpaperEngine.ViewModels {
                     SelectedCollection = Collections.First();
                 }
             } catch (Exception ex) {
-                Log.Error($"加载合集列表失败: {ex.Message}");
+                Log.Error(ex, "加载合集列表失败");
             }
         }
 
@@ -84,7 +84,7 @@ namespace WallpaperEngine.ViewModels {
                     }
                 }
             } catch (Exception ex) {
-                Log.Error($"加载合集壁纸失败: {ex.Message}");
+                Log.Error(ex, "加载合集壁纸失败");
             }
         }
 
@@ -104,7 +104,7 @@ namespace WallpaperEngine.ViewModels {
                     var mainVm = Ioc.Default.GetService<MainViewModel>();
                     mainVm?.RefreshCollections();
                 } catch (Exception ex) {
-                    Log.Error($"创建合集失败: {ex.Message}");
+                    Log.Error(ex, "创建合集失败");
                 }
             }
         }
@@ -126,7 +126,7 @@ namespace WallpaperEngine.ViewModels {
                     var mainVm = Ioc.Default.GetService<MainViewModel>();
                     mainVm?.RefreshCollections();
                 } catch (Exception ex) {
-                    Log.Error($"重命名合集失败: {ex.Message}");
+                    Log.Error(ex, "重命名合集失败");
                 }
             }
         }
@@ -152,7 +152,7 @@ namespace WallpaperEngine.ViewModels {
                     var mainVm = Ioc.Default.GetService<MainViewModel>();
                     mainVm?.RefreshCollections();
                 } catch (Exception ex) {
-                    Log.Error($"删除合集失败: {ex.Message}");
+                    Log.Error(ex, "删除合集失败");
                 }
             }
         }
@@ -171,7 +171,7 @@ namespace WallpaperEngine.ViewModels {
                 CollectionWallpapers.Remove(wallpaper);
                 SelectedCollection.WallpaperCount--;
             } catch (Exception ex) {
-                Log.Error($"从合集移除壁纸失败: {ex.Message}");
+                Log.Error(ex, "从合集移除壁纸失败");
             }
         }
 

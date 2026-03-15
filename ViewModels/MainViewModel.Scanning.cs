@@ -54,7 +54,7 @@ namespace WallpaperEngine.ViewModels {
                     scanPath = lastScan.ScanPath;
                     await DoScanWallpapers(scanPath, true);
                 } else {
-                    var dialog = new FolderBrowserDialog {
+                    using var dialog = new FolderBrowserDialog {
                         Description = "选择壁纸文件夹根目录",
                         ShowNewFolderButton = false,
                         RootFolder = Environment.SpecialFolder.MyComputer,
@@ -137,7 +137,7 @@ namespace WallpaperEngine.ViewModels {
         {
             ScanStatus = "扫描过程中发生错误";
 
-            Log.Error($"扫描错误: {ex.Message}");
+            Log.Error(ex, "扫描错误");
 
             var errorMessage = ex switch {
                 UnauthorizedAccessException => "没有权限访问指定的文件夹。请以管理员身份运行或选择其他文件夹。",

@@ -235,7 +235,7 @@ namespace WallpaperEngine.Data {
             using var transaction = m_connection.BeginTransaction();
             try {
                 // 1. 检查是否需要迁移Categories表（检查是否有Id列）
-                bool needsCategoryMigration = false;
+                bool needsCategoryMigration = true;
                 using (var checkCmd = m_connection.CreateCommand()) {
                     checkCmd.CommandText = "PRAGMA table_info(Categories)";
                     using var reader = checkCmd.ExecuteReader();
@@ -245,8 +245,6 @@ namespace WallpaperEngine.Data {
                             break;
                         }
                     }
-                    // 如果表不存在或没有Id列，需要迁移
-                    needsCategoryMigration = true;
                 }
 
                 if (needsCategoryMigration) {
@@ -745,8 +743,6 @@ namespace WallpaperEngine.Data {
                 Log.Warning("创建CollectionItems.WallpaperId索引失败: {Error}", ex.Message);
             }
 
-            command.ExecuteNonQuery();
-
             Log.Information("数据库初始化完成");
         }
         /// <summary>
@@ -780,7 +776,7 @@ namespace WallpaperEngine.Data {
                         fileSize = fileInfo.Length;
                     }
                 } catch (Exception ex) {
-                    Log.Warning($"获取文件信息失败 {wallpaper.FolderPath}: {ex.Message}");
+                    Log.Warning("获取文件信息失败 {FolderPath}: {Error}", wallpaper.FolderPath, ex.Message);
                     lastModified = DateTime.Now;
                 }
 
@@ -821,6 +817,8 @@ namespace WallpaperEngine.Data {
         public List<WallpaperItem> SearchWallpapers(string searchTerm, string categoryId = "", bool favoritesOnly = false, bool hideAdultContent = false)
         {
             Log.Debug("搜索壁纸, 关键词: {SearchTerm}, 分类ID: {CategoryId}, 仅收藏: {FavoritesOnly}, 隐藏成人内容: {HideAdultContent}", searchTerm, categoryId, favoritesOnly, hideAdultContent);
+            lock (m_lock) {
+            EnsureConnectionOpen();
             var wallpapers = new List<WallpaperItem>();
             using var command = m_connection.CreateCommand();
 
@@ -854,6 +852,7 @@ namespace WallpaperEngine.Data {
             }
 
             return wallpapers;
+            }
         }
 
         /// <summary>
@@ -1104,13 +1103,13 @@ namespace WallpaperEngine.Data {
             INSERT INTO ScanHistory
             (ScanPath, LastScanTime, TotalFolders, NewFound, DurationMs, Status)
             VALUES
-            (@scanPath, @lastScanTime, @newFound, @updated, @skipped, @status)";
+            (@scanPath, @lastScanTime, @totalFolders, @newFound, @durationMs, @status)";
 
             command.Parameters.AddWithValue("@scanPath", scanPath);
             command.Parameters.AddWithValue("@lastScanTime", DateTime.Now.ToString("O"));
+            command.Parameters.AddWithValue("@totalFolders", newFound + updated + skipped);
             command.Parameters.AddWithValue("@newFound", newFound);
-            command.Parameters.AddWithValue("@updated", updated);
-            command.Parameters.AddWithValue("@skipped", skipped);
+            command.Parameters.AddWithValue("@durationMs", 0);
             command.Parameters.AddWithValue("@status", "Success");
 
             command.ExecuteNonQuery();

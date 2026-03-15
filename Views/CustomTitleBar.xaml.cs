@@ -42,11 +42,12 @@ namespace WallpaperEngine.Views {
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             var window = FindParentWindow();
+            if (window == null) return;
 
             // 隐藏窗口（关键步骤，使其不显示在任务栏）
-            window?.Hide(); // 隐藏窗口
+            window.Hide(); // 隐藏窗口
             // 将窗口最小化
-            window.WindowState = WindowState.Minimized;                                     
+            window.WindowState = WindowState.Minimized;
         }
     }
 }

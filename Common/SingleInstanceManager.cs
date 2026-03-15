@@ -105,23 +105,29 @@ namespace WallpaperEngine.Common {
                     pipeClient.Flush();
                     return true;
                 }
-            } catch {
-                Log.Warning("发送参数到第一个实例失败");
+            } catch (Exception ex) {
+                Log.Warning("发送参数到第一个实例失败: {Error}", ex.Message);
                 return false;
             }
         }
+
+        private bool _disposed = false;
 
         /// <summary>
         /// 释放 Mutex、管道及取消令牌等资源
         /// </summary>
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
+
             _cancellationTokenSource?.Cancel();
             _pipeServer?.Dispose();
             if (IsFirstInstance) {
-                _mutex?.ReleaseMutex();
+                try { _mutex?.ReleaseMutex(); } catch (ApplicationException) { }
                 _mutex?.Dispose();
             }
+            _cancellationTokenSource?.Dispose();
         }
     }
 }

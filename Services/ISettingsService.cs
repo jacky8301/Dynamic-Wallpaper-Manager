@@ -1,4 +1,6 @@
-﻿/// <summary>
+﻿using WallpaperEngine.Models;
+
+/// <summary>
 /// 应用程序设置服务接口，提供设置的加载、保存和验证功能
 /// </summary>
 public interface ISettingsService

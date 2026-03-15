@@ -23,7 +23,7 @@ namespace WallpaperEngine.Converters
         {
             if (d is CurrentWallpaperProxy proxy && e.NewValue is WallpaperItem wallpaper)
             {
-                Log.Information($"CurrentWallpaperProxy: Wallpaper set to {wallpaper.Project?.Title}");
+                Log.Information("CurrentWallpaperProxy: Wallpaper set to {Title}", wallpaper.Project?.Title);
             }
         }
 

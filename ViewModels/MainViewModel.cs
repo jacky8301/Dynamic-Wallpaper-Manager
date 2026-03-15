@@ -17,7 +17,7 @@ namespace WallpaperEngine.ViewModels {
     /// </summary>
     public partial class MainViewModel : ObservableObject {
         /// <summary>数据库管理器</summary>
-        public readonly DatabaseManager _dbManager;
+        private readonly DatabaseManager _dbManager;
         private readonly WallpaperScanner _scanner;
         private readonly PreviewService _previewService;
         private readonly ISettingsService _settingsService;
@@ -217,7 +217,7 @@ namespace WallpaperEngine.ViewModels {
                 var matchedCategory = Categories.FirstOrDefault(c => c.Id == savedCategoryId);
                 SelectedCategory = matchedCategory;
             } catch (Exception ex) {
-                Log.Error($"加载分类失败: {ex.Message}");
+                Log.Error(ex, "加载分类失败");
             }
         }
 
@@ -259,7 +259,7 @@ namespace WallpaperEngine.ViewModels {
                     Collections.Add(collection);
                 }
             } catch (Exception ex) {
-                Log.Warning($"加载合集列表失败: {ex.Message}");
+                Log.Warning(ex, "加载合集列表失败");
             }
         }
 
@@ -352,7 +352,7 @@ namespace WallpaperEngine.ViewModels {
             }
             catch (Exception ex)
             {
-                Log.Error($"处理新增分类事件失败: {ex.Message}");
+                Log.Error(ex, "处理新增分类事件失败");
             }
         }
 
@@ -381,7 +381,9 @@ namespace WallpaperEngine.ViewModels {
         public async Task LoadWallpapersAsync()
         {
             // 取消上一次未完成的加载操作，防止并发加载导致界面空白
-            _loadWallpapersCts?.Cancel();
+            var oldCts = _loadWallpapersCts;
+            oldCts?.Cancel();
+            oldCts?.Dispose();
             var cts = new CancellationTokenSource();
             _loadWallpapersCts = cts;
 
@@ -426,7 +428,7 @@ namespace WallpaperEngine.ViewModels {
             } catch (OperationCanceledException) {
                 // 加载被取消，忽略
             } catch (Exception ex) {
-                Log.Fatal($"加载壁纸列表失败: {ex.Message}");
+                Log.Error(ex, "加载壁纸列表失败");
             }
         }
 
@@ -472,7 +474,7 @@ namespace WallpaperEngine.ViewModels {
             }
             catch (Exception ex)
             {
-                Log.Warning($"加载壁纸总数失败: {ex.Message}");
+                Log.Warning(ex, "加载壁纸总数失败");
                 // 不设置值，保持默认0
             }
         }
@@ -484,11 +486,11 @@ namespace WallpaperEngine.ViewModels {
         /// <returns>格式化后的文件大小字符串</returns>
         private string FormatFileSize(long bytes)
         {
-            string[] suffixes = { "B", "KB", "MB", "GB" };
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB" };
             int counter = 0;
             decimal number = bytes;
 
-            while (Math.Round(number / 1024) >= 1) {
+            while (counter < suffixes.Length - 1 && Math.Round(number / 1024) >= 1) {
                 number /= 1024;
                 counter++;
             }

@@ -246,7 +246,7 @@ namespace WallpaperEngine.ViewModels {
                 };
                 Process.Start(startInfo)?.Dispose();
             } else {
-                // 处理错误
+                Log.Warning("无法应用壁纸: 工具路径或project.json不存在. ToolPath={ToolPath}, ProjectJson={ProjectJson}", toolPath, projectJsonPath);
             }
         }
 
@@ -313,7 +313,7 @@ namespace WallpaperEngine.ViewModels {
                 _dbManager.ToggleFavorite(wallpaper.Id, wallpaper.IsFavorite);
                 Log.Information("数据库更新成功");
             } catch (Exception ex) {
-                Log.Warning($"更新收藏状态失败: {ex.Message}");
+                Log.Warning(ex, "更新收藏状态失败");
                 wallpaper.IsFavorite = !wallpaper.IsFavorite;
                 return;
             }
@@ -455,13 +455,13 @@ namespace WallpaperEngine.ViewModels {
         [RelayCommand]
         private async Task AddToSpecificCollection(object parameter)
         {
-            Log.Information($"=== AddToSpecificCollection called ===");
-            Log.Information($"  parameter type: {parameter?.GetType().Name ?? "null"}");
+            Log.Information("=== AddToSpecificCollection called ===");
+            Log.Information("  parameter type: {ParameterType}", parameter?.GetType().Name ?? "null");
 
             // 检查是否为DependencyProperty.UnsetValue
             if (parameter == System.Windows.DependencyProperty.UnsetValue)
             {
-                Log.Error($"AddToSpecificCollection: parameter is DependencyProperty.UnsetValue");
+                Log.Error("AddToSpecificCollection: parameter is DependencyProperty.UnsetValue");
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                     Message = "参数未设置，请检查绑定",
                     Title = "错误",
@@ -473,7 +473,7 @@ namespace WallpaperEngine.ViewModels {
 
             if (parameter is object[] argsArray)
             {
-                Log.Information($"  parameter is object[] with length {argsArray.Length}");
+                Log.Information("  parameter is object[] with length {Length}", argsArray.Length);
                 for (int i = 0; i < argsArray.Length; i++)
                 {
                     var arg = argsArray[i];
@@ -493,13 +493,13 @@ namespace WallpaperEngine.ViewModels {
                             stringValue = arg.ToString() ?? "null";
                         }
                     }
-                    Log.Information($"    args[{i}] type: {typeName}, value: {stringValue}");
+                    Log.Information("    args[{Index}] type: {TypeName}, value: {Value}", i, typeName, stringValue);
                 }
             }
 
             if (parameter is not object[] args || args.Length != 2)
             {
-                Log.Warning($"AddToSpecificCollection: Invalid parameter format, parameter is {parameter?.GetType().Name}");
+                Log.Warning("AddToSpecificCollection: Invalid parameter format, parameter is {TypeName}", parameter?.GetType().Name);
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                     Message = "参数格式错误",
                     Title = "错误",
@@ -510,7 +510,7 @@ namespace WallpaperEngine.ViewModels {
             }
             if (args[1] is not string collectionId)
             {
-                Log.Warning($"AddToSpecificCollection: args[1] is string: {args[1] is string}");
+                Log.Warning("AddToSpecificCollection: args[1] is string: {IsString}", args[1] is string);
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                     Message = "参数类型错误",
                     Title = "错误",
@@ -525,16 +525,16 @@ namespace WallpaperEngine.ViewModels {
             if (SelectedWallpapers.Count > 0)
             {
                 wallpapersToAdd.AddRange(SelectedWallpapers);
-                Log.Information($"AddToSpecificCollection: Using {SelectedWallpapers.Count} selected wallpapers");
+                Log.Information("AddToSpecificCollection: Using {Count} selected wallpapers", SelectedWallpapers.Count);
             }
             else if (args[0] is WallpaperItem wp)
             {
                 wallpapersToAdd.Add(wp);
-                Log.Information($"AddToSpecificCollection: Using parameter wallpaper");
+                Log.Information("AddToSpecificCollection: Using parameter wallpaper");
             }
             else
             {
-                Log.Warning($"AddToSpecificCollection: args[0] is WallpaperItem: {args[0] is WallpaperItem}");
+                Log.Warning("AddToSpecificCollection: args[0] is WallpaperItem: {IsWallpaper}", args[0] is WallpaperItem);
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                     Message = "参数类型错误",
                     Title = "错误",
@@ -546,7 +546,7 @@ namespace WallpaperEngine.ViewModels {
 
             if (wallpapersToAdd.Count == 0)
             {
-                Log.Warning($"AddToSpecificCollection: No wallpapers to add");
+                Log.Warning("AddToSpecificCollection: No wallpapers to add");
                 return;
             }
 
@@ -554,7 +554,7 @@ namespace WallpaperEngine.ViewModels {
                 var collection = Collections.FirstOrDefault(c => c.Id == collectionId);
                 if (collection == null)
                 {
-                    Log.Warning($"AddToSpecificCollection: Collection not found with ID {collectionId}");
+                    Log.Warning("AddToSpecificCollection: Collection not found with ID {CollectionId}", collectionId);
                     await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                         Message = "合集不存在",
                         Title = "错误",
@@ -576,7 +576,7 @@ namespace WallpaperEngine.ViewModels {
                     _dbManager.AddToCollection(collectionId, wallpaper.Id);
                     addedCount++;
                     collection.WallpaperCount++;
-                    Log.Information($"成功将壁纸{wallpaper.Project?.Title} 添加到合集{collection.Name}");
+                    Log.Information("成功将壁纸 {Title} 添加到合集 {CollectionName}", wallpaper.Project?.Title, collection.Name);
                 }
 
                 // 显示成功提示
@@ -631,7 +631,7 @@ namespace WallpaperEngine.ViewModels {
                     }
                 }
             } catch (Exception ex) {
-                Log.Warning($"添加壁纸到合集失败: {ex.Message}");
+                Log.Warning(ex, "添加壁纸到合集失败");
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                     Message = $"添加壁纸到合集失败: {ex.Message}",
                     Title = "错误",
@@ -750,7 +750,7 @@ namespace WallpaperEngine.ViewModels {
             }
             catch (Exception ex)
             {
-                Log.Warning($"添加壁纸到分类失败: {ex.Message}");
+                Log.Warning(ex, "添加壁纸到分类失败");
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                     Message = $"添加壁纸到分类失败: {ex.Message}",
                     Title = "错误",
@@ -810,7 +810,7 @@ namespace WallpaperEngine.ViewModels {
                         }
                     }
                 } catch (Exception ex) {
-                    Log.Warning($"添加壁纸到合集失败: {ex.Message}");
+                    Log.Warning("添加壁纸到合集失败: {Error}", ex.Message);
                 }
             }
         }
@@ -856,8 +856,10 @@ namespace WallpaperEngine.ViewModels {
                         Categories[index] = categoryItem; // 重新设置以触发通知
                     }
 
-                    // 更新内存中壁纸的分类ID（保持不变，只是名称变了）
-                    // 不需要更新Wallpapers的CategoryId，因为ID没变
+                    // 更新内存中壁纸的分类显示名称
+                    foreach (var w in Wallpapers.Where(w => w.CategoryId == categoryId)) {
+                        w.Category = newName;
+                    }
 
                     // 如果当前选中的是这个分类，更新选中状态
                     if (SelectedCategoryId == categoryId)
@@ -875,7 +877,7 @@ namespace WallpaperEngine.ViewModels {
                     // 重新加载分类列表以确保一致性
                     LoadCustomCategories();
                 } catch (Exception ex) {
-                    Log.Warning($"重命名分类失败: {ex.Message}");
+                    Log.Warning("重命名分类失败: {Error}", ex.Message);
                 }
             }
         }
@@ -913,9 +915,10 @@ namespace WallpaperEngine.ViewModels {
                         Categories.Remove(categoryItem);
                     }
 
-                    // 更新内存中壁纸的分类ID为"未分类" (ID = 1)
+                    // 更新内存中壁纸的分类ID和显示名称为"未分类"
                     foreach (var w in Wallpapers.Where(w => w.CategoryId == categoryId)) {
                         w.CategoryId = CategoryConstants.UNCATEGORIZED_ID;
+                        w.Category = "未分类";
                     }
 
                     // 如果当前选中的是这个分类，切换到"所有分类" (ID = 0)
@@ -933,7 +936,7 @@ namespace WallpaperEngine.ViewModels {
                     // 重新加载分类列表以确保一致性
                     LoadCustomCategories();
                 } catch (Exception ex) {
-                    Log.Warning($"删除分类失败: {ex.Message}");
+                    Log.Warning(ex, "删除分类失败");
                 }
             }
         }

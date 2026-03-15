@@ -134,7 +134,7 @@
                             <StackPanel Margin="10,0" Orientation="Horizontal">
                                 <TextBlock
                                     FontWeight="Bold"
-                                    Foreground="{Binding IsScanning}"
+                                    Foreground="#F57F17"
                                     Text="{Binding ScanStatus}" />
                                 <ProgressBar
                                     Width="200"

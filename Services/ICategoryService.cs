@@ -95,5 +95,10 @@ namespace WallpaperEngine.Services
         /// <param name="categoryId">分类ID</param>
         /// <returns>是否有效</returns>
         Task<bool> IsValidCategoryIdAsync(string categoryId);
+
+        /// <summary>
+        /// 触发分类统计更新事件
+        /// </summary>
+        void NotifyStatsUpdated();
     }
 }

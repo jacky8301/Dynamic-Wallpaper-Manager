@@ -172,7 +172,7 @@ namespace WallpaperEngine.ViewModels {
             }
             catch (Exception ex)
             {
-                Log.Warning($"加载壁纸合集失败: {ex.Message}");
+                Log.Warning(ex, "加载壁纸合集失败");
                 ShowCollectionsSection = false;
             }
         }
@@ -209,7 +209,7 @@ namespace WallpaperEngine.ViewModels {
             }
             catch (Exception ex)
             {
-                Log.Error($"导航到合集失败: {ex.Message}");
+                Log.Error(ex, "导航到合集失败");
             }
         }
 
@@ -418,7 +418,7 @@ namespace WallpaperEngine.ViewModels {
                     }
                 }
             } catch (Exception ex) {
-                Log.Warning($"加载自定义分类失败: {ex.Message}");
+                Log.Warning(ex, "加载自定义分类失败");
             }
         }
 
@@ -460,7 +460,7 @@ namespace WallpaperEngine.ViewModels {
             }
             catch (Exception ex)
             {
-                Log.Error($"添加分类失败: {ex.Message}");
+                Log.Error(ex, "添加分类失败");
                 await MaterialDialogService.ShowErrorAsync($"添加分类失败: {ex.Message}", "错误");
             }
         }
@@ -475,7 +475,7 @@ namespace WallpaperEngine.ViewModels {
             try {
                 await wallpaper.LoadFileListAsync();
             } catch (Exception ex) {
-                Log.Warning($"加载文件列表失败: {ex.Message}");
+                Log.Warning(ex, "加载文件列表失败");
             }
         }
 

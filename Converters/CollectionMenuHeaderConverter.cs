@@ -19,10 +19,10 @@ namespace WallpaperEngine.Converters
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            Log.Information($"=== CollectionMenuHeaderConverter.Convert called ===");
+            Log.Information("=== CollectionMenuHeaderConverter.Convert called ===");
             if (values == null || values.Length < 2)
             {
-                Log.Error($"CollectionMenuHeaderConverter: values is null or too short, length: {values?.Length}");
+                Log.Error("CollectionMenuHeaderConverter: values is null or too short, length: {Length}", values?.Length);
                 return string.Empty;
             }
 
@@ -46,7 +46,7 @@ namespace WallpaperEngine.Converters
                         stringValue = value.ToString() ?? "null";
                     }
                 }
-                Log.Information($"  values[{i}] type: {typeName}, value: {stringValue}");
+                Log.Information("  values[{Index}] type: {TypeName}, value: {StringValue}", i, typeName, stringValue);
             }
 
             // 获取壁纸对象和合集对象
@@ -56,19 +56,19 @@ namespace WallpaperEngine.Converters
             // 处理DependencyProperty.UnsetValue
             if (wallpaperObj == System.Windows.DependencyProperty.UnsetValue)
             {
-                Log.Warning($"CollectionMenuHeaderConverter: wallpaperObj is UnsetValue");
+                Log.Warning("CollectionMenuHeaderConverter: wallpaperObj is UnsetValue");
                 wallpaperObj = null;
             }
 
             if (collectionObj == System.Windows.DependencyProperty.UnsetValue)
             {
-                Log.Warning($"CollectionMenuHeaderConverter: collectionObj is UnsetValue");
+                Log.Warning("CollectionMenuHeaderConverter: collectionObj is UnsetValue");
                 collectionObj = null;
             }
 
             if (collectionObj is not WallpaperCollection collection)
             {
-                Log.Warning($"CollectionMenuHeaderConverter: collectionObj is not WallpaperCollection");
+                Log.Warning("CollectionMenuHeaderConverter: collectionObj is not WallpaperCollection");
                 return string.Empty;
             }
 
@@ -77,7 +77,7 @@ namespace WallpaperEngine.Converters
             // 如果壁纸对象无效，只返回合集名称
             if (wallpaperObj is not WallpaperItem wallpaper)
             {
-                Log.Warning($"CollectionMenuHeaderConverter: wallpaperObj is not WallpaperItem");
+                Log.Warning("CollectionMenuHeaderConverter: wallpaperObj is not WallpaperItem");
                 return CreateHeaderContent(false, collectionName);
             }
 
@@ -92,13 +92,13 @@ namespace WallpaperEngine.Converters
                 }
 
                 bool isInCollection = dbManager.IsInCollection(collection.Id, wallpaper.Id);
-                Log.Information($"CollectionMenuHeaderConverter: Wallpaper {wallpaper.Project?.Title} in collection {collection.Name}: {isInCollection}");
+                Log.Information("CollectionMenuHeaderConverter: Wallpaper {Title} in collection {CollectionName}: {IsInCollection}", wallpaper.Project?.Title, collection.Name, isInCollection);
 
                 return CreateHeaderContent(isInCollection, collectionName);
             }
             catch (Exception ex)
             {
-                Log.Error($"CollectionMenuHeaderConverter: Error checking collection: {ex.Message}");
+                Log.Error(ex, "CollectionMenuHeaderConverter: Error checking collection");
                 return CreateHeaderContent(false, collectionName);
             }
         }

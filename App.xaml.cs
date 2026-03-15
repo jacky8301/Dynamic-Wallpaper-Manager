@@ -19,6 +19,7 @@ namespace WallpaperEngine {
         private static extern bool SetForegroundWindow(IntPtr hWnd);
         private const string AppGuid = "{80DEC730-14F5-4798-A4A7-EEEB4ADE1672}";
         private SingleInstanceManager _singleInstanceManager;
+        private ServiceProvider _serviceProvider;
         public App()
         {
             string wallpaperDbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "DynamicWallpaperManager");
@@ -26,8 +27,7 @@ namespace WallpaperEngine {
                 Directory.CreateDirectory(wallpaperDbPath);
             }
             wallpaperDbPath = Path.Combine(wallpaperDbPath, "wallpapers.db");
-            Ioc.Default.ConfigureServices(
-                new ServiceCollection()
+            _serviceProvider = new ServiceCollection()
                     // 在这里注册你的服务
                     .AddSingleton<DatabaseManager>(new DatabaseManager(wallpaperDbPath))
                     .AddSingleton<ICategoryService, CategoryService>()
@@ -41,8 +41,8 @@ namespace WallpaperEngine {
                     .AddSingleton<FavoriteViewModel>()
                     .AddSingleton<CollectionViewModel>()
                     .AddSingleton<CategoryManagementViewModel>()
-                    .BuildServiceProvider()
-            );
+                    .BuildServiceProvider();
+            Ioc.Default.ConfigureServices(_serviceProvider);
         }
         /// <summary>
         /// 应用程序启动时执行，配置日志、初始化单实例管理器并开始监听
@@ -146,6 +146,7 @@ namespace WallpaperEngine {
         {
             Log.Information("Application shutting down");
             Log.CloseAndFlush();
+            _serviceProvider?.Dispose();
             _singleInstanceManager?.Dispose();
             base.OnExit(e);
         }

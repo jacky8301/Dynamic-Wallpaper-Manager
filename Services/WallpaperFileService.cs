@@ -18,6 +18,32 @@ namespace WallpaperEngine.Services {
                 return true;
             }
 
+            // 路径安全检查：确保路径不是系统关键目录
+            var fullPath = Path.GetFullPath(folderPath);
+            var root = Path.GetPathRoot(fullPath);
+            if (string.Equals(fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                              root?.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                              StringComparison.OrdinalIgnoreCase)) {
+                Log.Error("拒绝删除根目录: {Path}", folderPath);
+                return false;
+            }
+            var systemFolders = new[] {
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                Environment.GetFolderPath(Environment.SpecialFolder.System),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+            };
+            foreach (var sysFolder in systemFolders) {
+                if (!string.IsNullOrEmpty(sysFolder) &&
+                    string.Equals(fullPath.TrimEnd(Path.DirectorySeparatorChar),
+                                  sysFolder.TrimEnd(Path.DirectorySeparatorChar),
+                                  StringComparison.OrdinalIgnoreCase)) {
+                    Log.Error("拒绝删除系统目录: {Path}", folderPath);
+                    return false;
+                }
+            }
+
             try {
                 Directory.Delete(folderPath, true);
                 return true;
@@ -25,7 +51,7 @@ namespace WallpaperEngine.Services {
                 // 权限不足，尝试强制删除
                 return ForceDelete(folderPath);
             } catch (Exception ex) {
-                Log.Error($"删除失败 {folderPath}: {ex.Message}");
+                Log.Error("删除失败 {FolderPath}: {Error}", folderPath, ex.Message);
                 return false;
             }
         }
@@ -52,7 +78,7 @@ namespace WallpaperEngine.Services {
                 directory.Delete();
                 return true;
             } catch (Exception ex) {
-                Log.Warning($"强制删除失败 {folderPath}: {ex.Message}");
+                Log.Warning("强制删除失败 {FolderPath}: {Error}", folderPath, ex.Message);
                 return false;
             }
         }
