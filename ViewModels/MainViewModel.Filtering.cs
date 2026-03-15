@@ -37,6 +37,23 @@ namespace WallpaperEngine.ViewModels {
             WallpapersView.Refresh();
             OnPropertyChanged(nameof(WallpaperCount));
         }
+        /// <summary>用户从ComboBox选择分类时，同步更新SelectedCategoryId以触发筛选</summary>
+        partial void OnSelectedCategoryChanged(CategoryItem? value)
+        {
+            if (!_updatingSelection && value != null)
+            {
+                _updatingSelection = true;
+                try
+                {
+                    SelectedCategoryId = value.Id;
+                }
+                finally
+                {
+                    _updatingSelection = false;
+                }
+            }
+        }
+
         /// <summary>选中分类变更时刷新壁纸视图</summary>
         partial void OnSelectedCategoryIdChanged(string value)
         {
