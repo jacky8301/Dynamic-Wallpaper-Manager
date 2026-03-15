@@ -58,22 +58,6 @@ namespace WallpaperEngine.ViewModels {
             WallpapersView.Refresh();
             OnPropertyChanged(nameof(WallpaperCount));
         }
-        /// <summary>选中分类项变更时更新选中分类ID</summary>
-        partial void OnSelectedCategoryChanged(CategoryItem? value)
-        {
-            if (!_updatingSelection)
-            {
-                _updatingSelection = true;
-                try
-                {
-                    SelectedCategoryId = value?.Id ?? CategoryConstants.ALL_CATEGORIES_ID;
-                }
-                finally
-                {
-                    _updatingSelection = false;
-                }
-            }
-        }
 
         /// <summary>成人内容过滤状态变更时刷新壁纸视图</summary>
         partial void OnHideAdultContentChanged(bool value)
