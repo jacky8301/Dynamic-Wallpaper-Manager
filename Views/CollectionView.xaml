@@ -179,8 +179,13 @@
                                     <Separator />
                                     <MenuItem
                                         Header="🗑️ 从合集移除"
-                                        Foreground="Red"
                                         Command="{Binding PlacementTarget.Tag.RemoveFromCollectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                        CommandParameter="{Binding}" />
+                                    <Separator />
+                                    <MenuItem
+                                        Header="🗑️ 删除壁纸"
+                                        Foreground="Red"
+                                        Command="{Binding PlacementTarget.Tag.DeleteWallpaperCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                         CommandParameter="{Binding}" />
                                 </ContextMenu>
                             </Border.ContextMenu>

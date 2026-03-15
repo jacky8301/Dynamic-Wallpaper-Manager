@@ -224,6 +224,77 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
+        /// 删除壁纸命令，确认后删除壁纸文件和数据库记录，并刷新所有视图
+        /// </summary>
+        /// <param name="wallpaper">要删除的壁纸项</param>
+        [RelayCommand]
+        private async Task DeleteWallpaper(WallpaperItem wallpaper)
+        {
+            if (wallpaper == null) return;
+
+            var confirmed = await MaterialDialogService.ShowConfirmationAsync(
+                $"确定要删除壁纸「{wallpaper.Project.Title}」吗？\n此操作无法撤销，所有文件将被永久删除！",
+                "确认删除壁纸");
+
+            if (!confirmed) return;
+
+            try {
+                var mainVm = Ioc.Default.GetService<MainViewModel>();
+                var wallpaperFileService = Ioc.Default.GetService<IWallpaperFileService>();
+                if (wallpaperFileService == null) return;
+
+                var success = await Task.Run(() => {
+                    var fileDeleted = wallpaperFileService.DeleteWallpaperFiles(wallpaper.FolderPath);
+                    if (fileDeleted) {
+                        _dbManager.DeleteWallpaper(wallpaper.Id);
+                    }
+                    return fileDeleted;
+                });
+
+                if (success) {
+                    Log.Information("从合集视图删除壁纸成功: {Title}", wallpaper.Project.Title);
+
+                    // 从当前合集视图移除
+                    CollectionWallpapers.Remove(wallpaper);
+                    if (SelectedCollection != null) {
+                        SelectedCollection.WallpaperCount--;
+                    }
+
+                    // 从主视图移除
+                    if (mainVm != null) {
+                        var mainItem = mainVm.Wallpapers.FirstOrDefault(w => w.Id == wallpaper.Id);
+                        if (mainItem != null) {
+                            mainVm.Wallpapers.Remove(mainItem);
+                        }
+                        await mainVm.LoadTotalWallpaperCountAsync();
+                    }
+
+                    // 从收藏视图移除
+                    var favoriteVm = Ioc.Default.GetService<FavoriteViewModel>();
+                    if (favoriteVm != null) {
+                        var favItem = favoriteVm.FavoriteWallpapers.FirstOrDefault(w => w.Id == wallpaper.Id);
+                        if (favItem != null) {
+                            favoriteVm.FavoriteWallpapers.Remove(favItem);
+                        }
+                    }
+
+                    // 更新其他合集的壁纸数量（该壁纸可能存在于其他合集中）
+                    foreach (var collection in Collections) {
+                        if (collection != SelectedCollection) {
+                            var itemCount = _dbManager.GetCollectionItems(collection.Id).Count;
+                            collection.WallpaperCount = itemCount;
+                        }
+                    }
+                } else {
+                    await MaterialDialogService.ShowErrorAsync($"删除壁纸「{wallpaper.Project.Title}」失败", "删除错误");
+                }
+            } catch (Exception ex) {
+                Log.Error(ex, "删除壁纸失败: {Title}", wallpaper.Project.Title);
+                await MaterialDialogService.ShowErrorAsync($"删除过程中发生错误: {ex.Message}", "删除错误");
+            }
+        }
+
+        /// <summary>
         /// 打开壁纸所在目录命令，在文件资源管理器中打开
         /// </summary>
         /// <param name="wallpaper">壁纸项</param>

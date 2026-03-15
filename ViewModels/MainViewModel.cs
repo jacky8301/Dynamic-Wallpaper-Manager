@@ -462,7 +462,7 @@ namespace WallpaperEngine.ViewModels {
         /// <summary>
         /// 异步加载数据库中的壁纸总数
         /// </summary>
-        private async Task LoadTotalWallpaperCountAsync()
+        public async Task LoadTotalWallpaperCountAsync()
         {
             try
             {
