@@ -36,6 +36,7 @@
                 <ListBox
                     ItemsSource="{Binding Collections}"
                     SelectedItem="{Binding SelectedCollection}"
+                    SelectionChanged="CollectionList_SelectionChanged"
                     BorderThickness="0"
                     Background="Transparent"
                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -112,6 +113,7 @@
 
             <!-- 壁纸列表 -->
             <ListBox
+                x:Name="WallpaperListBox"
                 ItemsSource="{Binding CollectionWallpapers}"
                 BorderThickness="0"
                 Background="Transparent"
