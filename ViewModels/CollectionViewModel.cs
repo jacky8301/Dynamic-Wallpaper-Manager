@@ -29,6 +29,9 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private ObservableCollection<WallpaperItem> _collectionWallpapers = new();
 
+        /// <summary>右键菜单用的合集列表（排除当前选中的合集）</summary>
+        public ObservableCollection<WallpaperCollection> OtherCollections { get; } = new ObservableCollection<WallpaperCollection>();
+
         /// <summary>
         /// 初始化合集视图模型，加载合集列表
         /// </summary>
@@ -56,15 +59,33 @@ namespace WallpaperEngine.ViewModels {
                 {
                     SelectedCollection = Collections.First();
                 }
+
+                RefreshOtherCollections();
             } catch (Exception ex) {
                 Log.Error(ex, "加载合集列表失败");
             }
         }
 
-        /// <summary>选中合集变更时加载对应的壁纸列表</summary>
+        /// <summary>选中合集变更时加载对应的壁纸列表，并刷新右键菜单的其他合集列表</summary>
         partial void OnSelectedCollectionChanged(WallpaperCollection? value)
         {
             LoadCollectionWallpapers();
+            RefreshOtherCollections();
+        }
+
+        /// <summary>
+        /// 刷新右键菜单用的其他合集列表（排除当前选中的合集）
+        /// </summary>
+        private void RefreshOtherCollections()
+        {
+            OtherCollections.Clear();
+            foreach (var c in Collections)
+            {
+                if (c != SelectedCollection)
+                {
+                    OtherCollections.Add(c);
+                }
+            }
         }
 
         /// <summary>
@@ -291,6 +312,53 @@ namespace WallpaperEngine.ViewModels {
             } catch (Exception ex) {
                 Log.Error(ex, "删除壁纸失败: {Title}", wallpaper.Project.Title);
                 await MaterialDialogService.ShowErrorAsync($"删除过程中发生错误: {ex.Message}", "删除错误");
+            }
+        }
+
+        /// <summary>
+        /// 将壁纸添加到指定合集命令
+        /// </summary>
+        /// <param name="parameter">包含壁纸对象和合集ID的参数</param>
+        [RelayCommand]
+        private async Task AddToSpecificCollection(object parameter)
+        {
+            if (parameter is not object[] args || args.Length != 2) return;
+            if (args[1] is not string collectionId) return;
+            if (args[0] is not WallpaperItem wallpaper) return;
+
+            try {
+                var collection = OtherCollections.FirstOrDefault(c => c.Id == collectionId);
+                if (collection == null) return;
+
+                if (_dbManager.IsInCollection(collectionId, wallpaper.Id)) {
+                    await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                        Message = $"壁纸「{wallpaper.Project?.Title}��已存在于合集「{collection.Name}」中。",
+                        Title = "提示", ShowCancelButton = false, DialogType = DialogType.Information
+                    });
+                    return;
+                }
+
+                _dbManager.AddToCollection(collectionId, wallpaper.Id);
+                collection.WallpaperCount++;
+
+                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
+                    Message = $"已将壁纸「{wallpaper.Project?.Title}」添加到合集「{collection.Name}」。",
+                    Title = "成功", ShowCancelButton = false, DialogType = DialogType.Information
+                });
+
+                // 如果当前正在查看目标合集，刷新壁纸列表
+                if (SelectedCollection?.Id == collectionId) {
+                    LoadCollectionWallpapers();
+                }
+
+                // 同步主视图和收藏视图的合集列表
+                var mainVm = Ioc.Default.GetService<MainViewModel>();
+                mainVm?.RefreshCollections();
+
+                var favoriteVm = Ioc.Default.GetService<FavoriteViewModel>();
+                favoriteVm?.RefreshCollections();
+            } catch (Exception ex) {
+                Log.Warning(ex, "添加壁纸到合集失败");
             }
         }
 
