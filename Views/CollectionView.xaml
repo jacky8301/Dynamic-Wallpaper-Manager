@@ -217,6 +217,39 @@
                                         </MenuItem.Style>
                                     </MenuItem>
                                     <Separator />
+                                    <MenuItem Header="📦 移动到合集">
+                                        <MenuItem.ItemsSource>
+                                            <Binding Path="PlacementTarget.Tag.OtherCollections" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                        </MenuItem.ItemsSource>
+                                        <MenuItem.ItemContainerStyle>
+                                            <Style TargetType="MenuItem">
+                                                <Setter Property="Header" Value="{Binding Name}" />
+                                                <Setter Property="Command" Value="{Binding PlacementTarget.Tag.MoveToCollectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                                <Setter Property="CommandParameter">
+                                                    <Setter.Value>
+                                                        <MultiBinding Converter="{StaticResource AddToCollectionConverter}">
+                                                            <Binding Path="PlacementTarget.DataContext" RelativeSource="{RelativeSource AncestorType=ContextMenu}" />
+                                                            <Binding Path="Id" />
+                                                        </MultiBinding>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter Property="Padding" Value="8,4" />
+                                                <Setter Property="Margin" Value="0,2" />
+                                            </Style>
+                                        </MenuItem.ItemContainerStyle>
+                                        <MenuItem.Style>
+                                            <Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="MenuItem">
+                                                <Setter Property="IsEnabled" Value="True" />
+                                                <Setter Property="Header" Value="{Binding PlacementTarget.Tag.OtherCollections.Count, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource CollectionCountConverter}}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding PlacementTarget.Tag.OtherCollections.Count, RelativeSource={RelativeSource AncestorType=ContextMenu}}" Value="0">
+                                                        <Setter Property="IsEnabled" Value="False" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </MenuItem.Style>
+                                    </MenuItem>
+                                    <Separator />
                                     <MenuItem
                                         Header="🗑️ 从合集移除"
                                         Command="{Binding PlacementTarget.Tag.RemoveFromCollectionCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"

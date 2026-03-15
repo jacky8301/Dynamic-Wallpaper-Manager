@@ -363,6 +363,52 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
+        /// 将壁纸从当前合集移动到指定合集命令
+        /// </summary>
+        /// <param name="parameter">包含壁纸对象和目标合集ID的参数</param>
+        [RelayCommand]
+        private async Task MoveToCollection(object parameter)
+        {
+            if (parameter is not object[] args || args.Length != 2) return;
+            if (args[1] is not string targetCollectionId) return;
+            if (args[0] is not WallpaperItem wallpaper) return;
+            if (SelectedCollection == null) return;
+
+            try {
+                var targetCollection = OtherCollections.FirstOrDefault(c => c.Id == targetCollectionId);
+                if (targetCollection == null) return;
+
+                // 检查目标合集是否已包含该壁纸
+                if (_dbManager.IsInCollection(targetCollectionId, wallpaper.Id)) {
+                    // 已存在于目标合集，询问是否仅从当前合集移除
+                    var confirmed = await MaterialDialogService.ShowConfirmationAsync(
+                        $"壁纸「{wallpaper.Project?.Title}」已存在于合集「{targetCollection.Name}」中。\n是否仅从当前合集「{SelectedCollection.Name}」中移除？",
+                        "移动到合集");
+
+                    if (!confirmed) return;
+                } else {
+                    // 添加到目标合集
+                    _dbManager.AddToCollection(targetCollectionId, wallpaper.Id);
+                    targetCollection.WallpaperCount++;
+                }
+
+                // 从当前合集移除
+                _dbManager.RemoveFromCollection(SelectedCollection.Id, wallpaper.Id);
+                CollectionWallpapers.Remove(wallpaper);
+                SelectedCollection.WallpaperCount--;
+
+                // 同步主视图和收藏视图的合集列表
+                var mainVm = Ioc.Default.GetService<MainViewModel>();
+                mainVm?.RefreshCollections();
+
+                var favoriteVm = Ioc.Default.GetService<FavoriteViewModel>();
+                favoriteVm?.RefreshCollections();
+            } catch (Exception ex) {
+                Log.Warning(ex, "移动壁纸到合集失败");
+            }
+        }
+
+        /// <summary>
         /// 打开壁纸所在目录命令，在文件资源管理器中打开
         /// </summary>
         /// <param name="wallpaper">壁纸项</param>
