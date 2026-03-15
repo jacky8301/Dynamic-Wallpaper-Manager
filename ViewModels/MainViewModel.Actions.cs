@@ -760,61 +760,6 @@ namespace WallpaperEngine.ViewModels {
             }
         }
 
-        /// <summary>
-        /// </summary>
-        /// <param name="parameter">壁纸对象</param>
-        [RelayCommand]
-        private async Task AddToCollection(object parameter)
-        {
-            if (parameter is not WallpaperItem wallpaper) return;
-
-            var collections = _dbManager.GetAllCollections();
-            if (collections.Count == 0) {
-                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
-                    Message = "还没有合集，请先在「壁纸合集」页面创建一个合集。",
-                    Title = "提示",
-                    ShowCancelButton = false,
-                    DialogType = DialogType.Information
-                });
-                return;
-            }
-
-            var view = new SelectCollectionDialog();
-            view.DataContext = new SelectCollectionDialogViewModel(collections);
-
-            var result = await DialogHost.Show(view, "MainRootDialog");
-            if (result is MaterialDialogResult dialogResult && dialogResult.Confirmed && dialogResult.Data is WallpaperCollection selected) {
-                try {
-                    if (_dbManager.IsInCollection(selected.Id, wallpaper.Id)) {
-                        await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
-                            Message = $"该壁纸已存在于合集「{selected.Name}」中。",
-                            Title = "提示",
-                            ShowCancelButton = false,
-                            DialogType = DialogType.Information
-                        });
-                        return;
-                    }
-                    _dbManager.AddToCollection(selected.Id, wallpaper.Id);
-                    // 更新合集壁纸数量
-                    selected.WallpaperCount++;
-                    // 刷新合集页面（如果当前正在查看该合集）
-                    var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
-                    if (collectionVm?.SelectedCollection?.Id == selected.Id) {
-                        collectionVm.LoadCollectionWallpapers();
-                    }
-                    // 刷新壁纸详情页的合集信息（如果当前正在查看该壁纸详情）
-                    var detailVm = Ioc.Default.GetService<WallpaperDetailViewModel>();
-                    if (detailVm?.CurrentWallpaper != null) {
-                        if (detailVm.CurrentWallpaper.FolderPath == wallpaper.FolderPath) {
-                            _ = detailVm.LoadWallpaperCollections();
-                        }
-                    }
-                } catch (Exception ex) {
-                    Log.Warning("添加壁纸到合集失败: {Error}", ex.Message);
-                }
-            }
-        }
-
         /// <summary>受保护的分类名称集合，不允许重命名或删除</summary>
         private static readonly HashSet<string> ProtectedCategories = new() { "所有分类", "未分类" };
 
