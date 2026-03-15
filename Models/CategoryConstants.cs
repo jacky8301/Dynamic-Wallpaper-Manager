@@ -48,7 +48,7 @@ namespace WallpaperEngine.Models
         /// 默认分类定义列表（不包括虚拟分类）
         /// 包含10个合理的默认分类，基于Wallpaper Engine常见标签
         /// </summary>
-        public static readonly List<DefaultCategoryDefinition> DefaultCategories = new()
+        public static readonly IReadOnlyList<DefaultCategoryDefinition> DefaultCategories = new List<DefaultCategoryDefinition>
         {
             new DefaultCategoryDefinition("自然", new[] { "nature", "landscape", "forest", "water", "mountain", "自然", "风景", "森林", "水", "山", "山水", "大自然" }),
             new DefaultCategoryDefinition("抽象", new[] { "abstract", "pattern", "geometric", "minimal", "art", "抽象", "图案", "几何", "极简", "艺术", "现代艺术" }),
@@ -65,7 +65,7 @@ namespace WallpaperEngine.Models
         /// <summary>
         /// 受保护的分类名称列表
         /// </summary>
-        public static readonly List<string> ProtectedCategoryNames = new()
+        public static readonly IReadOnlyList<string> ProtectedCategoryNames = new List<string>
         {
             "所有分类", "未分类"
         };
