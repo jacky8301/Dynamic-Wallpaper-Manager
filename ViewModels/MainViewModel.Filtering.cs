@@ -52,8 +52,6 @@ namespace WallpaperEngine.ViewModels {
                     _updatingSelection = false;
                 }
             }
-            // 重新从数据库加载壁纸，确保特定分类下的壁纸不会因LIMIT被截断
-            _ = LoadWallpapersAsync();
         }
 
         /// <summary>选中分类变更时重新从数据库加载壁纸（因为LIMIT限制，客户端筛选可能遗漏数据）</summary>
