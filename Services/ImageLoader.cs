@@ -42,41 +42,5 @@ namespace WallpaperEngine.Services {
             Log.Debug("LoadImageWithUri finish, filePath: {FilePath}", filePath);
             return bitmap;
         }
-        /// <summary>
-        /// 通过字节数组方式加载图片，先读取全部字节再创建 BitmapImage，不锁定文件
-        /// </summary>
-        /// <param name="filePath">图片文件的绝对路径</param>
-        /// <returns>加载成功返回 BitmapImage，否则返回 null</returns>
-        public static BitmapImage LoadImagev2(string filePath)
-        {
-            if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
-                return null;
-
-            try {
-                byte[] imageData = File.ReadAllBytes(filePath);
-                return LoadImageToBytes(imageData);
-            } catch (Exception ex) {
-                Log.Warning(ex, "加载图片失败 {FilePath}", filePath);
-                return null;
-            }
-        }
-        /// <summary>
-        /// 从字节数组加载图片并返回冻结的 BitmapImage
-        /// </summary>
-        /// <param name="imageData">图片的字节数组数据</param>
-        /// <returns>加载成功返回 BitmapImage，数据为空时返回 null</returns>
-        public static BitmapImage LoadImageToBytes(byte[] imageData)
-        {
-            if (imageData == null || imageData.Length == 0) { return null; }
-            using (MemoryStream stream = new MemoryStream(imageData)) {
-                BitmapImage bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.StreamSource = stream;
-                bitmap.EndInit();
-                bitmap.Freeze();
-                return bitmap;
-            }
-        }
     }
 }

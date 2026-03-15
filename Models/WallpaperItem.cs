@@ -78,11 +78,6 @@ namespace WallpaperEngine.Models {
         private DateTime _favoritedDate;
 
         /// <summary>
-        /// 是否为新添加的壁纸（非数据库中已存在的）
-        /// </summary>
-        public bool IsNewlyAdded { get; set; } = false;
-
-        /// <summary>
         /// 最后扫描时间
         /// </summary>
         [ObservableProperty]

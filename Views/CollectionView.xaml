@@ -195,6 +195,7 @@
                                         FontSize="12"
                                         FontWeight="Bold"
                                         Foreground="White"
+                                        Height="15"
                                         Text="{Binding Project.Title}"
                                         TextWrapping="Wrap" />
                                 </Border>

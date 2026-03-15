@@ -148,8 +148,7 @@ namespace WallpaperEngine.Services {
 
                 var wallpaperItem = new WallpaperItem {
                     FolderPath = folderPath,
-                    AddedDate = DateTime.Now,
-                    IsNewlyAdded = true
+                    AddedDate = DateTime.Now
                 };
 
                 var projectFile = Path.Combine(folderPath, "project.json");

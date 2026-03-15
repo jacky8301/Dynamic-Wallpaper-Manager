@@ -36,7 +36,6 @@ namespace WallpaperEngine {
                     .AddSingleton<IWallpaperFileService, WallpaperFileService>()
                     .AddSingleton<SettingsViewModel>()
                     .AddSingleton<WallpaperDetailViewModel>()
-                    .AddSingleton<PreviewViewModel>()
                     .AddSingleton<MainViewModel>()
                     .AddSingleton<FavoriteViewModel>()
                     .AddSingleton<CollectionViewModel>()
@@ -132,11 +131,6 @@ namespace WallpaperEngine {
         private void ProcessCommandLineArgs(string?[] args)
         {
             // 处理命令行参数的逻辑
-            // 例如：
-            // if (args.Length > 0 && File.Exists(args[0]))
-            // {
-            //     (MainWindow as MainWindow)?.OpenFile(args[0]);
-            // }
         }
 
         /// <summary>

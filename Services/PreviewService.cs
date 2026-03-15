@@ -135,64 +135,7 @@ namespace WallpaperEngine.Services {
             }
 
             return string.Join(" ", args);
-        }
-
-        /// <summary>
-        /// 尝试移动预览窗口到指定位置（备用方法，如果命令行参数无效）
-        /// </summary>
-        private async Task TryMovePreviewWindowAsync(Process process, int x, int y, int width, int height)
-        {
-            if (process == null || process.HasExited)
-                return;
-
-            Log.Debug("尝试移动预览窗口到位置: ({X},{Y}), 尺寸: {Width}x{Height}", x, y, width, height);
-
-            // 等待进程初始化并创建窗口
-            await Task.Delay(500);
-
-            int attempts = 0;
-            const int maxAttempts = 10;
-
-            while (attempts < maxAttempts && !process.HasExited)
-            {
-                try
-                {
-                    // 使用WindowFinder获取窗口句柄
-                    IntPtr hwnd = WindowFinder.GetMainWindowHandle(process.Id);
-                    if (hwnd != IntPtr.Zero)
-                    {
-                        Log.Debug("找到预览窗口句柄: {Handle}, 尝试移动", hwnd);
-
-                        // 移动窗口到指定位置
-                        bool moved = SetWindowPos(hwnd, IntPtr.Zero, x, y, width, height, SWP_NOZORDER | SWP_NOACTIVATE);
-                        if (moved)
-                        {
-                            Log.Information("成功移动预览窗口到指定位置");
-                        }
-                        else
-                        {
-                            Log.Warning("移动预览窗口失败");
-                        }
-
-                        // 显示窗口
-                        ShowWindow(hwnd, SW_SHOWNORMAL);
-                        break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning("移动窗口时出错: {Error}", ex.Message);
-                }
-
-                attempts++;
-                await Task.Delay(200);
-            }
-
-            if (attempts >= maxAttempts)
-            {
-                Log.Warning("未能找到预览窗口，无法移动");
-            }
-        }
+        } 
 
         /// <summary>
         /// 停止当前正在运行的预览进程，先尝试优雅关闭，超时后强制终止
