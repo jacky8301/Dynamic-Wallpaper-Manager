@@ -129,7 +129,7 @@ namespace WallpaperEngine.ViewModels
             }
             catch (Exception ex)
             {
-                Log.Error($"加载分类列表失败: {ex.Message}");
+                Log.Error(ex, "加载分类列表失败");
             }
             finally
             {
@@ -161,7 +161,7 @@ namespace WallpaperEngine.ViewModels
             }
             catch (Exception ex)
             {
-                Log.Warning($"获取自定义分类列表失败: {ex.Message}");
+                Log.Warning(ex, "获取自定义分类列表失败");
             }
 
             return allCategories;
@@ -192,7 +192,7 @@ namespace WallpaperEngine.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"新增分类失败: {ex.Message}");
+                    Log.Error(ex, "新增分类失败");
                     await MaterialDialogService.ShowErrorAsync($"新增分类失败: {ex.Message}", "错误");
                 }
             }
@@ -235,7 +235,7 @@ namespace WallpaperEngine.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"重命名分类失败: {ex.Message}");
+                    Log.Error(ex, "重命名分类失败");
                     await MaterialDialogService.ShowErrorAsync($"重命名分类失败: {ex.Message}", "错误");
                 }
             }
@@ -276,7 +276,7 @@ namespace WallpaperEngine.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"删除分类失败: {ex.Message}");
+                    Log.Error(ex, "删除分类失败");
                     await MaterialDialogService.ShowErrorAsync($"删除分类失败: {ex.Message}", "错误");
                 }
             }
