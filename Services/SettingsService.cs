@@ -2,6 +2,7 @@
 using Serilog;
 using System.Diagnostics;
 using System.IO;
+using WallpaperEngine.Models;
 
 
 namespace WallpaperEngine.Services {
