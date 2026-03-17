@@ -24,6 +24,17 @@ namespace WallpaperEngine.Views {
                 Dispatcher.Invoke(() => HideLoadingOverlay());
             };
 
+            // 切换分类时重置滚动条位置
+            ViewModel.PropertyChanged += (s, e) => {
+                if (e.PropertyName == nameof(MainViewModel.SelectedCategoryId))
+                {
+                    Dispatcher.Invoke(() => {
+                        ScrollViewer scrollViewer = GetScrollViewer(WallpaperListBox);
+                        scrollViewer?.ScrollToHome();
+                    });
+                }
+            };
+
             // 手动添加ListBox事件处理器以避免XAML解析错误
             if (WallpaperListBox != null)
             {
@@ -42,6 +53,17 @@ namespace WallpaperEngine.Views {
             TrayIcon?.Dispose();
         }
         private MainViewModel ViewModel;
+        private static ScrollViewer GetScrollViewer(DependencyObject element)
+        {
+            if (element is ScrollViewer sv) return sv;
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
+            {
+                ScrollViewer result = GetScrollViewer(VisualTreeHelper.GetChild(element, i));
+                if (result != null) return result;
+            }
+            return null;
+        }
+
         // 允许通过拖动标题栏移动窗口
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
