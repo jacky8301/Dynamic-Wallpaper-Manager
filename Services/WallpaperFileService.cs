@@ -35,12 +35,14 @@ namespace WallpaperEngine.Services {
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
             };
             foreach (var sysFolder in systemFolders) {
-                if (!string.IsNullOrEmpty(sysFolder) &&
-                    string.Equals(fullPath.TrimEnd(Path.DirectorySeparatorChar),
-                                  sysFolder.TrimEnd(Path.DirectorySeparatorChar),
-                                  StringComparison.OrdinalIgnoreCase)) {
-                    Log.Error("拒绝删除系统目录: {Path}", folderPath);
-                    return false;
+                if (!string.IsNullOrEmpty(sysFolder)) {
+                    // Block both the system folder itself and any subdirectory within it
+                    string normalizedSys = sysFolder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    string normalizedPath = fullPath.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    if (normalizedPath.StartsWith(normalizedSys, StringComparison.OrdinalIgnoreCase)) {
+                        Log.Error("拒绝删除系统目录: {Path}", folderPath);
+                        return false;
+                    }
                 }
             }
 

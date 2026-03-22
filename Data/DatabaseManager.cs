@@ -892,14 +892,17 @@ namespace WallpaperEngine.Data {
         /// <param name="wallpaperId">壁纸 ID</param>
         public void DeleteWallpaper(string wallpaperId)
         {
-            Log.Information("删除壁纸记录: {Id}", wallpaperId);
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = $id";
-            command.Parameters.AddWithValue("$id", wallpaperId);
-            command.ExecuteNonQuery();
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                Log.Information("删除壁纸记录: {Id}", wallpaperId);
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = $id";
+                command.Parameters.AddWithValue("$id", wallpaperId);
+                command.ExecuteNonQuery();
 
-            command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
-            command.ExecuteNonQuery();
+                command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
+                command.ExecuteNonQuery();
+            }
         }
 
         /// <summary>
@@ -908,23 +911,26 @@ namespace WallpaperEngine.Data {
         /// <param name="folderPath">壁纸文件夹路径</param>
         public void DeleteWallpaperByPath(string folderPath)
         {
-            using var command = m_connection.CreateCommand();
-            // 先根据folderPath获取WallpaperId
-            command.CommandText = "SELECT Id FROM Wallpapers WHERE FolderPath = @path";
-            command.Parameters.AddWithValue("@path", folderPath);
-            var wallpaperId = command.ExecuteScalar() as string;
-            if (!string.IsNullOrEmpty(wallpaperId)) {
-                // 删除收藏记录（通过WallpaperId）
-                command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = @wallpaperId";
-                command.Parameters.Clear();
-                command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                // 先根据folderPath获取WallpaperId
+                command.CommandText = "SELECT Id FROM Wallpapers WHERE FolderPath = @path";
+                command.Parameters.AddWithValue("@path", folderPath);
+                var wallpaperId = command.ExecuteScalar() as string;
+                if (!string.IsNullOrEmpty(wallpaperId)) {
+                    // 删除收藏记录（通过WallpaperId）
+                    command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = @wallpaperId";
+                    command.Parameters.Clear();
+                    command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+                    command.ExecuteNonQuery();
+                    command.Parameters.Clear();
+                }
+                // 删除壁纸记录
+                command.CommandText = "DELETE FROM Wallpapers WHERE FolderPath = @path";
+                command.Parameters.AddWithValue("@path", folderPath);
                 command.ExecuteNonQuery();
-                command.Parameters.Clear();
             }
-            // 删除壁纸记录
-            command.CommandText = "DELETE FROM Wallpapers WHERE FolderPath = @path";
-            command.Parameters.AddWithValue("@path", folderPath);
-            command.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -947,25 +953,28 @@ namespace WallpaperEngine.Data {
         /// <returns>合集列表</returns>
         public List<WallpaperCollection> GetAllCollections()
         {
-            var collections = new List<WallpaperCollection>();
-            using var command = m_connection.CreateCommand();
-            command.CommandText = @"
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                var collections = new List<WallpaperCollection>();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = @"
                 SELECT c.Id, c.Name, c.CreatedDate,
                        (SELECT COUNT(1) FROM CollectionItems ci WHERE ci.CollectionId = c.Id) AS WallpaperCount
                 FROM Collections c
                 ORDER BY c.CreatedDate DESC";
-            using var reader = command.ExecuteReader();
-            while (reader.Read()) {
-                collections.Add(new WallpaperCollection {
-                    Id = reader["Id"].ToString(),
-                    Name = reader["Name"].ToString(),
-                    WallpaperCount = Convert.ToInt32(reader["WallpaperCount"]),
-                    CreatedDate = reader["CreatedDate"] != DBNull.Value && DateTime.TryParse(reader["CreatedDate"].ToString(), out var createdDateParsed)
-                        ? createdDateParsed
-                        : DateTime.MinValue
-                });
+                using var reader = command.ExecuteReader();
+                while (reader.Read()) {
+                    collections.Add(new WallpaperCollection {
+                        Id = reader["Id"].ToString(),
+                        Name = reader["Name"].ToString(),
+                        WallpaperCount = Convert.ToInt32(reader["WallpaperCount"]),
+                        CreatedDate = reader["CreatedDate"] != DBNull.Value && DateTime.TryParse(reader["CreatedDate"].ToString(), out var createdDateParsed)
+                            ? createdDateParsed
+                            : DateTime.MinValue
+                    });
+                }
+                return collections;
             }
-            return collections;
         }
 
         /// <summary>
@@ -975,20 +984,25 @@ namespace WallpaperEngine.Data {
         /// <returns>创建的合集对象</returns>
         public WallpaperCollection AddCollection(string name)
         {
+            if (string.IsNullOrWhiteSpace(name) || name.Length > 256)
+                throw new ArgumentException("合集名称无效（1-256个字符）", nameof(name));
             Log.Information("创建合集: {Name}", name);
             var collection = new WallpaperCollection {
                 Id = Guid.NewGuid().ToString(),
                 Name = name,
                 CreatedDate = DateTime.Now
             };
-            using var command = m_connection.CreateCommand();
-            command.CommandText = @"
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = @"
                 INSERT INTO Collections (Id, Name, CreatedDate)
                 VALUES (@id, @name, @createdDate)";
-            command.Parameters.AddWithValue("@id", collection.Id);
-            command.Parameters.AddWithValue("@name", collection.Name);
-            command.Parameters.AddWithValue("@createdDate", collection.CreatedDate.ToString("O"));
-            command.ExecuteNonQuery();
+                command.Parameters.AddWithValue("@id", collection.Id);
+                command.Parameters.AddWithValue("@name", collection.Name);
+                command.Parameters.AddWithValue("@createdDate", collection.CreatedDate.ToString("O"));
+                command.ExecuteNonQuery();
+            }
             return collection;
         }
 
@@ -999,11 +1013,16 @@ namespace WallpaperEngine.Data {
         /// <param name="newName">新名称</param>
         public void RenameCollection(string id, string newName)
         {
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "UPDATE Collections SET Name = @name WHERE Id = @id";
-            command.Parameters.AddWithValue("@name", newName);
-            command.Parameters.AddWithValue("@id", id);
-            command.ExecuteNonQuery();
+            if (string.IsNullOrWhiteSpace(newName) || newName.Length > 256)
+                throw new ArgumentException("合集名称无效（1-256个字符）", nameof(newName));
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "UPDATE Collections SET Name = @name WHERE Id = @id";
+                command.Parameters.AddWithValue("@name", newName);
+                command.Parameters.AddWithValue("@id", id);
+                command.ExecuteNonQuery();
+            }
         }
 
         /// <summary>
@@ -1012,14 +1031,17 @@ namespace WallpaperEngine.Data {
         /// <param name="id">合集 ID</param>
         public void DeleteCollection(string id)
         {
-            Log.Information("删除合集: {Id}", id);
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "DELETE FROM CollectionItems WHERE CollectionId = @id";
-            command.Parameters.AddWithValue("@id", id);
-            command.ExecuteNonQuery();
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                Log.Information("删除合集: {Id}", id);
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "DELETE FROM CollectionItems WHERE CollectionId = @id";
+                command.Parameters.AddWithValue("@id", id);
+                command.ExecuteNonQuery();
 
-            command.CommandText = "DELETE FROM Collections WHERE Id = @id";
-            command.ExecuteNonQuery();
+                command.CommandText = "DELETE FROM Collections WHERE Id = @id";
+                command.ExecuteNonQuery();
+            }
         }
 
         /// <summary>
@@ -1029,15 +1051,18 @@ namespace WallpaperEngine.Data {
         /// <returns>壁纸ID列表</returns>
         public List<string> GetCollectionItems(string collectionId)
         {
-            var items = new List<string>();
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT WallpaperId FROM CollectionItems WHERE CollectionId = @id ORDER BY AddedDate DESC";
-            command.Parameters.AddWithValue("@id", collectionId);
-            using var reader = command.ExecuteReader();
-            while (reader.Read()) {
-                items.Add(reader.GetString(0));
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                var items = new List<string>();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "SELECT WallpaperId FROM CollectionItems WHERE CollectionId = @id ORDER BY AddedDate DESC";
+                command.Parameters.AddWithValue("@id", collectionId);
+                using var reader = command.ExecuteReader();
+                while (reader.Read()) {
+                    items.Add(reader.GetString(0));
+                }
+                return items;
             }
-            return items;
         }
 
         /// <summary>
@@ -1048,11 +1073,14 @@ namespace WallpaperEngine.Data {
         /// <returns>已存在返回 true，否则返回 false</returns>
         public bool IsInCollection(string collectionId, string wallpaperId)
         {
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT COUNT(1) FROM CollectionItems WHERE CollectionId = @collectionId AND WallpaperId = @wallpaperId";
-            command.Parameters.AddWithValue("@collectionId", collectionId);
-            command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
-            return Convert.ToInt64(command.ExecuteScalar()) > 0;
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "SELECT COUNT(1) FROM CollectionItems WHERE CollectionId = @collectionId AND WallpaperId = @wallpaperId";
+                command.Parameters.AddWithValue("@collectionId", collectionId);
+                command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+                return Convert.ToInt64(command.ExecuteScalar()) > 0;
+            }
         }
 
         /// <summary>
@@ -1062,17 +1090,20 @@ namespace WallpaperEngine.Data {
         /// <param name="wallpaperId">壁纸ID</param>
         public void AddToCollection(string collectionId, string wallpaperId)
         {
-            Log.Debug("添加壁纸到合集: {CollectionId}, {WallpaperId}", collectionId, wallpaperId);
-            using var command = m_connection.CreateCommand();
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                Log.Debug("添加壁纸到合集: {CollectionId}, {WallpaperId}", collectionId, wallpaperId);
+                using var command = m_connection.CreateCommand();
 
-            // 直接插入，不再需要文件夹路径
-            command.CommandText = @"
+                // 直接插入，不再需要文件夹路径
+                command.CommandText = @"
                 INSERT OR IGNORE INTO CollectionItems (CollectionId, WallpaperId, AddedDate)
                 VALUES (@collectionId, @wallpaperId, @addedDate)";
-            command.Parameters.AddWithValue("@collectionId", collectionId);
-            command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
-            command.Parameters.AddWithValue("@addedDate", DateTime.Now.ToString("O"));
-            command.ExecuteNonQuery();
+                command.Parameters.AddWithValue("@collectionId", collectionId);
+                command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+                command.Parameters.AddWithValue("@addedDate", DateTime.Now.ToString("O"));
+                command.ExecuteNonQuery();
+            }
         }
 
         /// <summary>
@@ -1082,11 +1113,14 @@ namespace WallpaperEngine.Data {
         /// <param name="wallpaperId">壁纸ID</param>
         public void RemoveFromCollection(string collectionId, string wallpaperId)
         {
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "DELETE FROM CollectionItems WHERE CollectionId = @collectionId AND WallpaperId = @wallpaperId";
-            command.Parameters.AddWithValue("@collectionId", collectionId);
-            command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
-            command.ExecuteNonQuery();
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "DELETE FROM CollectionItems WHERE CollectionId = @collectionId AND WallpaperId = @wallpaperId";
+                command.Parameters.AddWithValue("@collectionId", collectionId);
+                command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+                command.ExecuteNonQuery();
+            }
         }
 
         /// <summary>
@@ -1096,27 +1130,30 @@ namespace WallpaperEngine.Data {
         /// <returns>包含该壁纸的合集列表</returns>
         public List<WallpaperCollection> GetCollectionsForWallpaper(string wallpaperId)
         {
-            var collections = new List<WallpaperCollection>();
-            using var command = m_connection.CreateCommand();
-            command.CommandText = @"
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                var collections = new List<WallpaperCollection>();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = @"
                 SELECT c.Id, c.Name, c.CreatedDate
                 FROM Collections c
                 INNER JOIN CollectionItems ci ON c.Id = ci.CollectionId
                 WHERE ci.WallpaperId = @wallpaperId
                 ORDER BY c.CreatedDate DESC";
-            command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+                command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read()) {
-                collections.Add(new WallpaperCollection {
-                    Id = reader["Id"].ToString(),
-                    Name = reader["Name"].ToString(),
-                    CreatedDate = reader["CreatedDate"] != DBNull.Value && DateTime.TryParse(reader["CreatedDate"].ToString(), out var createdDateParsed)
-                        ? createdDateParsed
-                        : DateTime.MinValue
-                });
+                using var reader = command.ExecuteReader();
+                while (reader.Read()) {
+                    collections.Add(new WallpaperCollection {
+                        Id = reader["Id"].ToString(),
+                        Name = reader["Name"].ToString(),
+                        CreatedDate = reader["CreatedDate"] != DBNull.Value && DateTime.TryParse(reader["CreatedDate"].ToString(), out var createdDateParsed)
+                            ? createdDateParsed
+                            : DateTime.MinValue
+                    });
+                }
+                return collections;
             }
-            return collections;
         }
 
         /// <summary>
@@ -1128,22 +1165,25 @@ namespace WallpaperEngine.Data {
         /// <param name="skipped">跳过的壁纸数量</param>
         public void SaveScanRecord(string scanPath, int newFound, int updated, int skipped)
         {
-            Log.Information("保存扫描记录: {ScanPath}", scanPath);
-            using var command = m_connection.CreateCommand();
-            command.CommandText = @"
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                Log.Information("保存扫描记录: {ScanPath}", scanPath);
+                using var command = m_connection.CreateCommand();
+                command.CommandText = @"
             INSERT INTO ScanHistory
             (ScanPath, LastScanTime, TotalFolders, NewFound, DurationMs, Status)
             VALUES
             (@scanPath, @lastScanTime, @totalFolders, @newFound, @durationMs, @status)";
 
-            command.Parameters.AddWithValue("@scanPath", scanPath);
-            command.Parameters.AddWithValue("@lastScanTime", DateTime.Now.ToString("O"));
-            command.Parameters.AddWithValue("@totalFolders", newFound + updated + skipped);
-            command.Parameters.AddWithValue("@newFound", newFound);
-            command.Parameters.AddWithValue("@durationMs", 0);
-            command.Parameters.AddWithValue("@status", "Success");
+                command.Parameters.AddWithValue("@scanPath", scanPath);
+                command.Parameters.AddWithValue("@lastScanTime", DateTime.Now.ToString("O"));
+                command.Parameters.AddWithValue("@totalFolders", newFound + updated + skipped);
+                command.Parameters.AddWithValue("@newFound", newFound);
+                command.Parameters.AddWithValue("@durationMs", 0);
+                command.Parameters.AddWithValue("@status", "Success");
 
-            command.ExecuteNonQuery();
+                command.ExecuteNonQuery();
+            }
         }
 
         /// <summary>
@@ -1155,23 +1195,26 @@ namespace WallpaperEngine.Data {
         /// <returns>需要更新返回 true，否则返回 false</returns>
         public bool NeedsUpdate(string folderPath, DateTime lastModified, long fileSize)
         {
-            using var command = m_connection.CreateCommand();
-            command.CommandText = @"
-            SELECT FolderLastModified, FileSize FROM Wallpapers 
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = @"
+            SELECT FolderLastModified, FileSize FROM Wallpapers
             WHERE FolderPath = @folderPath";
-            command.Parameters.AddWithValue("@folderPath", folderPath);
+                command.Parameters.AddWithValue("@folderPath", folderPath);
 
-            using var reader = command.ExecuteReader();
-            if (!reader.Read())
-                return true; // 不存在，需要添加
+                using var reader = command.ExecuteReader();
+                if (!reader.Read())
+                    return true; // 不存在，需要添加
 
-            if (!DateTime.TryParse(reader["FolderLastModified"].ToString(), out var dbLastModified))
-                return true;
-            if (!long.TryParse(reader["FileSize"].ToString(), out var dbFileSize))
-                return true;
+                if (!DateTime.TryParse(reader["FolderLastModified"].ToString(), out var dbLastModified))
+                    return true;
+                if (!long.TryParse(reader["FileSize"].ToString(), out var dbFileSize))
+                    return true;
 
-            // 如果最后修改时间或文件大小变化，则需要更新
-            return dbLastModified != lastModified || dbFileSize != fileSize;
+                // 如果最后修改时间或文件大小变化，则需要更新
+                return dbLastModified != lastModified || dbFileSize != fileSize;
+            }
         }
 
         /// <summary>
@@ -1181,38 +1224,41 @@ namespace WallpaperEngine.Data {
         /// <returns>扫描历史列表</returns>
         public List<ScanInfo> GetScanHistory(string? scanPath = null)
         {
-            var history = new List<ScanInfo>();
-            using var command = m_connection.CreateCommand();
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                var history = new List<ScanInfo>();
+                using var command = m_connection.CreateCommand();
 
-            if (string.IsNullOrEmpty(scanPath)) {
-                command.CommandText = @"
-                SELECT ScanPath, LastScanTime, TotalFolders, NewFound 
-                FROM ScanHistory 
-                ORDER BY LastScanTime DESC 
+                if (string.IsNullOrEmpty(scanPath)) {
+                    command.CommandText = @"
+                SELECT ScanPath, LastScanTime, TotalFolders, NewFound
+                FROM ScanHistory
+                ORDER BY LastScanTime DESC
                 LIMIT 50";
-            } else {
-                command.CommandText = @"
-                SELECT ScanPath, LastScanTime, TotalFolders, NewFound 
-                FROM ScanHistory 
-                WHERE ScanPath = @scanPath 
-                ORDER BY LastScanTime DESC 
+                } else {
+                    command.CommandText = @"
+                SELECT ScanPath, LastScanTime, TotalFolders, NewFound
+                FROM ScanHistory
+                WHERE ScanPath = @scanPath
+                ORDER BY LastScanTime DESC
                 LIMIT 20";
-                command.Parameters.AddWithValue("@scanPath", scanPath);
-            }
+                    command.Parameters.AddWithValue("@scanPath", scanPath);
+                }
 
-            using var reader = command.ExecuteReader();
-            while (reader.Read()) {
-                history.Add(new ScanInfo {
-                    ScanPath = reader["ScanPath"].ToString(),
-                    LastScanTime = reader["LastScanTime"] != DBNull.Value && DateTime.TryParse(reader["LastScanTime"].ToString(), out var lastScanTimeParsed)
-                        ? lastScanTimeParsed
-                        : DateTime.MinValue,
-                    TotalScanned = Convert.ToInt32(reader["TotalFolders"]),
-                    NewFound = Convert.ToInt32(reader["NewFound"])
-                });
-            }
+                using var reader = command.ExecuteReader();
+                while (reader.Read()) {
+                    history.Add(new ScanInfo {
+                        ScanPath = reader["ScanPath"].ToString(),
+                        LastScanTime = reader["LastScanTime"] != DBNull.Value && DateTime.TryParse(reader["LastScanTime"].ToString(), out var lastScanTimeParsed)
+                            ? lastScanTimeParsed
+                            : DateTime.MinValue,
+                        TotalScanned = Convert.ToInt32(reader["TotalFolders"]),
+                        NewFound = Convert.ToInt32(reader["NewFound"])
+                    });
+                }
 
-            return history;
+                return history;
+            }
         }
 
         /// <summary>
@@ -1220,9 +1266,12 @@ namespace WallpaperEngine.Data {
         /// </summary>
         public void ClearScanHistory()
         {
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "DELETE FROM ScanHistory";
-            command.ExecuteNonQuery();
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "DELETE FROM ScanHistory";
+                command.ExecuteNonQuery();
+            }
         }
 
         /// <summary>
@@ -1231,10 +1280,12 @@ namespace WallpaperEngine.Data {
         /// <param name="wallpaper">包含更新数据的壁纸项</param>
         public void UpdateWallpaper(WallpaperItem wallpaper)
         {
-            Log.Debug("更新壁纸记录: {Id}", wallpaper.Id);
-            using var command = m_connection.CreateCommand();
-            command.CommandText = @"
-            UPDATE Wallpapers 
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                Log.Debug("更新壁纸记录: {Id}", wallpaper.Id);
+                using var command = m_connection.CreateCommand();
+                command.CommandText = @"
+            UPDATE Wallpapers
             SET Title = @title,
                 Description = @description,
                 FileName = @fileName,
@@ -1247,19 +1298,20 @@ namespace WallpaperEngine.Data {
                 LastUpdated = @lastUpdated
             WHERE Id = @id";
 
-            command.Parameters.AddWithValue("@id", wallpaper.Id);
-            command.Parameters.AddWithValue("@title", wallpaper.Project.Title);
-            command.Parameters.AddWithValue("@description", wallpaper.Project.Description);
-            command.Parameters.AddWithValue("@fileName", wallpaper.Project.File);
-            command.Parameters.AddWithValue("@previewFile", wallpaper.Project.Preview);
-            command.Parameters.AddWithValue("@type", wallpaper.Project.Type);
-            command.Parameters.AddWithValue("@tags", string.Join(",", wallpaper.Project.Tags ?? new List<string>()));
-            command.Parameters.AddWithValue("@contentRating", wallpaper.Project.ContentRating);
-            command.Parameters.AddWithValue("@visibility", wallpaper.Project.Visibility);
-            command.Parameters.AddWithValue("@categoryId", wallpaper.CategoryId);
-            command.Parameters.AddWithValue("@lastUpdated", DateTime.Now.ToString("O"));
+                command.Parameters.AddWithValue("@id", wallpaper.Id);
+                command.Parameters.AddWithValue("@title", wallpaper.Project.Title);
+                command.Parameters.AddWithValue("@description", wallpaper.Project.Description);
+                command.Parameters.AddWithValue("@fileName", wallpaper.Project.File);
+                command.Parameters.AddWithValue("@previewFile", wallpaper.Project.Preview);
+                command.Parameters.AddWithValue("@type", wallpaper.Project.Type);
+                command.Parameters.AddWithValue("@tags", string.Join(",", wallpaper.Project.Tags ?? new List<string>()));
+                command.Parameters.AddWithValue("@contentRating", wallpaper.Project.ContentRating);
+                command.Parameters.AddWithValue("@visibility", wallpaper.Project.Visibility);
+                command.Parameters.AddWithValue("@categoryId", wallpaper.CategoryId);
+                command.Parameters.AddWithValue("@lastUpdated", DateTime.Now.ToString("O"));
 
-            command.ExecuteNonQuery();
+                command.ExecuteNonQuery();
+            }
         }
 
         /// <summary>
@@ -1269,15 +1321,18 @@ namespace WallpaperEngine.Data {
         /// <returns>文件数量和总大小的元组</returns>
         public (int FileCount, long TotalSize) GetWallpaperFileStats(string wallpaperId)
         {
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT FileCount, TotalSize FROM WallpaperStats WHERE WallpaperId = @id";
-            command.Parameters.AddWithValue("@id", wallpaperId);
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "SELECT FileCount, TotalSize FROM WallpaperStats WHERE WallpaperId = @id";
+                command.Parameters.AddWithValue("@id", wallpaperId);
 
-            using var reader = command.ExecuteReader();
-            if (reader.Read()) {
-                return (reader.GetInt32(0), reader.GetInt64(1));
+                using var reader = command.ExecuteReader();
+                if (reader.Read()) {
+                    return (reader.GetInt32(0), reader.GetInt64(1));
+                }
+                return (0, 0);
             }
-            return (0, 0);
         }
 
         /// <summary>
@@ -1286,14 +1341,17 @@ namespace WallpaperEngine.Data {
         /// <returns>分类名称列表</returns>
         public List<string> GetCustomCategories()
         {
-            var categories = new List<string>();
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT Name FROM Categories WHERE IsDefault = 0 ORDER BY Name";
-            using var reader = command.ExecuteReader();
-            while (reader.Read()) {
-                categories.Add(reader.GetString(0));
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                var categories = new List<string>();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "SELECT Name FROM Categories WHERE IsDefault = 0 ORDER BY Name";
+                using var reader = command.ExecuteReader();
+                while (reader.Read()) {
+                    categories.Add(reader.GetString(0));
+                }
+                return categories;
             }
-            return categories;
         }
 
         /// <summary>
@@ -1303,24 +1361,29 @@ namespace WallpaperEngine.Data {
         /// <returns>新分类的ID，如果已存在则返回现有分类的ID</returns>
         public string AddCategory(string name)
         {
+            if (string.IsNullOrWhiteSpace(name) || name.Length > 256)
+                throw new ArgumentException("分类名称无效（1-256个字符）", nameof(name));
             Log.Information("添加分类: {Name}", name);
-            using var command = m_connection.CreateCommand();
-            // 先检查是否已存在
-            command.CommandText = "SELECT Id FROM Categories WHERE Name = @name";
-            command.Parameters.AddWithValue("@name", name);
-            var existing = command.ExecuteScalar();
-            if (existing != null)
-                return existing.ToString();
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                // 先检查是否已存在
+                command.CommandText = "SELECT Id FROM Categories WHERE Name = @name";
+                command.Parameters.AddWithValue("@name", name);
+                var existing = command.ExecuteScalar();
+                if (existing != null)
+                    return existing.ToString();
 
-            // 生成新GUID并插入
-            var newId = Guid.NewGuid().ToString();
-            command.CommandText = @"
+                // 生成新GUID并插入
+                var newId = Guid.NewGuid().ToString();
+                command.CommandText = @"
                 INSERT INTO Categories (Id, Name, IsDefault) VALUES (@id, @name, 0)";
-            command.Parameters.Clear();
-            command.Parameters.AddWithValue("@id", newId);
-            command.Parameters.AddWithValue("@name", name);
-            command.ExecuteNonQuery();
-            return newId;
+                command.Parameters.Clear();
+                command.Parameters.AddWithValue("@id", newId);
+                command.Parameters.AddWithValue("@name", name);
+                command.ExecuteNonQuery();
+                return newId;
+            }
         }
 
         /// <summary>
@@ -1363,26 +1426,31 @@ namespace WallpaperEngine.Data {
         /// <param name="newName">新分类名称</param>
         public void RenameCategory(string id, string newName)
         {
+            if (string.IsNullOrWhiteSpace(newName) || newName.Length > 256)
+                throw new ArgumentException("分类名称无效（1-256个字符）", nameof(newName));
             Log.Information("重命名分类ID: {Id} -> {NewName}", id, newName);
-            using var transaction = m_connection.BeginTransaction();
-            try {
-                // 更新分类名称
-                using var updateCmd = m_connection.CreateCommand();
-                updateCmd.CommandText = "UPDATE Categories SET Name = @newName WHERE Id = @id AND IsDefault = 0";
-                updateCmd.Parameters.AddWithValue("@id", id);
-                updateCmd.Parameters.AddWithValue("@newName", newName);
-                var rowsAffected = updateCmd.ExecuteNonQuery();
-                if (rowsAffected == 0) {
-                    Log.Warning("尝试重命名默认分类或分类不存在: {Id}", id);
-                    // 对于默认分类，不重命名
-                    transaction.Commit();
-                    return;
-                }
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var transaction = m_connection.BeginTransaction();
+                try {
+                    // 更新分类名称
+                    using var updateCmd = m_connection.CreateCommand();
+                    updateCmd.CommandText = "UPDATE Categories SET Name = @newName WHERE Id = @id AND IsDefault = 0";
+                    updateCmd.Parameters.AddWithValue("@id", id);
+                    updateCmd.Parameters.AddWithValue("@newName", newName);
+                    var rowsAffected = updateCmd.ExecuteNonQuery();
+                    if (rowsAffected == 0) {
+                        Log.Warning("尝试重命名默认分类或分类不存在: {Id}", id);
+                        // 对于默认分类，不重命名
+                        transaction.Commit();
+                        return;
+                    }
 
-                transaction.Commit();
-            } catch {
-                transaction.Rollback();
-                throw;
+                    transaction.Commit();
+                } catch {
+                    transaction.Rollback();
+                    throw;
+                }
             }
         }
 
@@ -1393,17 +1461,20 @@ namespace WallpaperEngine.Data {
         /// <returns>壁纸文件夹路径列表</returns>
         public List<string> GetWallpaperFolderPathsByCategoryId(string categoryId)
         {
-            var paths = new List<string>();
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT FolderPath FROM Wallpapers WHERE CategoryId = @categoryId";
-            command.Parameters.AddWithValue("@categoryId", categoryId);
-            using var reader = command.ExecuteReader();
-            while (reader.Read()) {
-                var path = reader["FolderPath"]?.ToString();
-                if (!string.IsNullOrEmpty(path))
-                    paths.Add(path);
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                var paths = new List<string>();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "SELECT FolderPath FROM Wallpapers WHERE CategoryId = @categoryId";
+                command.Parameters.AddWithValue("@categoryId", categoryId);
+                using var reader = command.ExecuteReader();
+                while (reader.Read()) {
+                    var path = reader["FolderPath"]?.ToString();
+                    if (!string.IsNullOrEmpty(path))
+                        paths.Add(path);
+                }
+                return paths;
             }
-            return paths;
         }
 
         /// <summary>
@@ -1412,9 +1483,12 @@ namespace WallpaperEngine.Data {
         /// <returns>壁纸总数</returns>
         public int GetTotalWallpaperCount()
         {
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT COUNT(*) FROM Wallpapers";
-            return Convert.ToInt32(command.ExecuteScalar());
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "SELECT COUNT(*) FROM Wallpapers";
+                return Convert.ToInt32(command.ExecuteScalar());
+            }
         }
 
         /// <summary>
@@ -1449,29 +1523,32 @@ namespace WallpaperEngine.Data {
         /// <returns>该分类下的壁纸数量</returns>
         public int GetCategoryWallpaperCount(string categoryId)
         {
-            // 虚拟分类处理
-            if (CategoryConstants.IsVirtualCategoryId(categoryId)) {
-                using var virtualCmd = m_connection.CreateCommand();
-                if (categoryId == CategoryConstants.ALL_CATEGORIES_ID) {
-                    // "所有分类" - 返回所有壁纸总数
-                    virtualCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers";
-                } else if (categoryId == CategoryConstants.UNCATEGORIZED_ID) {
-                    // "未分类" - 返回未分类的壁纸数量
-                    virtualCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE CategoryId = @categoryId";
-                    virtualCmd.Parameters.AddWithValue("@categoryId", categoryId);
-                } else {
-                    // 其他虚拟分类（目前没有）
-                    return 0;
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                // 虚拟分类处理
+                if (CategoryConstants.IsVirtualCategoryId(categoryId)) {
+                    using var virtualCmd = m_connection.CreateCommand();
+                    if (categoryId == CategoryConstants.ALL_CATEGORIES_ID) {
+                        // "所有分类" - 返回所有壁纸总数
+                        virtualCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers";
+                    } else if (categoryId == CategoryConstants.UNCATEGORIZED_ID) {
+                        // "未分类" - 返回未分类的壁纸数量
+                        virtualCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE CategoryId = @categoryId";
+                        virtualCmd.Parameters.AddWithValue("@categoryId", categoryId);
+                    } else {
+                        // 其他虚拟分类（目前没有）
+                        return 0;
+                    }
+                    return Convert.ToInt32(virtualCmd.ExecuteScalar());
                 }
-                return Convert.ToInt32(virtualCmd.ExecuteScalar());
+
+                // 正常分类
+                using var cmd = m_connection.CreateCommand();
+                cmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE CategoryId = @categoryId";
+                cmd.Parameters.AddWithValue("@categoryId", categoryId);
+
+                return Convert.ToInt32(cmd.ExecuteScalar());
             }
-
-            // 正常分类
-            using var cmd = m_connection.CreateCommand();
-            cmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE CategoryId = @categoryId";
-            cmd.Parameters.AddWithValue("@categoryId", categoryId);
-
-            return Convert.ToInt32(cmd.ExecuteScalar());
         }
 
         /// <summary>
@@ -1481,24 +1558,27 @@ namespace WallpaperEngine.Data {
         /// <returns>分类项列表</returns>
         public List<CategoryItem> GetAllCategories()
         {
-            var categories = new List<CategoryItem>();
-            using var command = m_connection.CreateCommand();
-            command.CommandText = @"
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                var categories = new List<CategoryItem>();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = @"
                 SELECT c.Id, c.Name, c.IsDefault, COUNT(w.Id) AS WallpaperCount
                 FROM Categories c
                 LEFT JOIN Wallpapers w ON c.Id = w.CategoryId
                 GROUP BY c.Id, c.Name, c.IsDefault
                 ORDER BY c.IsDefault DESC, c.Name";
-            using var reader = command.ExecuteReader();
-            while (reader.Read()) {
-                var id = reader["Id"].ToString() ?? string.Empty;
-                var name = reader["Name"].ToString() ?? string.Empty;
-                var isDefault = Convert.ToBoolean(reader["IsDefault"]);
-                var isProtected = CategoryConstants.IsProtectedCategory(name);
-                var count = Convert.ToInt32(reader["WallpaperCount"]);
-                categories.Add(new CategoryItem(id, name, count, isProtected, isDefault));
+                using var reader = command.ExecuteReader();
+                while (reader.Read()) {
+                    var id = reader["Id"].ToString() ?? string.Empty;
+                    var name = reader["Name"].ToString() ?? string.Empty;
+                    var isDefault = Convert.ToBoolean(reader["IsDefault"]);
+                    var isProtected = CategoryConstants.IsProtectedCategory(name);
+                    var count = Convert.ToInt32(reader["WallpaperCount"]);
+                    categories.Add(new CategoryItem(id, name, count, isProtected, isDefault));
+                }
+                return categories;
             }
-            return categories;
         }
 
         /// <summary>
@@ -1513,18 +1593,16 @@ namespace WallpaperEngine.Data {
             if (virtualName != null)
                 return virtualName;
 
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT Name FROM Categories WHERE Id = @id";
-            command.Parameters.AddWithValue("@id", id);
-            var result = command.ExecuteScalar();
-            return result?.ToString();
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "SELECT Name FROM Categories WHERE Id = @id";
+                command.Parameters.AddWithValue("@id", id);
+                var result = command.ExecuteScalar();
+                return result?.ToString();
+            }
         }
 
-        /// <summary>
-        /// 根据分类名称获取分类ID
-        /// </summary>
-        /// <param name="name">分类名称</param>
-        /// <returns>分类ID，如果不存在则返回null</returns>
         public string? GetCategoryIdByName(string name)
         {
             // 检查虚拟分类
@@ -1532,11 +1610,14 @@ namespace WallpaperEngine.Data {
             if (virtualId != null)
                 return virtualId;
 
-            using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT Id FROM Categories WHERE Name = @name";
-            command.Parameters.AddWithValue("@name", name);
-            var result = command.ExecuteScalar();
-            return result?.ToString();
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                using var command = m_connection.CreateCommand();
+                command.CommandText = "SELECT Id FROM Categories WHERE Name = @name";
+                command.Parameters.AddWithValue("@name", name);
+                var result = command.ExecuteScalar();
+                return result?.ToString();
+            }
         }
 
         /// <summary>
@@ -1568,7 +1649,7 @@ namespace WallpaperEngine.Data {
                             continue;
 
                         var jsonContent = File.ReadAllText(projectFile);
-                        var project = Newtonsoft.Json.JsonConvert.DeserializeObject<WallpaperProject>(jsonContent);
+                        var project = Newtonsoft.Json.JsonConvert.DeserializeObject<WallpaperProject>(jsonContent, new Newtonsoft.Json.JsonSerializerSettings { MaxDepth = 32 });
                         if (project == null)
                             continue;
 

@@ -154,11 +154,17 @@ namespace WallpaperEngine.Services {
                 var projectFile = Path.Combine(folderPath, "project.json");
                 if (!File.Exists(projectFile)) {
                     string defaultProjectPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "project.json");
-                    File.Copy(defaultProjectPath, projectFile);
+                    if (File.Exists(defaultProjectPath)) {
+                        File.Copy(defaultProjectPath, projectFile);
+                    } else {
+                        Log.Warning("默认 project.json 模板不存在，跳过文件夹: {Folder}", folderPath);
+                        return ScanResultType.Skipped;
+                    }
                 }
 
                 var jsonContent = await File.ReadAllTextAsync(projectFile);
-                var project = JsonConvert.DeserializeObject<WallpaperProject>(jsonContent);
+                var jsonSettings = new JsonSerializerSettings { MaxDepth = 32 };
+                var project = JsonConvert.DeserializeObject<WallpaperProject>(jsonContent, jsonSettings);
 
                 if (project == null) {
                     return ScanResultType.Skipped;

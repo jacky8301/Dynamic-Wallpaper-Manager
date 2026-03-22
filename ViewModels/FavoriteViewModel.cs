@@ -375,7 +375,8 @@ namespace WallpaperEngine.ViewModels {
             string projectJsonPath = Path.Combine(wallpaper.FolderPath, "project.json");
 
             if (File.Exists(toolPath) && File.Exists(projectJsonPath)) {
-                string arguments = $"-control openWallpaper -file \"{projectJsonPath}\"";
+                string escapedPath = projectJsonPath.Replace("\"", "\\\"");
+                string arguments = $"-control openWallpaper -file \"{escapedPath}\"";
                 ProcessStartInfo startInfo = new ProcessStartInfo {
                     FileName = toolPath,
                     Arguments = arguments,

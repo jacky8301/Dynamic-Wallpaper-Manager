@@ -266,7 +266,7 @@ namespace WallpaperEngine.Services
                     try
                     {
                         var json = await File.ReadAllTextAsync(projectFile);
-                        var project = JsonConvert.DeserializeObject<WallpaperProject>(json);
+                        var project = JsonConvert.DeserializeObject<WallpaperProject>(json, new JsonSerializerSettings { MaxDepth = 32 });
                         if (project == null)
                             continue;
 

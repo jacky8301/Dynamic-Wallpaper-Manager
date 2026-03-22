@@ -107,13 +107,15 @@ namespace WallpaperEngine.Services {
         /// <param name="projectJsonPath">壁纸 project.json 文件路径</param>
         /// <param name="options">预览选项</param>
         /// <returns>拼接后的命令行参数字符串</returns>
+        private static string EscapeArgument(string value) => value.Replace("\"", "\\\"");
+
         private string BuildPreviewArguments(string projectJsonPath, PreviewOptions options)
         {
             var args = new List<string>
         {
             "-control openWallpaper",
-            $"-file \"{projectJsonPath}\"",
-            $"-playInWindow \"{options.WindowId}\"",
+            $"-file \"{EscapeArgument(projectJsonPath)}\"",
+            $"-playInWindow \"{EscapeArgument(options.WindowId)}\"",
             $"-width {options.Width}",
             $"-height {options.Height}",
             "-paused false"  // 自动开始播放
