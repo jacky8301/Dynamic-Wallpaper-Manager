@@ -55,10 +55,7 @@ namespace WallpaperEngine.ViewModels {
                 }
 
                 // 如果没有选中合集且合集列表不为空，则自动选中第一个壁纸数不为0的合集
-                if (SelectedCollection == null && Collections.Count > 0)
-                {
-                    SelectedCollection = Collections.FirstOrDefault(c => c.WallpaperCount > 0) ?? Collections.First();
-                }
+                SelectFirstNonEmptyCollection();
 
                 RefreshOtherCollections();
             } catch (Exception ex) {
@@ -73,9 +70,6 @@ namespace WallpaperEngine.ViewModels {
             RefreshOtherCollections();
         }
 
-        /// <summary>
-        /// 如果当前没有选中合集，自动选中第一个壁纸数不为0的合集
-        /// </summary>
         public void SelectFirstNonEmptyCollection()
         {
             if (SelectedCollection == null && Collections.Count > 0)

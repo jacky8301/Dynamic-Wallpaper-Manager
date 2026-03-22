@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using WallpaperEngine.Common;
 using WallpaperEngine.ViewModels;
 using WallpaperEngine.Models;
 
@@ -28,10 +29,8 @@ namespace WallpaperEngine.Views {
             ViewModel.PropertyChanged += (s, e) => {
                 if (e.PropertyName == nameof(MainViewModel.SelectedCategoryId))
                 {
-                    Dispatcher.Invoke(() => {
-                        ScrollViewer scrollViewer = GetScrollViewer(WallpaperListBox);
-                        scrollViewer?.ScrollToHome();
-                    });
+                    _wallpaperScrollViewer ??= WpfHelper.FindScrollViewer(WallpaperListBox);
+                    _wallpaperScrollViewer?.ScrollToHome();
                 }
             };
 
@@ -53,16 +52,7 @@ namespace WallpaperEngine.Views {
             TrayIcon?.Dispose();
         }
         private MainViewModel ViewModel;
-        private static ScrollViewer GetScrollViewer(DependencyObject element)
-        {
-            if (element is ScrollViewer sv) return sv;
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(element); i++)
-            {
-                ScrollViewer result = GetScrollViewer(VisualTreeHelper.GetChild(element, i));
-                if (result != null) return result;
-            }
-            return null;
-        }
+        private ScrollViewer? _wallpaperScrollViewer;
 
         // 允许通过拖动标题栏移动窗口
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
