@@ -103,11 +103,8 @@ namespace WallpaperEngine.ViewModels {
 
             try {
                 var wallpaperIds = _dbManager.GetCollectionItems(SelectedCollection.Id);
-                foreach (var id in wallpaperIds) {
-                    var wallpaper = _dbManager.GetWallpaperById(id);
-                    if (wallpaper != null) {
-                        CollectionWallpapers.Add(wallpaper);
-                    }
+                foreach (var wallpaper in _dbManager.GetWallpapersByIds(wallpaperIds)) {
+                    CollectionWallpapers.Add(wallpaper);
                 }
             } catch (Exception ex) {
                 Log.Error(ex, "加载合集壁纸失败");

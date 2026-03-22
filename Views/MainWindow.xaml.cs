@@ -142,113 +142,35 @@ namespace WallpaperEngine.Views {
             System.Windows.Application.Current.Shutdown();
         }
 
-        // ListBox预览鼠标按下事件，处理Ctrl/Shift多选
         private void ListBox_PreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton != MouseButton.Left) return;
+            DependencyObject? src = e.OriginalSource as DependencyObject;
+            if (WpfHelper.IsAncestorButton(src) || WpfHelper.IsAncestorScrollBar(src)) return;
 
-            // 检查是否点击了按钮（如收藏按钮），如果是则跳过处理
-            DependencyObject? originalSource = e.OriginalSource as DependencyObject;
-            DependencyObject? current = originalSource;
-            bool isButtonClick = false;
-            while (current != null)
+            if (WpfHelper.FindAncestorBorder(src) is Border border &&
+                border.Tag is WallpaperEngine.Models.WallpaperItem wallpaper)
             {
-                if (current is System.Windows.Controls.Button)
-                {
-                    isButtonClick = true;
-                    break;
-                }
-                current = VisualTreeHelper.GetParent(current);
+                ViewModel.HandleWallpaperSelection(
+                    wallpaper,
+                    (Keyboard.Modifiers & ModifierKeys.Control) != 0,
+                    (Keyboard.Modifiers & ModifierKeys.Shift) != 0);
             }
-            if (isButtonClick) return;
-
-            // 检查是否点击了滚动条，如果是则跳过处理（允许滚动条正常工作）
-            current = originalSource;
-            bool isScrollBarClick = false;
-            while (current != null)
-            {
-                if (current is System.Windows.Controls.Primitives.ScrollBar ||
-                    current is System.Windows.Controls.Primitives.Thumb ||
-                    current is System.Windows.Controls.Primitives.RepeatButton ||
-                    current is System.Windows.Controls.Primitives.Track)
-                {
-                    isScrollBarClick = true;
-                    break;
-                }
-                current = VisualTreeHelper.GetParent(current);
-            }
-            if (isScrollBarClick) return;
-
-            // 找到被点击的Border（壁纸项）
-            DependencyObject? source = e.OriginalSource as DependencyObject;
-            while (source != null && !(source is Border))
-            {
-                source = VisualTreeHelper.GetParent(source);
-            }
-            if (source is Border border && border.Tag is WallpaperEngine.Models.WallpaperItem wallpaper)
-            {
-                bool isCtrlPressed = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
-                bool isShiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
-                ViewModel.HandleWallpaperSelection(wallpaper, isCtrlPressed, isShiftPressed);
-            }
-
-            // 始终阻止事件进一步传播，防止ListBox系统选择
             e.Handled = true;
         }
 
-        // ListBox预览鼠标右键按下事件，更新选中项
         private void ListBox_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton != MouseButton.Right) return;
+            DependencyObject? src = e.OriginalSource as DependencyObject;
+            if (WpfHelper.IsAncestorButton(src) || WpfHelper.IsAncestorScrollBar(src)) return;
 
-            // 检查是否点击了按钮（如收藏按钮），如果是则跳过处理
-            DependencyObject? originalSource = e.OriginalSource as DependencyObject;
-            DependencyObject? current = originalSource;
-            bool isButtonClick = false;
-            while (current != null)
+            if (WpfHelper.FindAncestorBorder(src) is Border border &&
+                border.Tag is WallpaperEngine.Models.WallpaperItem wallpaper &&
+                !wallpaper.IsSelected)
             {
-                if (current is System.Windows.Controls.Button)
-                {
-                    isButtonClick = true;
-                    break;
-                }
-                current = VisualTreeHelper.GetParent(current);
+                ViewModel.HandleWallpaperSelection(wallpaper, false, false);
             }
-            if (isButtonClick) return;
-
-            // 检查是否点击了滚动条，如果是则跳过处理（允许滚动条正常工作）
-            current = originalSource;
-            bool isScrollBarClick = false;
-            while (current != null)
-            {
-                if (current is System.Windows.Controls.Primitives.ScrollBar ||
-                    current is System.Windows.Controls.Primitives.Thumb ||
-                    current is System.Windows.Controls.Primitives.RepeatButton ||
-                    current is System.Windows.Controls.Primitives.Track)
-                {
-                    isScrollBarClick = true;
-                    break;
-                }
-                current = VisualTreeHelper.GetParent(current);
-            }
-            if (isScrollBarClick) return;
-
-            // 找到被点击的Border（壁纸项）
-            DependencyObject? source = e.OriginalSource as DependencyObject;
-            while (source != null && !(source is Border))
-            {
-                source = VisualTreeHelper.GetParent(source);
-            }
-            if (source is Border border && border.Tag is WallpaperEngine.Models.WallpaperItem wallpaper)
-            {
-                // 如果右键点击的壁纸未被选中，则清空选择并选中它
-                if (!wallpaper.IsSelected)
-                {
-                    ViewModel.HandleWallpaperSelection(wallpaper, false, false);
-                }
-            }
-
-            // 始终阻止事件进一步传播，防止ListBox系统选择
             e.Handled = true;
         }
 

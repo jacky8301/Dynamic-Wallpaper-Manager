@@ -191,6 +191,37 @@ namespace WallpaperEngine.Data {
         }
 
         /// <summary>
+        /// 批量按ID获取壁纸，保留传入ID的顺序
+        /// </summary>
+        public List<WallpaperItem> GetWallpapersByIds(IEnumerable<string> wallpaperIds)
+        {
+            var idList = wallpaperIds.ToList();
+            if (idList.Count == 0) return new List<WallpaperItem>();
+
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                var placeholders = string.Join(",", idList.Select((_, i) => $"@id{i}"));
+                using var command = m_connection.CreateCommand();
+                command.CommandText = $@"
+                    SELECT w.*, f.WallpaperId AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
+                    FROM Wallpapers w
+                    LEFT JOIN Favorites f ON w.Id = f.WallpaperId
+                    WHERE w.Id IN ({placeholders})";
+                for (int i = 0; i < idList.Count; i++)
+                    command.Parameters.AddWithValue($"@id{i}", idList[i]);
+
+                var byId = new Dictionary<string, WallpaperItem>();
+                using var reader = command.ExecuteReader();
+                while (reader.Read()) {
+                    var item = ReadWallpaperItem(reader);
+                    byId[item.Id] = item;
+                }
+                // preserve original ordering
+                return idList.Where(id => byId.ContainsKey(id)).Select(id => byId[id]).ToList();
+            }
+        }
+
+        /// <summary>
         /// 切换壁纸的收藏状态，收藏时插入记录，取消收藏时删除记录
         /// </summary>
         /// <param name="wallpaperId">壁纸ID</param>
@@ -1452,15 +1483,19 @@ namespace WallpaperEngine.Data {
         {
             var categories = new List<CategoryItem>();
             using var command = m_connection.CreateCommand();
-            command.CommandText = "SELECT Id, Name, IsDefault FROM Categories ORDER BY IsDefault DESC, Name";
+            command.CommandText = @"
+                SELECT c.Id, c.Name, c.IsDefault, COUNT(w.Id) AS WallpaperCount
+                FROM Categories c
+                LEFT JOIN Wallpapers w ON c.Id = w.CategoryId
+                GROUP BY c.Id, c.Name, c.IsDefault
+                ORDER BY c.IsDefault DESC, c.Name";
             using var reader = command.ExecuteReader();
             while (reader.Read()) {
                 var id = reader["Id"].ToString() ?? string.Empty;
                 var name = reader["Name"].ToString() ?? string.Empty;
                 var isDefault = Convert.ToBoolean(reader["IsDefault"]);
                 var isProtected = CategoryConstants.IsProtectedCategory(name);
-                // 获取壁纸数量
-                var count = GetCategoryWallpaperCount(id);
+                var count = Convert.ToInt32(reader["WallpaperCount"]);
                 categories.Add(new CategoryItem(id, name, count, isProtected, isDefault));
             }
             return categories;
