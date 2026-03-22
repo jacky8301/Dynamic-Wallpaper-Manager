@@ -220,6 +220,6 @@ Follow `.editorconfig` conventions:
 - **Database locked**: Ensure no other process is accessing `wallpapers.db`. The application holds a single SQLite connection for its lifetime.
 - **Wallpaper Engine not detected**: The `PreviewService` attempts to locate Wallpaper Engine via the registry; if not found, previews will fail. The path can be set manually in the settings UI.
 - **High memory usage**: The `ImageCache` limits the number of cached images; thumbnails are stored on disk. If memory grows, check for unbounded collections in view‑models.
-- **Category management issues**: The application has no hardcoded default categories. All categories are user-defined. Protected virtual categories (`所有分类`, `未分类`) cannot be renamed or deleted.
+- **Category management issues**: Protected virtual categories (`所有分类`, `未分类`) cannot be renamed or deleted. The 10 default categories (自然, 抽象, 游戏, 动漫, 科幻, 风景, 建筑, 动物, 人物, 车辆) are stored in the database with `IsDefault=1`; they can be renamed/deleted by the user like custom categories.
 - **Single instance conflicts**: If the application appears unresponsive, check for existing instances via Task Manager and terminate them before relaunching.
 - **Database schema errors**: If you encounter "table Favorites has no column named WallpaperId", delete the database file (`%USERPROFILE%\DynamicWallpaperManager\wallpapers.db`) and restart the application. The database will be recreated with the correct schema. The application includes automatic migration logic, but in rare cases manual cleanup may be needed.
