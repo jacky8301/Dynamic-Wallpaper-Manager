@@ -278,6 +278,8 @@ namespace WallpaperEngine.ViewModels {
         /// <param name="e">事件参数</param>
         private async void OnCategoryChanged(object? sender, CategoryChangedEventArgs e)
         {
+            try
+            {
             // 当分类发生变化时，刷新分类列表
             await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
             {
@@ -313,6 +315,11 @@ namespace WallpaperEngine.ViewModels {
                 WallpapersView.Refresh();
                 OnPropertyChanged(nameof(WallpaperCount));
             });
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "处理分类变更事件失败");
+            }
         }
 
         /// <summary>
@@ -455,7 +462,7 @@ namespace WallpaperEngine.ViewModels {
                     Message =  $"加载壁纸列表失败: {ex.Message}", Title = "错误",
                     ShowCancelButton =false, DialogType = DialogType.Error
                  });
-                return null;
+                return new List<WallpaperItem>();
             }
         }
 

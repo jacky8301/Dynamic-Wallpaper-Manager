@@ -230,8 +230,10 @@ namespace WallpaperEngine.Services {
         {
             try
             {
-                var json = JsonConvert.SerializeObject(project, Formatting.Indented);
-                await File.WriteAllTextAsync(projectFile, json);
+                var rawJson = await File.ReadAllTextAsync(projectFile);
+                var jobj = Newtonsoft.Json.Linq.JObject.Parse(rawJson);
+                jobj["wallpaperId"] = project.WallpaperId;
+                await File.WriteAllTextAsync(projectFile, jobj.ToString(Newtonsoft.Json.Formatting.Indented));
                 Log.Debug("已更新壁纸ID到文件: {ProjectFile}", projectFile);
             }
             catch (Exception ex)

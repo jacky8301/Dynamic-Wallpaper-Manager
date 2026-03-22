@@ -266,13 +266,9 @@ namespace WallpaperEngine.Services
                     try
                     {
                         var json = await File.ReadAllTextAsync(projectFile);
-                        var project = JsonConvert.DeserializeObject<WallpaperProject>(json, new JsonSerializerSettings { MaxDepth = 32 });
-                        if (project == null)
-                            continue;
-
-                        project.Category = newCategoryName;
-                        var updatedJson = JsonConvert.SerializeObject(project, Formatting.Indented);
-                        await File.WriteAllTextAsync(projectFile, updatedJson);
+                        var jobj = Newtonsoft.Json.Linq.JObject.Parse(json);
+                        jobj["category"] = newCategoryName;
+                        await File.WriteAllTextAsync(projectFile, jobj.ToString(Newtonsoft.Json.Formatting.Indented));
                     }
                     catch (Exception ex)
                     {

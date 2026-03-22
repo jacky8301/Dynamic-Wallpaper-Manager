@@ -198,27 +198,32 @@ namespace WallpaperEngine.Data {
             var idList = wallpaperIds.ToList();
             if (idList.Count == 0) return new List<WallpaperItem>();
 
+            const int batchSize = 999;
+            var byId = new Dictionary<string, WallpaperItem>();
+
             lock (m_lock) {
                 EnsureConnectionOpen();
-                var placeholders = string.Join(",", idList.Select((_, i) => $"@id{i}"));
-                using var command = m_connection.CreateCommand();
-                command.CommandText = $@"
-                    SELECT w.*, f.WallpaperId AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
-                    FROM Wallpapers w
-                    LEFT JOIN Favorites f ON w.Id = f.WallpaperId
-                    WHERE w.Id IN ({placeholders})";
-                for (int i = 0; i < idList.Count; i++)
-                    command.Parameters.AddWithValue($"@id{i}", idList[i]);
+                for (int offset = 0; offset < idList.Count; offset += batchSize) {
+                    var batch = idList.Skip(offset).Take(batchSize).ToList();
+                    var placeholders = string.Join(",", batch.Select((_, i) => $"@id{i}"));
+                    using var command = m_connection.CreateCommand();
+                    command.CommandText = $@"
+                        SELECT w.*, f.WallpaperId AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
+                        FROM Wallpapers w
+                        LEFT JOIN Favorites f ON w.Id = f.WallpaperId
+                        WHERE w.Id IN ({placeholders})";
+                    for (int i = 0; i < batch.Count; i++)
+                        command.Parameters.AddWithValue($"@id{i}", batch[i]);
 
-                var byId = new Dictionary<string, WallpaperItem>();
-                using var reader = command.ExecuteReader();
-                while (reader.Read()) {
-                    var item = ReadWallpaperItem(reader);
-                    byId[item.Id] = item;
+                    using var reader = command.ExecuteReader();
+                    while (reader.Read()) {
+                        var item = ReadWallpaperItem(reader);
+                        byId[item.Id] = item;
+                    }
                 }
-                // preserve original ordering
-                return idList.Where(id => byId.ContainsKey(id)).Select(id => byId[id]).ToList();
             }
+            // preserve original ordering
+            return idList.Where(id => byId.ContainsKey(id)).Select(id => byId[id]).ToList();
         }
 
         /// <summary>
@@ -252,6 +257,13 @@ namespace WallpaperEngine.Data {
                 DELETE FROM Favorites WHERE WallpaperId = @wallpaperId";
                     command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
                 }
+                command.ExecuteNonQuery();
+
+                // 同步更新 Wallpapers.IsFavorite 缓存列
+                command.Parameters.Clear();
+                command.CommandText = "UPDATE Wallpapers SET IsFavorite = @isFavorite WHERE Id = @wallpaperId";
+                command.Parameters.AddWithValue("@isFavorite", isFavorite ? 1 : 0);
+                command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
                 command.ExecuteNonQuery();
             }
         }
@@ -775,6 +787,10 @@ namespace WallpaperEngine.Data {
             }
 
             Log.Information("数据库初始化完成");
+
+            // 执行schema迁移（检查旧版本数据库结构并升级）
+            MigrateCategoryIdToGuid();
+            MigrateCategoriesToIdSystem();
         }
         /// <summary>
         /// 保存壁纸记录到数据库，若已存在则更新（INSERT OR REPLACE）

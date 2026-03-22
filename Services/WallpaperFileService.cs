@@ -32,14 +32,18 @@ namespace WallpaperEngine.Services {
                 Environment.GetFolderPath(Environment.SpecialFolder.System),
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
                 Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
             };
             foreach (var sysFolder in systemFolders) {
                 if (!string.IsNullOrEmpty(sysFolder)) {
-                    // Block both the system folder itself and any subdirectory within it
-                    string normalizedSys = sysFolder.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-                    string normalizedPath = fullPath.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
-                    if (normalizedPath.StartsWith(normalizedSys, StringComparison.OrdinalIgnoreCase)) {
+                    // Block the system folder itself but NOT its subdirectories
+                    // (subdirectories like SteamLibrary under UserProfile are valid wallpaper locations)
+                    string normalizedSys = sysFolder.TrimEnd(Path.DirectorySeparatorChar);
+                    string normalizedPath = fullPath.TrimEnd(Path.DirectorySeparatorChar);
+                    if (string.Equals(normalizedPath, normalizedSys, StringComparison.OrdinalIgnoreCase)) {
                         Log.Error("拒绝删除系统目录: {Path}", folderPath);
                         return false;
                     }

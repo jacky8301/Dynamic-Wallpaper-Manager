@@ -13,6 +13,7 @@ namespace WallpaperEngine.Services {
         private readonly ApplicationSettings _settings;
         private readonly ISettingsService _settingsService;
         private Process? _currentPreviewProcess;
+        private readonly object _previewLock = new();
 
         // Windows API声明
         [DllImport("user32.dll", SetLastError = true)]
@@ -81,20 +82,19 @@ namespace WallpaperEngine.Services {
                 StopPreview();
 
                 // 构建命令参数
-                var arguments = BuildPreviewArguments(projectJsonPath, options);
-                Log.Debug("启动Wallpaper Engine预览，命令行参数: {Arguments}", arguments);
-
-                // 启动预览进程
                 var processStartInfo = new ProcessStartInfo {
                     FileName = _settings.WallpaperEnginePath,
-                    Arguments = arguments,
                     UseShellExecute = false,
                     CreateNoWindow = false,
                     WindowStyle = ProcessWindowStyle.Normal
                 };
+                PopulatePreviewArguments(processStartInfo, projectJsonPath, options);
+                Log.Debug("启动Wallpaper Engine预览，参数: {Args}", string.Join(" ", processStartInfo.ArgumentList));
 
-                _currentPreviewProcess = Process.Start(processStartInfo);
-                return _currentPreviewProcess != null && !_currentPreviewProcess.HasExited;
+                lock (_previewLock) {
+                    _currentPreviewProcess = Process.Start(processStartInfo);
+                    return _currentPreviewProcess != null && !_currentPreviewProcess.HasExited;
+                }
             } catch (Exception ex) {
                 Log.Error("启动预览失败: {Error}", ex.Message);
                 throw new Exception($"启动预览失败: {ex.Message}", ex);
@@ -107,58 +107,57 @@ namespace WallpaperEngine.Services {
         /// <param name="projectJsonPath">壁纸 project.json 文件路径</param>
         /// <param name="options">预览选项</param>
         /// <returns>拼接后的命令行参数字符串</returns>
-        private static string EscapeArgument(string value) => value.Replace("\"", "\\\"");
-
-        private string BuildPreviewArguments(string projectJsonPath, PreviewOptions options)
+        private static void PopulatePreviewArguments(ProcessStartInfo startInfo, string projectJsonPath, PreviewOptions options)
         {
-            var args = new List<string>
-        {
-            "-control openWallpaper",
-            $"-file \"{EscapeArgument(projectJsonPath)}\"",
-            $"-playInWindow \"{EscapeArgument(options.WindowId)}\"",
-            $"-width {options.Width}",
-            $"-height {options.Height}",
-            "-paused false"  // 自动开始播放
-        };
+            startInfo.ArgumentList.Add("-control");
+            startInfo.ArgumentList.Add("openWallpaper");
+            startInfo.ArgumentList.Add("-file");
+            startInfo.ArgumentList.Add(projectJsonPath);
+            startInfo.ArgumentList.Add("-playInWindow");
+            startInfo.ArgumentList.Add(options.WindowId);
+            startInfo.ArgumentList.Add("-width");
+            startInfo.ArgumentList.Add(options.Width.ToString());
+            startInfo.ArgumentList.Add("-height");
+            startInfo.ArgumentList.Add(options.Height.ToString());
+            startInfo.ArgumentList.Add("-paused");
+            startInfo.ArgumentList.Add("false");
 
-            // 添加窗口位置参数
-            if (options.X != 0)
-            {
-                args.Add($"-x {options.X}");
+            if (options.X != 0) {
+                startInfo.ArgumentList.Add("-x");
+                startInfo.ArgumentList.Add(options.X.ToString());
             }
-            if (options.Y != 0)
-            {
-                args.Add($"-y {options.Y}");
+            if (options.Y != 0) {
+                startInfo.ArgumentList.Add("-y");
+                startInfo.ArgumentList.Add(options.Y.ToString());
             }
-            // 添加窗口激活参数
-            if (options.Activate)
-            {
-                args.Add("-activate");
+            if (options.Activate) {
+                startInfo.ArgumentList.Add("-activate");
             }
-
-            return string.Join(" ", args);
-        } 
+        }
 
         /// <summary>
         /// 停止当前正在运行的预览进程，先尝试优雅关闭，超时后强制终止
         /// </summary>
         public void StopPreview()
         {
+            Process? proc;
+            lock (_previewLock) {
+                proc = _currentPreviewProcess;
+                _currentPreviewProcess = null;
+            }
+            if (proc == null) return;
             try {
                 Log.Debug("停止壁纸预览");
-                if (_currentPreviewProcess != null && !_currentPreviewProcess.HasExited) {
-                    // 尝试优雅关闭
-                    _currentPreviewProcess.CloseMainWindow();
-
-                    if (!_currentPreviewProcess.WaitForExit(2000)) {
-                        _currentPreviewProcess.Kill();
+                if (!proc.HasExited) {
+                    proc.CloseMainWindow();
+                    if (!proc.WaitForExit(2000)) {
+                        proc.Kill();
                     }
                 }
             } catch (Exception ex) {
                 Log.Warning("停止预览进程时出错: {Error}", ex.Message);
             } finally {
-                _currentPreviewProcess?.Dispose();
-                _currentPreviewProcess = null;
+                proc.Dispose();
             }
         }
 
@@ -168,7 +167,13 @@ namespace WallpaperEngine.Services {
         /// <returns>预览进程正在运行返回 true，否则返回 false</returns>
         public bool IsPreviewRunning()
         {
-            return _currentPreviewProcess != null && !_currentPreviewProcess.HasExited;
+            lock (_previewLock) {
+                try {
+                    return _currentPreviewProcess != null && !_currentPreviewProcess.HasExited;
+                } catch (InvalidOperationException) {
+                    return false;
+                }
+            }
         }
     }
 }

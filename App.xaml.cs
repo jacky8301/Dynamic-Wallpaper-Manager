@@ -22,6 +22,15 @@ namespace WallpaperEngine {
         private ServiceProvider _serviceProvider;
         public App()
         {
+            // 配置 Serilog（在所有其他初始化之前，以捕获数据库初始化日志）
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .WriteTo.File("log/dynamic_wallpaper_manager.log",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 30)
+                .CreateLogger();
+
             string wallpaperDbPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "DynamicWallpaperManager");
             if (!Directory.Exists(wallpaperDbPath)) {
                 Directory.CreateDirectory(wallpaperDbPath);
@@ -48,15 +57,6 @@ namespace WallpaperEngine {
         /// </summary>
         protected override void OnStartup(StartupEventArgs e)
         {
-            // 配置 Serilog
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.Console()
-                .WriteTo.File("log/dynamic_wallpaper_manager.log",
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 30)
-                .CreateLogger();
-
             Log.Information("Application starting up");
 
             // 迁移壁纸ID：将数据库中的Id回写到project.json文件

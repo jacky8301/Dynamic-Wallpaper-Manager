@@ -238,13 +238,14 @@ namespace WallpaperEngine.ViewModels {
             string projectJsonPath = Path.Combine(wallpaper.FolderPath, "project.json");
 
             if (File.Exists(toolPath) && File.Exists(projectJsonPath)) {
-                string escapedPath = projectJsonPath.Replace("\"", "\\\"");
-                string arguments = $"-control openWallpaper -file \"{escapedPath}\"";
                 ProcessStartInfo startInfo = new ProcessStartInfo {
                     FileName = toolPath,
-                    Arguments = arguments,
                     UseShellExecute = false
                 };
+                startInfo.ArgumentList.Add("-control");
+                startInfo.ArgumentList.Add("openWallpaper");
+                startInfo.ArgumentList.Add("-file");
+                startInfo.ArgumentList.Add(projectJsonPath);
                 Process.Start(startInfo)?.Dispose();
             } else {
                 Log.Warning("无法应用壁纸: 工具路径或project.json不存在. ToolPath={ToolPath}, ProjectJson={ProjectJson}", toolPath, projectJsonPath);
