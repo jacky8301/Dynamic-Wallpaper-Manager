@@ -239,15 +239,6 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
-        /// 更新分类统计信息（壁纸数量）
-        /// </summary>
-        private void UpdateCategoryStats()
-        {
-            // 分类在从数据库加载时已经设置了壁纸数量，这里只需要更新显示
-            // 如果需要实时更新，可以重新查询数据库
-        }
-
-        /// <summary>
         /// 从数据库加载合集列表
         /// </summary>
         private void LoadCollections()

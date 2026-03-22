@@ -59,17 +59,6 @@ namespace WallpaperEngine {
         {
             Log.Information("Application starting up");
 
-            // 迁移壁纸ID：将数据库中的Id回写到project.json文件
-            //try
-            //{
-            //    var dbManager = Ioc.Default.GetService<DatabaseManager>();
-            //    dbManager?.MigrateWallpaperIds();
-            //}
-            //catch (Exception ex)
-            //{
-            //    Log.Warning("壁纸ID迁移失败: {Message}", ex.Message);
-            //}
-
             _singleInstanceManager = new SingleInstanceManager(AppGuid);
 
             if (!_singleInstanceManager.IsFirstInstance) {

@@ -1635,55 +1635,5 @@ namespace WallpaperEngine.Data {
                 return result?.ToString();
             }
         }
-
-        /// <summary>
-        /// 迁移壁纸ID：检查所有壁纸的project.json文件，如果wallpaperId为空，则将数据库中的Id回写进去
-        /// </summary>
-        public void MigrateWallpaperIds()
-        {
-            lock (m_lock) {
-                EnsureConnectionOpen();
-                Log.Information("开始迁移壁纸ID");
-
-                // 获取所有壁纸记录
-                var wallpapers = new List<WallpaperItem>();
-                using var command = m_connection.CreateCommand();
-                command.CommandText = "SELECT Id, FolderPath FROM Wallpapers";
-                using var reader = command.ExecuteReader();
-                while (reader.Read()) {
-                    wallpapers.Add(new WallpaperItem {
-                        Id = reader["Id"].ToString(),
-                        FolderPath = reader["FolderPath"].ToString()
-                    });
-                }
-
-                int updatedCount = 0;
-                foreach (var wallpaper in wallpapers) {
-                    try {
-                        var projectFile = Path.Combine(wallpaper.FolderPath, "project.json");
-                        if (!File.Exists(projectFile))
-                            continue;
-
-                        var jsonContent = File.ReadAllText(projectFile);
-                        var project = Newtonsoft.Json.JsonConvert.DeserializeObject<WallpaperProject>(jsonContent, new Newtonsoft.Json.JsonSerializerSettings { MaxDepth = 32 });
-                        if (project == null)
-                            continue;
-
-                        // 如果wallpaperId为空，则使用数据库中的Id
-                        if (string.IsNullOrEmpty(project.WallpaperId)) {
-                            project.WallpaperId = wallpaper.Id;
-                            var updatedJson = Newtonsoft.Json.JsonConvert.SerializeObject(project, Newtonsoft.Json.Formatting.Indented);
-                            File.WriteAllText(projectFile, updatedJson);
-                            updatedCount++;
-                            Log.Debug("更新壁纸ID: {FolderPath} -> {Id}", wallpaper.FolderPath, wallpaper.Id);
-                        }
-                    } catch (Exception ex) {
-                        Log.Warning("迁移壁纸ID失败 {FolderPath}: {Message}", wallpaper.FolderPath, ex.Message);
-                    }
-                }
-
-                Log.Information("壁纸ID迁移完成，更新了 {UpdatedCount} 个文件", updatedCount);
-            }
-        }
     }
 }
