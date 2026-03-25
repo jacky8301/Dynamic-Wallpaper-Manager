@@ -1,5 +1,6 @@
 using Serilog;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 
@@ -60,6 +61,32 @@ namespace WallpaperEngine.Services {
             } catch (Exception ex) {
                 Log.Error(ex, "设置桌面壁纸时发生异常");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// 停止 Wallpaper Engine 动态壁纸
+        /// </summary>
+        /// <param name="wallpaperEnginePath">Wallpaper Engine 可执行文件路径</param>
+        public static void StopWallpaperEngine(string wallpaperEnginePath)
+        {
+            if (string.IsNullOrEmpty(wallpaperEnginePath) || !File.Exists(wallpaperEnginePath)) {
+                Log.Debug("Wallpaper Engine 路径未设置或不存在，跳过停止动态壁纸");
+                return;
+            }
+
+            try {
+                ProcessStartInfo startInfo = new ProcessStartInfo {
+                    FileName = wallpaperEnginePath,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
+                startInfo.ArgumentList.Add("-control");
+                startInfo.ArgumentList.Add("stop");
+                Process.Start(startInfo)?.Dispose();
+                Log.Information("已发送停止动态壁纸命令");
+            } catch (Exception ex) {
+                Log.Warning(ex, "停止动态壁纸失败");
             }
         }
 

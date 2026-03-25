@@ -246,6 +246,13 @@ namespace WallpaperEngine.ViewModels {
             StaticWallpaperItem? wallpaper = parameter as StaticWallpaperItem ?? SelectedWallpaper;
             if (wallpaper == null) return;
 
+            // 先停止 Wallpaper Engine 动态壁纸，再设置静态壁纸
+            var settingsService = Ioc.Default.GetService<ISettingsService>();
+            if (settingsService != null) {
+                var settings = settingsService.LoadSettings();
+                DesktopWallpaperService.StopWallpaperEngine(settings.WallpaperEnginePath);
+            }
+
             bool success = DesktopWallpaperService.SetDesktopWallpaper(wallpaper.FilePath);
             if (success) {
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
