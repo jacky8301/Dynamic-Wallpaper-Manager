@@ -49,6 +49,7 @@ namespace WallpaperEngine {
                     .AddSingleton<FavoriteViewModel>()
                     .AddSingleton<CollectionViewModel>()
                     .AddSingleton<CategoryManagementViewModel>()
+                    .AddSingleton<StaticWallpaperViewModel>()
                     .BuildServiceProvider();
             Ioc.Default.ConfigureServices(_serviceProvider);
         }

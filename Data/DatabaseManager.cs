@@ -786,6 +786,26 @@ namespace WallpaperEngine.Data {
                 Log.Warning("创建CollectionItems.WallpaperId索引失败: {Error}", ex.Message);
             }
 
+            // 静态壁纸表
+            command.CommandText = @"
+                CREATE TABLE IF NOT EXISTS StaticWallpapers (
+                    Id TEXT PRIMARY KEY,
+                    FilePath TEXT UNIQUE NOT NULL,
+                    FileName TEXT,
+                    FileSize INTEGER DEFAULT 0,
+                    Width INTEGER DEFAULT 0,
+                    Height INTEGER DEFAULT 0,
+                    AddedDate TEXT NOT NULL
+                )";
+            command.ExecuteNonQuery();
+
+            try {
+                command.CommandText = "CREATE INDEX IF NOT EXISTS IX_StaticWallpapers_FileName ON StaticWallpapers(FileName)";
+                command.ExecuteNonQuery();
+            } catch (Exception ex) {
+                Log.Warning("创建StaticWallpapers.FileName索引失败: {Error}", ex.Message);
+            }
+
             Log.Information("数据库初始化完成");
 
             // 执行schema迁移（检查旧版本数据库结构并升级）
@@ -1634,6 +1654,150 @@ namespace WallpaperEngine.Data {
                 var result = command.ExecuteScalar();
                 return result?.ToString();
             }
+        }
+
+        // ===== 静态壁纸管理 =====
+
+        /// <summary>
+        /// 获取所有静态壁纸，按添加时间倒序排列
+        /// </summary>
+        public List<StaticWallpaperItem> GetAllStaticWallpapers()
+        {
+            return ExecuteInLock(conn => {
+                var items = new List<StaticWallpaperItem>();
+                using var command = conn.CreateCommand();
+                command.CommandText = "SELECT Id, FilePath, FileName, FileSize, Width, Height, AddedDate FROM StaticWallpapers ORDER BY AddedDate DESC";
+                using var reader = command.ExecuteReader();
+                while (reader.Read()) {
+                    items.Add(ReadStaticWallpaperItem(reader));
+                }
+                return items;
+            });
+        }
+
+        /// <summary>
+        /// 添加单个静态壁纸记录
+        /// </summary>
+        public void AddStaticWallpaper(StaticWallpaperItem item)
+        {
+            ExecuteInLock(conn => {
+                using var command = conn.CreateCommand();
+                command.CommandText = @"
+                    INSERT OR IGNORE INTO StaticWallpapers (Id, FilePath, FileName, FileSize, Width, Height, AddedDate)
+                    VALUES ($id, $filePath, $fileName, $fileSize, $width, $height, $addedDate)";
+                command.Parameters.AddWithValue("$id", item.Id);
+                command.Parameters.AddWithValue("$filePath", item.FilePath);
+                command.Parameters.AddWithValue("$fileName", item.FileName);
+                command.Parameters.AddWithValue("$fileSize", item.FileSize);
+                command.Parameters.AddWithValue("$width", item.Width);
+                command.Parameters.AddWithValue("$height", item.Height);
+                command.Parameters.AddWithValue("$addedDate", item.AddedDate.ToString("o"));
+                command.ExecuteNonQuery();
+            });
+        }
+
+        /// <summary>
+        /// 批量添加静态壁纸记录（使用事务）
+        /// </summary>
+        public void AddStaticWallpapers(IEnumerable<StaticWallpaperItem> items)
+        {
+            ExecuteInLock(conn => {
+                using var transaction = conn.BeginTransaction();
+                try {
+                    using var command = conn.CreateCommand();
+                    command.CommandText = @"
+                        INSERT OR IGNORE INTO StaticWallpapers (Id, FilePath, FileName, FileSize, Width, Height, AddedDate)
+                        VALUES ($id, $filePath, $fileName, $fileSize, $width, $height, $addedDate)";
+                    var pId = command.Parameters.Add("$id", SqliteType.Text);
+                    var pFilePath = command.Parameters.Add("$filePath", SqliteType.Text);
+                    var pFileName = command.Parameters.Add("$fileName", SqliteType.Text);
+                    var pFileSize = command.Parameters.Add("$fileSize", SqliteType.Integer);
+                    var pWidth = command.Parameters.Add("$width", SqliteType.Integer);
+                    var pHeight = command.Parameters.Add("$height", SqliteType.Integer);
+                    var pAddedDate = command.Parameters.Add("$addedDate", SqliteType.Text);
+
+                    foreach (var item in items) {
+                        pId.Value = item.Id;
+                        pFilePath.Value = item.FilePath;
+                        pFileName.Value = item.FileName;
+                        pFileSize.Value = item.FileSize;
+                        pWidth.Value = item.Width;
+                        pHeight.Value = item.Height;
+                        pAddedDate.Value = item.AddedDate.ToString("o");
+                        command.ExecuteNonQuery();
+                    }
+                    transaction.Commit();
+                } catch {
+                    transaction.Rollback();
+                    throw;
+                }
+            });
+        }
+
+        /// <summary>
+        /// 删除单个静态壁纸记录
+        /// </summary>
+        public void DeleteStaticWallpaper(string id)
+        {
+            ExecuteInLock(conn => {
+                using var command = conn.CreateCommand();
+                command.CommandText = "DELETE FROM StaticWallpapers WHERE Id = $id";
+                command.Parameters.AddWithValue("$id", id);
+                command.ExecuteNonQuery();
+            });
+        }
+
+        /// <summary>
+        /// 批量删除静态壁纸记录
+        /// </summary>
+        public void DeleteStaticWallpapers(IEnumerable<string> ids)
+        {
+            ExecuteInLock(conn => {
+                using var transaction = conn.BeginTransaction();
+                try {
+                    using var command = conn.CreateCommand();
+                    command.CommandText = "DELETE FROM StaticWallpapers WHERE Id = $id";
+                    var pId = command.Parameters.Add("$id", SqliteType.Text);
+                    foreach (var id in ids) {
+                        pId.Value = id;
+                        command.ExecuteNonQuery();
+                    }
+                    transaction.Commit();
+                } catch {
+                    transaction.Rollback();
+                    throw;
+                }
+            });
+        }
+
+        /// <summary>
+        /// 根据文件路径查找静态壁纸
+        /// </summary>
+        public StaticWallpaperItem? GetStaticWallpaperByFilePath(string filePath)
+        {
+            return ExecuteInLock(conn => {
+                using var command = conn.CreateCommand();
+                command.CommandText = "SELECT Id, FilePath, FileName, FileSize, Width, Height, AddedDate FROM StaticWallpapers WHERE FilePath = $filePath";
+                command.Parameters.AddWithValue("$filePath", filePath);
+                using var reader = command.ExecuteReader();
+                if (reader.Read()) {
+                    return ReadStaticWallpaperItem(reader);
+                }
+                return null;
+            });
+        }
+
+        private StaticWallpaperItem ReadStaticWallpaperItem(DbDataReader reader)
+        {
+            return new StaticWallpaperItem {
+                Id = reader["Id"]?.ToString() ?? string.Empty,
+                FilePath = reader["FilePath"]?.ToString() ?? string.Empty,
+                FileName = reader["FileName"]?.ToString() ?? string.Empty,
+                FileSize = reader["FileSize"] != DBNull.Value ? Convert.ToInt64(reader["FileSize"]) : 0,
+                Width = reader["Width"] != DBNull.Value ? Convert.ToInt32(reader["Width"]) : 0,
+                Height = reader["Height"] != DBNull.Value ? Convert.ToInt32(reader["Height"]) : 0,
+                AddedDate = DateTime.TryParse(reader["AddedDate"]?.ToString(), out var date) ? date : DateTime.Now
+            };
         }
     }
 }

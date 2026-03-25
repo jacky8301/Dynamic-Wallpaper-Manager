@@ -53,9 +53,7 @@
                                 Background="{TemplateBinding Background}"
                                 BorderBrush="Transparent"
                                 BorderThickness="0,0,0,2">
-                                <ContentPresenter
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center" />
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsChecked" Value="True">
@@ -108,7 +106,7 @@
                             BorderThickness="0,0,0,1">
                             <StackPanel Height="36" Orientation="Horizontal">
                                 <RadioButton
-                                    Content="全部壁纸"
+                                    Content="动态壁纸"
                                     GroupName="MainTab"
                                     IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToZeroConverter}}"
                                     Style="{StaticResource TabRadioButtonStyle}" />
@@ -121,6 +119,11 @@
                                     Content="壁纸合集"
                                     GroupName="MainTab"
                                     IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToTwoConverter}}"
+                                    Style="{StaticResource TabRadioButtonStyle}" />
+                                <RadioButton
+                                    Content="静态壁纸"
+                                    GroupName="MainTab"
+                                    IsChecked="{Binding CurrentTab, Converter={StaticResource EqualToThreeConverter}}"
                                     Style="{StaticResource TabRadioButtonStyle}" />
                             </StackPanel>
                         </Border>
@@ -150,7 +153,7 @@
                         </Border>
                         <!--  内容区域  -->
                         <Grid Grid.Row="2">
-                            <!--  Tab 0: 全部壁纸列表 + 详情  -->
+                            <!--  Tab 0: 动态壁纸列表 + 详情  -->
                             <Grid>
                                 <Grid.Style>
                                     <Style TargetType="Grid">
@@ -340,10 +343,10 @@
                                                     <Image Source="{Binding PreviewImagePath, Converter={StaticResource ImageToSourceConverter}, IsAsync=True}" Stretch="UniformToFill" />
                                                     <Border VerticalAlignment="Bottom" Background="#80000000">
                                                         <TextBlock
+                                                            Height="15"
                                                             Margin="5"
                                                             FontWeight="Bold"
                                                             Foreground="White"
-                                                            Height="15"
                                                             Text="{Binding Project.Title, Mode=TwoWay}"
                                                             TextWrapping="Wrap" />
                                                     </Border>
@@ -394,6 +397,19 @@
                                     </Style>
                                 </views:CollectionView.Style>
                             </views:CollectionView>
+                            <!--  Tab 3: 静态壁纸  -->
+                            <views:StaticWallpaperView x:Name="StaticWallpaperViewPanel">
+                                <views:StaticWallpaperView.Style>
+                                    <Style TargetType="views:StaticWallpaperView">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.CurrentTab, ElementName=mainWindow, Converter={StaticResource EqualToThreeConverter}}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </views:StaticWallpaperView.Style>
+                            </views:StaticWallpaperView>
                         </Grid>
                     </Grid>
                 </Grid>

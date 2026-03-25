@@ -1,0 +1,75 @@
+using Serilog;
+using System;
+using System.IO;
+using System.Runtime.InteropServices;
+
+namespace WallpaperEngine.Services {
+    /// <summary>
+    /// 桌面壁纸设置服务，通过 Win32 API 设置 Windows 桌面壁纸
+    /// </summary>
+    public static class DesktopWallpaperService {
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+
+        private const int SPI_SETDESKWALLPAPER = 20;
+        private const int SPIF_UPDATEINIFILE = 0x01;
+        private const int SPIF_SENDWININICHANGE = 0x02;
+
+        private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase) {
+            ".jpg", ".jpeg", ".png", ".bmp", ".webp"
+        };
+
+        /// <summary>
+        /// 设置桌面壁纸
+        /// </summary>
+        /// <param name="imagePath">图片文件完整路径</param>
+        /// <returns>是否设置成功</returns>
+        public static bool SetDesktopWallpaper(string imagePath)
+        {
+            if (string.IsNullOrEmpty(imagePath)) {
+                Log.Warning("壁纸路径为空");
+                return false;
+            }
+
+            if (!File.Exists(imagePath)) {
+                Log.Warning("壁纸文件不存在: {Path}", imagePath);
+                return false;
+            }
+
+            string extension = Path.GetExtension(imagePath);
+            if (!SupportedExtensions.Contains(extension)) {
+                Log.Warning("不支持的图片格式: {Extension}", extension);
+                return false;
+            }
+
+            try {
+                int result = SystemParametersInfo(
+                    SPI_SETDESKWALLPAPER,
+                    0,
+                    imagePath,
+                    SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
+
+                if (result != 0) {
+                    Log.Information("桌面壁纸设置成功: {Path}", imagePath);
+                    return true;
+                } else {
+                    int error = Marshal.GetLastWin32Error();
+                    Log.Warning("设置桌面壁纸失败，错误代码: {ErrorCode}", error);
+                    return false;
+                }
+            } catch (Exception ex) {
+                Log.Error(ex, "设置桌面壁纸时发生异常");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 判断文件是否为支持的图片格式
+        /// </summary>
+        public static bool IsSupportedImage(string filePath)
+        {
+            string extension = Path.GetExtension(filePath);
+            return SupportedExtensions.Contains(extension);
+        }
+    }
+}

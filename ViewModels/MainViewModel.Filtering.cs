@@ -108,6 +108,16 @@ namespace WallpaperEngine.ViewModels {
                 var collectionVm = Ioc.Default.GetService<CollectionViewModel>();
                 collectionVm?.SelectFirstNonEmptyCollection();
             }
+
+            // 切换到静态壁纸页面时加载数据
+            if (value == 3)
+            {
+                var staticVm = Ioc.Default.GetService<StaticWallpaperViewModel>();
+                if (staticVm != null)
+                {
+                    _ = staticVm.LoadStaticWallpapersAsync();
+                }
+            }
         }
 
         /// <summary>
