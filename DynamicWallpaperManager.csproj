@@ -1,5 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="version.props" />
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -12,7 +14,18 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>AnyCPU;x86</Platforms>
+    <AppVersion>1.3.4.3</AppVersion>  <!-- 改这里 -->                                                    
+    <AssemblyVersion>$(AppVersion)</AssemblyVersion>
+    <FileVersion>$(AppVersion)</FileVersion>
   </PropertyGroup>
+
+  <!-- Generate version.nsh for NSIS after each build -->
+  <Target Name="GenerateVersionNsh" AfterTargets="Build">
+    <WriteLinesToFile
+      File="$(MSBuildProjectDirectory)\version.nsh"
+      Lines="!define PRODUCT_VERSION &quot;$(AppVersion)&quot;"
+      Overwrite="true" />
+  </Target>
 
   <ItemGroup>
     <None Remove="C:\Users\Jacky Zheng\.nuget\packages\nlog.config\4.7.15\contentFiles\any\any\NLog.config" />

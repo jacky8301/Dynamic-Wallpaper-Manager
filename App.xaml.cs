@@ -57,7 +57,8 @@ namespace WallpaperEngine {
         /// </summary>
         protected override void OnStartup(StartupEventArgs e)
         {
-            Log.Information("Application starting up");
+            string version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown";
+            Log.Information("Application starting up, version: {Version}", version);
 
             _singleInstanceManager = new SingleInstanceManager(AppGuid);
 

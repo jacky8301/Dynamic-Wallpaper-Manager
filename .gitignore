@@ -3,6 +3,7 @@
 Debug
 Release
 obj
+version.nsh
 *.user
 
 # Claude Code memory

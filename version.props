@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <AppVersion>1.3.4.1</AppVersion>
+    <AssemblyVersion>$(AppVersion)</AssemblyVersion>
+    <FileVersion>$(AppVersion)</FileVersion>
+  </PropertyGroup>
+</Project>

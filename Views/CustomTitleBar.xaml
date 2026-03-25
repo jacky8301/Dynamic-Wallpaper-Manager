@@ -29,6 +29,22 @@
 
             <!--  窗口控制按钮  -->
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <!--  关于按钮  -->
+                <Button
+                    x:Name="AboutButton"
+                    Width="40"
+                    Height="40"
+                    Click="AboutButton_Click"
+                    Style="{StaticResource MaterialDesignToolButton}"
+                    ToolTip="关于"
+                    WindowChrome.IsHitTestVisibleInChrome="True">
+                    <materialDesign:PackIcon
+                        Width="16"
+                        Height="16"
+                        Foreground="White"
+                        Kind="InformationOutline" />
+                </Button>
+
                 <Button
                     x:Name="MinimizeButton"
                     Width="40"

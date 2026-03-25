@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using MaterialDesignThemes.Wpf;
+using System.Windows;
+using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views {
     /// <summary>
@@ -22,6 +24,12 @@ namespace WallpaperEngine.Views {
         private Window FindParentWindow()
         {
             return Window.GetWindow(this);
+        }
+
+        private async void AboutButton_Click(object sender, RoutedEventArgs e)
+        {
+            AboutDialog dialog = new() { DataContext = new AboutDialogViewModel() };
+            await DialogHost.Show(dialog, "MainRootDialog");
         }
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
