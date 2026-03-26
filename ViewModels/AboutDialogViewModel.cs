@@ -1,8 +1,9 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
+using Newtonsoft.Json.Linq;
 using System.Diagnostics;
-using System.Reflection;
+using System.IO;
 
 namespace WallpaperEngine.ViewModels {
     /// <summary>
@@ -15,8 +16,15 @@ namespace WallpaperEngine.ViewModels {
 
         public string Version {
             get {
-                string? version = Assembly.GetExecutingAssembly().GetName().Version?.ToString();
-                return version is not null ? $"v{version}" : "v1.0.0";
+                try {
+                    string versionFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "version.json");
+                    string json = File.ReadAllText(versionFile);
+                    string? version = JObject.Parse(json)["version"]?.ToString();
+                    return version is not null ? $"v{version}" : "v1.0.0";
+                }
+                catch {
+                    return "v1.0.0";
+                }
             }
         }
 

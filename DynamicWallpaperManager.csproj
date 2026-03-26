@@ -66,6 +66,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="version.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Data\" />
   </ItemGroup>
 

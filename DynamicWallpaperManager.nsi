@@ -55,7 +55,6 @@ RequestExecutionLevel user
 !define MUI_FINISHPAGE_SHOWREADME ""
 !define MUI_FINISHPAGE_SHOWREADME_TEXT "在桌面创建快捷方式"
 !define MUI_FINISHPAGE_SHOWREADME_FUNCTION CreateDesktopShortcut
-!define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
 !define MUI_FINISHPAGE_NOREBOOTSUPPORT
 !insertmacro MUI_PAGE_FINISH
 
@@ -80,6 +79,7 @@ Section "主程序" SecMain
     File /r "bin\x86\Release\net8.0-windows\runtimes\win\*.*"
     File /r "bin\x86\Release\net8.0-windows\*.dll"
     File "bin\x86\Release\net8.0-windows\DynamicWallpaperManager.exe"
+    File "bin\x86\Release\net8.0-windows\version.json"
     File "bin\x86\Release\net8.0-windows\preview.jpg"
     File "bin\x86\Release\net8.0-windows\project.json"
     File /r "bin\x86\Release\net8.0-windows\assets\*.*"
@@ -117,6 +117,7 @@ Section "Uninstall"
 
     ; Remove files
     Delete "$INSTDIR\DynamicWallpaperManager.exe"
+    Delete "$INSTDIR\version.json"
     Delete "$INSTDIR\*.dll"
     Delete "$INSTDIR\preview.jpg"
     Delete "$INSTDIR\project.json"
