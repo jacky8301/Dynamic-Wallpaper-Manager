@@ -14,9 +14,6 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>AnyCPU;x86</Platforms>
-    <AppVersion>1.3.5.4</AppVersion>  <!-- 改这里 -->                                                    
-    <AssemblyVersion>$(AppVersion)</AssemblyVersion>
-    <FileVersion>$(AppVersion)</FileVersion>
   </PropertyGroup>
 
   <!-- Generate version.nsh for NSIS after each build -->

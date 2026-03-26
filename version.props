@@ -1,6 +1,11 @@
 <Project>
+  <Target Name="ReadVersionFromJson" BeforeTargets="BeforeBuild;GenerateAssemblyInfo">
+    <Exec Command="powershell -NoProfile -Command &quot;(Get-Content '$(MSBuildProjectDirectory)\version.json' | ConvertFrom-Json).version&quot;"
+          ConsoleToMsBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="AppVersion" />
+    </Exec>
+  </Target>
   <PropertyGroup>
-    <AppVersion>1.3.4.1</AppVersion>
     <AssemblyVersion>$(AppVersion)</AssemblyVersion>
     <FileVersion>$(AppVersion)</FileVersion>
   </PropertyGroup>

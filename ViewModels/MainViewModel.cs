@@ -589,6 +589,9 @@ namespace WallpaperEngine.ViewModels {
                         return;
                     }
 
+                    // 先停止 Wallpaper Engine 动态壁纸，再设置静态壁纸
+                    DesktopWallpaperService.StopWallpaperEngine(Settings.WallpaperEnginePath);
+
                     bool success = DesktopWallpaperService.SetDesktopWallpaper(path);
                     if (success) {
                         Log.Information("已恢复静态壁纸: {Path}", path);
