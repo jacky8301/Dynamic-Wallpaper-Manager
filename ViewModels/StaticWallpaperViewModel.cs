@@ -255,6 +255,10 @@ namespace WallpaperEngine.ViewModels {
 
             bool success = DesktopWallpaperService.SetDesktopWallpaper(wallpaper.FilePath);
             if (success) {
+                // 保存最后应用的壁纸信息
+                var mainVm = Ioc.Default.GetService<MainViewModel>();
+                mainVm?.SaveLastWallpaper("static", wallpaper.FilePath);
+
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
                     Message = $"已将「{wallpaper.FileName}」设置为桌面壁纸。",
                     Title = "成功",

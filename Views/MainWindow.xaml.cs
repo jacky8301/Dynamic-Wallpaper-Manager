@@ -90,6 +90,9 @@ namespace WallpaperEngine.Views {
                 Log.Debug("LoadWallpapersAsync started");
                 await ViewModel.LoadWallpapersAsync();
                 Log.Debug("LoadWallpapersAsync finish");
+
+                // 恢复最后应用的壁纸
+                ViewModel.RestoreLastWallpaper();
             } catch (Exception ex) {
                 Log.Error(ex, "mainWindow_Loaded 发生未处理异常");
             }

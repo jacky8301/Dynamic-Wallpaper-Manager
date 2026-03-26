@@ -247,6 +247,9 @@ namespace WallpaperEngine.ViewModels {
                 startInfo.ArgumentList.Add("-file");
                 startInfo.ArgumentList.Add(projectJsonPath);
                 Process.Start(startInfo)?.Dispose();
+
+                // 保存最后应用的壁纸信息
+                SaveLastWallpaper("dynamic", wallpaper.FolderPath);
             } else {
                 Log.Warning("无法应用壁纸: 工具路径或project.json不存在. ToolPath={ToolPath}, ProjectJson={ProjectJson}", toolPath, projectJsonPath);
             }

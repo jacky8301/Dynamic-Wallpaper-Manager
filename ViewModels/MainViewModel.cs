@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.DependencyInjection;
 using Serilog;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Data;
@@ -524,6 +526,79 @@ namespace WallpaperEngine.ViewModels {
         partial void OnSelectedWallpaperChanged(WallpaperItem? value)
         {
             _dataContextService.CurrentWallpaper = value;
+        }
+
+        /// <summary>
+        /// 保存最后应用的壁纸信息到设置文件
+        /// </summary>
+        /// <param name="type">壁纸类型："dynamic" 或 "static"</param>
+        /// <param name="path">壁纸路径</param>
+        public void SaveLastWallpaper(string type, string path)
+        {
+            try {
+                Settings.LastWallpaperType = type;
+                Settings.LastWallpaperPath = path;
+                _settingsService.SaveSettings(Settings);
+                Log.Information("已保存最后应用的壁纸: Type={Type}, Path={Path}", type, path);
+            } catch (Exception ex) {
+                Log.Warning(ex, "保存最后应用的壁纸信息失败");
+            }
+        }
+
+        /// <summary>
+        /// 启动时恢复最后应用的壁纸
+        /// </summary>
+        public void RestoreLastWallpaper()
+        {
+            try {
+                var settings = _settingsService.LoadSettings();
+                string type = settings.LastWallpaperType;
+                string path = settings.LastWallpaperPath;
+
+                if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(path)) {
+                    Log.Debug("没有保存的壁纸记录，跳过恢复");
+                    return;
+                }
+
+                if (type == "dynamic") {
+                    string projectJsonPath = Path.Combine(path, "project.json");
+                    string toolPath = settings.WallpaperEnginePath;
+
+                    if (string.IsNullOrEmpty(toolPath) || !File.Exists(toolPath)) {
+                        Log.Warning("恢复壁纸失败: Wallpaper Engine 路径未配置或不存在: {Path}", toolPath);
+                        return;
+                    }
+                    if (!File.Exists(projectJsonPath)) {
+                        Log.Warning("恢复壁纸失败: project.json 不存在: {Path}", projectJsonPath);
+                        return;
+                    }
+
+                    ProcessStartInfo startInfo = new ProcessStartInfo {
+                        FileName = toolPath,
+                        UseShellExecute = false
+                    };
+                    startInfo.ArgumentList.Add("-control");
+                    startInfo.ArgumentList.Add("openWallpaper");
+                    startInfo.ArgumentList.Add("-file");
+                    startInfo.ArgumentList.Add(projectJsonPath);
+                    Process.Start(startInfo)?.Dispose();
+                    Log.Information("已恢复动态壁纸: {Path}", path);
+                } else if (type == "static") {
+                    if (!File.Exists(path)) {
+                        Log.Warning("恢复壁纸失败: 静态壁纸文件不存在: {Path}", path);
+                        return;
+                    }
+
+                    bool success = DesktopWallpaperService.SetDesktopWallpaper(path);
+                    if (success) {
+                        Log.Information("已恢复静态壁纸: {Path}", path);
+                    }
+                } else {
+                    Log.Warning("未知的壁纸类型: {Type}", type);
+                }
+            } catch (Exception ex) {
+                Log.Warning(ex, "恢复最后应用的壁纸失败");
+            }
         }
     }
 }

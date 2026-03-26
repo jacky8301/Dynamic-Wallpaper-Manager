@@ -11,5 +11,17 @@ namespace WallpaperEngine.Models {
         /// </summary>
         [ObservableProperty]
         private string _wallpaperEnginePath = string.Empty;
+
+        /// <summary>
+        /// 最后应用的壁纸类型："dynamic"（动态壁纸）或 "static"（静态壁纸）
+        /// </summary>
+        [ObservableProperty]
+        private string _lastWallpaperType = string.Empty;
+
+        /// <summary>
+        /// 最后应用的壁纸路径：动态壁纸为 FolderPath，静态壁纸为 FilePath
+        /// </summary>
+        [ObservableProperty]
+        private string _lastWallpaperPath = string.Empty;
     }
 }
