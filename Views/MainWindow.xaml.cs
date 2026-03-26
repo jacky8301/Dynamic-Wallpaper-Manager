@@ -17,6 +17,13 @@ namespace WallpaperEngine.Views {
         public MainWindow()
         {
             InitializeComponent();
+
+            // 根据屏幕工作区大小动态设置窗口尺寸
+            double workAreaWidth = SystemParameters.WorkArea.Width;
+            double workAreaHeight = SystemParameters.WorkArea.Height;
+            this.Width = Math.Min(workAreaWidth * 0.85, 1730);
+            this.Height = Math.Min(workAreaHeight * 0.85, 1240);
+
             ViewModel = Ioc.Default.GetService<MainViewModel>();
             this.DataContext = ViewModel;
             CollectionViewPanel.DataContext = Ioc.Default.GetService<CollectionViewModel>();
