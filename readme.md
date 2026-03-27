@@ -104,8 +104,12 @@ DynamicWallpaperManager/
 ├── Views/                   # XAML 视图
 ├── Services/                # 业务服务
 ├── Models/                  # 数据模型
-├── Database/                # SQLite 数据库管理
+├── Data/                    # 数据访问（DatabaseManager 等）
+├── Common/                  # 通用工具类
+├── Converters/              # WPF 值转换器
+├── Events/                  # 自定义事件定义
 ├── Assets/                  # 静态资源
+├── Resources/               # 应用资源（XAML 等）
 └── Styles/                  # 样式定义
 ```
 

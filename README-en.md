@@ -102,8 +102,12 @@ DynamicWallpaperManager/
 ├── Views/                   # XAML Views
 ├── Services/                # Business services
 ├── Models/                  # Data models
-├── Database/                # SQLite database management
+├── Data/                    # Data access (DatabaseManager, etc.)
+├── Common/                  # Shared utility classes
+├── Converters/              # WPF value converters
+├── Events/                  # Custom event definitions
 ├── Assets/                  # Static resources
+├── Resources/               # Application resources (XAML, etc.)
 └── Styles/                  # Style definitions
 ```
 
