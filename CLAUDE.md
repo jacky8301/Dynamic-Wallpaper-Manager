@@ -84,7 +84,8 @@ Services are registered in `App.xaml.cs` using `Ioc.Default.ConfigureServices()`
 | `ISettingsService` | Singleton | Settings persistence |
 | `IDataContextService` | Singleton | Cross-ViewModel data sharing via events |
 | `IWallpaperFileService` | Singleton | File system operations |
-ViewModels are also registered as singletons for state persistence.
+
+ViewModels are also registered as singletons for state persistence: `MainViewModel`, `WallpaperDetailViewModel`, `FavoriteViewModel`, `CollectionViewModel`, `CategoryManagementViewModel`, `StaticWallpaperViewModel`, `SettingsViewModel`.
 
 `MaterialDialogService` is a static utility class (not registered in DI) that provides standardized dialog boxes (confirmation, input, error).
 
@@ -126,14 +127,7 @@ The application features a centralized category management system with intellige
 - **Centralized Category Service**: `ICategoryService` provides a unified interface for all category operations with event-driven synchronization. It manages category caching and broadcasts `CategoryChanged` events to keep all view models synchronized.
 - **Category Statistics**: The system tracks wallpaper counts per category via `DatabaseManager.GetCategoryStatistics()` and `ICategoryService.GetCategoryStatisticsAsync()`.
 - **Intelligent Suggestions**: `CategoryConstants.SuggestCategoriesByTags()` can recommend categories based on wallpaper tags using the default category matching rules.
-
-**Category Management Workflow**:
-- `ICategoryService` is the central authority for all category operations, providing caching and event notification
-- `CategoryManagementViewModel` provides UI for managing categories (add, rename, delete) using the category service
-- `MainViewModel` and `WallpaperDetailViewModel` subscribe to `CategoryChanged` events to keep their category lists synchronized
-- `CategoryItem` model represents category with name, count, protected status, and default status
-- Category operations use the centralized service which handles database updates and event broadcasting
-- Default categories are automatically created on first run if they don't exist
+- Default categories are automatically created on first run if they don't exist.
 
 ### Image Caching and Thumbnail Generation
 
@@ -156,6 +150,13 @@ The application features a centralized category management system with intellige
 - **Custom styles**: XAML styles are defined in the `Styles/` folder and referenced from `App.xaml`.
 - **Dialog Services**: `MaterialDialogService` provides standardized dialog boxes (confirmation, input, error). Input dialogs accept optional `defaultText` parameter to pre-populate the text field, commonly used for rename operations.
 
+### Static Wallpaper Management
+
+`StaticWallpaperViewModel` manages importing and applying static image wallpapers (separate from Wallpaper Engine dynamic wallpapers):
+- Users can import image files which are stored in the database as `StaticWallpaperItem` records
+- `DesktopWallpaperService` uses Win32 `SystemParametersInfo` to set the desktop wallpaper and can stop Wallpaper Engine before applying
+- The last applied wallpaper (static or dynamic) is saved for restoration on startup
+
 ## Key File Locations
 
 | Item | Location |
@@ -172,7 +173,7 @@ Each wallpaper is assigned a unique identifier (`Wallpapers.Id`) stored as a TEX
 - **Persisted** in the `project.json` file itself (in the `wallpaperId` field) to survive folder moves
 - **Used** as the primary foreign key in related tables (`Favorites.WallpaperId`, `CollectionItems.WallpaperId`)
 
-The system maintains backward compatibility: Database initialization automatically migrates existing data from older schema versions (including removing the `FolderPath` column from Favorites and the `WallpaperFolderPath` column from CollectionItems if present) and ensures the `WallpaperId` column exists.
+The system maintains backward compatibility: Database initialization automatically migrates existing data from older schema versions.
 
 ## Database Schema
 
@@ -182,10 +183,10 @@ The `Favorites` table is intentionally normalized — a wallpaper's favorite sta
 
 **Table details**:
 - `Wallpapers`: Core wallpaper metadata, including folder path, title, tags, category, file hash, etc. Primary key is `Id` (TEXT), a unique wallpaper identifier.
-- `Favorites`: Records wallpaper favorite status. Uses `WallpaperId` (TEXT) as foreign key to `Wallpapers.Id`. Unique constraint on `WallpaperId`. The table no longer contains a `FolderPath` column.
+- `Favorites`: Records wallpaper favorite status. Uses `WallpaperId` (TEXT) as foreign key to `Wallpapers.Id`. Unique constraint on `WallpaperId`.
 - `Categories`: User‑defined category names. Only custom categories are stored; default categories are hardcoded.
 - `Collections`: User‑defined collections with name and creation date. Primary key is `Id` (TEXT).
-- `CollectionItems`: Junction table linking collections to wallpapers. Contains `CollectionId` (TEXT, foreign key to `Collections.Id`), `WallpaperId` (TEXT, foreign key to `Wallpapers.Id`), and `AddedDate` (TEXT). Primary key is (`CollectionId`, `WallpaperId`). The table no longer contains a `WallpaperFolderPath` column.
+- `CollectionItems`: Junction table linking collections to wallpapers. Contains `CollectionId`, `WallpaperId` (both TEXT foreign keys), and `AddedDate` (TEXT). Primary key is (`CollectionId`, `WallpaperId`).
 - `ScanHistory`: Log of each scan operation with statistics.
 
 Indexes are created on frequently queried columns (`Title`, `Tags`, `Category`, `IsFavorite`, `ScanPath`, etc.). An additional index `IX_Favorites_WallpaperId` exists for `Favorites.WallpaperId`.
@@ -210,16 +211,9 @@ Follow `.editorconfig` conventions:
 - `App.xaml.cs` — Dependency injection setup, Serilog initialization, single-instance handling, `-autostart` argument processing
 - `MainWindow.xaml.cs` — Main window initialization, system tray, loading overlay
 
-### Command Line Argument Processing
-
-- `-autostart`: Causes the main window to start minimized (hidden). Used when the application is launched from the registry `Run` key.
-- Arguments are passed via the single‑instance pipe; the first instance activates its window and can process them (e.g., open a specific file). Currently only `-autostart` is implemented.
-
 ## Troubleshooting
 
-- **Database locked**: Ensure no other process is accessing `wallpapers.db`. The application holds a single SQLite connection for its lifetime.
-- **Wallpaper Engine not detected**: The `PreviewService` attempts to locate Wallpaper Engine via the registry; if not found, previews will fail. The path can be set manually in the settings UI.
-- **High memory usage**: The `ImageCache` limits the number of cached images; thumbnails are stored on disk. If memory grows, check for unbounded collections in view‑models.
-- **Category management issues**: Protected virtual categories (`所有分类`, `未分类`) cannot be renamed or deleted. The 10 default categories (自然, 抽象, 游戏, 动漫, 科幻, 风景, 建筑, 动物, 人物, 车辆) are stored in the database with `IsDefault=1`; they can be renamed/deleted by the user like custom categories.
-- **Single instance conflicts**: If the application appears unresponsive, check for existing instances via Task Manager and terminate them before relaunching.
-- **Database schema errors**: If you encounter "table Favorites has no column named WallpaperId", delete the database file (`%USERPROFILE%\DynamicWallpaperManager\wallpapers.db`) and restart the application. The database will be recreated with the correct schema. The application includes automatic migration logic, but in rare cases manual cleanup may be needed.
+- **Database locked**: The application holds a single SQLite connection for its lifetime. Ensure no other process is accessing `wallpapers.db`.
+- **Wallpaper Engine not detected**: `PreviewService` locates Wallpaper Engine via registry; path can be set manually in settings.
+- **Category management**: Virtual categories (`所有分类` ID=0, `未分类` ID=1) are protected and cannot be renamed/deleted. Default categories have `IsDefault=1` in the database.
+- **Database schema errors**: If migration fails, delete `wallpapers.db` and restart. The database will be recreated with the correct schema.
