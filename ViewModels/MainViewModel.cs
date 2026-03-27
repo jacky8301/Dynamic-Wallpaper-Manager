@@ -358,7 +358,12 @@ namespace WallpaperEngine.ViewModels {
 
         private void OnWallpapersCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            OnPropertyChanged(nameof(WallpaperCount));
+            // Only update count on Reset (Clear) to avoid O(n) per-item recalculation during batch adds.
+            // Count is explicitly refreshed after LoadWallpapersAsync, WallpapersView.Refresh, etc.
+            if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset)
+            {
+                OnPropertyChanged(nameof(WallpaperCount));
+            }
         }
 
         /// <summary>当前筛选条件下的壁纸总数</summary>
@@ -410,6 +415,7 @@ namespace WallpaperEngine.ViewModels {
                         }
                     }
                     WallpapersView.Refresh();
+                    OnPropertyChanged(nameof(WallpaperCount));
                 });
 
                 if (cts.Token.IsCancellationRequested) return;
@@ -417,11 +423,14 @@ namespace WallpaperEngine.ViewModels {
                 // 加载壁纸总数
                 await LoadTotalWallpaperCountAsync();
 
-                // 通知 FavoriteViewModel 刷新数据
-                var favoriteVm = Ioc.Default.GetService<FavoriteViewModel>();
-                if (favoriteVm != null)
+                // 通知 FavoriteViewModel 刷新数据（仅在收藏标签页激活时）
+                if (CurrentTab == 1)
                 {
-                    await favoriteVm.LoadFavoritesAsync();
+                    var favoriteVm = Ioc.Default.GetService<FavoriteViewModel>();
+                    if (favoriteVm != null)
+                    {
+                        await favoriteVm.LoadFavoritesAsync();
+                    }
                 }
 
                 OnEventLoadWallpapersCompleted();

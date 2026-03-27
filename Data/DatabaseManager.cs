@@ -85,7 +85,7 @@ namespace WallpaperEngine.Data {
             // 判断是否有 Favorites 表的 JOIN 列
             bool hasFavoriteJoin = false;
             for (int i = 0; i < reader.FieldCount; i++) {
-                if (reader.GetName(i) == "FavFolderPath") {
+                if (reader.GetName(i) == "FavWallpaperId") {
                     hasFavoriteJoin = true;
                     break;
                 }
@@ -94,7 +94,7 @@ namespace WallpaperEngine.Data {
             bool isFavorite;
             DateTime favoritedDate;
             if (hasFavoriteJoin) {
-                isFavorite = reader["FavFolderPath"] != DBNull.Value;
+                isFavorite = reader["FavWallpaperId"] != DBNull.Value;
                 favoritedDate = reader["FavFavoritedDate"] != DBNull.Value && DateTime.TryParse(reader["FavFavoritedDate"].ToString(), out var parsedDate)
                     ? parsedDate
                     : DateTime.MinValue;
@@ -106,7 +106,21 @@ namespace WallpaperEngine.Data {
             }
 
             var categoryId = reader["CategoryId"] != DBNull.Value ? reader["CategoryId"].ToString() ?? CategoryConstants.UNCATEGORIZED_ID : CategoryConstants.UNCATEGORIZED_ID;
-            var categoryName = GetCategoryNameById(categoryId) ?? "未分类";
+
+            // Try to read category name from JOIN; fall back to lookup for queries without the JOIN
+            string categoryName;
+            bool hasCategoryJoin = false;
+            for (int i = 0; i < reader.FieldCount; i++) {
+                if (reader.GetName(i) == "CategoryName") {
+                    hasCategoryJoin = true;
+                    break;
+                }
+            }
+            if (hasCategoryJoin && reader["CategoryName"] != DBNull.Value) {
+                categoryName = reader["CategoryName"].ToString() ?? "未分类";
+            } else {
+                categoryName = CategoryConstants.GetVirtualCategoryName(categoryId) ?? GetCategoryNameById(categoryId) ?? "未分类";
+            }
 
             return new WallpaperItem {
                 Id = reader["Id"].ToString(),
@@ -149,9 +163,10 @@ namespace WallpaperEngine.Data {
                 EnsureConnectionOpen();
                 using var command = m_connection.CreateCommand();
                 command.CommandText = @"
-                SELECT w.*, f.WallpaperId AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
+                SELECT w.*, f.WallpaperId AS FavWallpaperId, f.FavoritedDate AS FavFavoritedDate, cat.Name AS CategoryName
                 FROM Wallpapers w
                 LEFT JOIN Favorites f ON w.Id = f.WallpaperId
+                LEFT JOIN Categories cat ON w.CategoryId = cat.Id
                 WHERE w.FolderPath = @folderPath";
                 command.Parameters.AddWithValue("@folderPath", folderPath);
 
@@ -175,9 +190,10 @@ namespace WallpaperEngine.Data {
                 EnsureConnectionOpen();
                 using var command = m_connection.CreateCommand();
                 command.CommandText = @"
-                SELECT w.*, f.WallpaperId AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
+                SELECT w.*, f.WallpaperId AS FavWallpaperId, f.FavoritedDate AS FavFavoritedDate, cat.Name AS CategoryName
                 FROM Wallpapers w
                 LEFT JOIN Favorites f ON w.Id = f.WallpaperId
+                LEFT JOIN Categories cat ON w.CategoryId = cat.Id
                 WHERE w.Id = @wallpaperId";
                 command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
 
@@ -208,9 +224,10 @@ namespace WallpaperEngine.Data {
                     var placeholders = string.Join(",", batch.Select((_, i) => $"@id{i}"));
                     using var command = m_connection.CreateCommand();
                     command.CommandText = $@"
-                        SELECT w.*, f.WallpaperId AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
+                        SELECT w.*, f.WallpaperId AS FavWallpaperId, f.FavoritedDate AS FavFavoritedDate, cat.Name AS CategoryName
                         FROM Wallpapers w
                         LEFT JOIN Favorites f ON w.Id = f.WallpaperId
+                        LEFT JOIN Categories cat ON w.CategoryId = cat.Id
                         WHERE w.Id IN ({placeholders})";
                     for (int i = 0; i < batch.Count; i++)
                         command.Parameters.AddWithValue($"@id{i}", batch[i]);
@@ -906,9 +923,10 @@ namespace WallpaperEngine.Data {
             }
 
             command.CommandText = $@"
-                SELECT w.*, f.WallpaperId AS FavFolderPath, f.FavoritedDate AS FavFavoritedDate
+                SELECT w.*, f.WallpaperId AS FavWallpaperId, f.FavoritedDate AS FavFavoritedDate, cat.Name AS CategoryName
                 FROM Wallpapers w
                 LEFT JOIN Favorites f ON w.Id = f.WallpaperId
+                LEFT JOIN Categories cat ON w.CategoryId = cat.Id
                 {whereClause}
                 ORDER BY (CASE WHEN f.WallpaperId IS NOT NULL THEN 1 ELSE 0 END) DESC, w.AddedDate DESC
                 LIMIT 1000";
@@ -950,22 +968,25 @@ namespace WallpaperEngine.Data {
             lock (m_lock) {
                 EnsureConnectionOpen();
                 using var command = m_connection.CreateCommand();
-                // 先根据folderPath获取WallpaperId
                 command.CommandText = "SELECT Id FROM Wallpapers WHERE FolderPath = @path";
                 command.Parameters.AddWithValue("@path", folderPath);
                 var wallpaperId = command.ExecuteScalar() as string;
                 if (!string.IsNullOrEmpty(wallpaperId)) {
-                    // 删除收藏记录（通过WallpaperId）
-                    command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = @wallpaperId";
+                    // Delegate to DeleteWallpaper for the actual delete sequence
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+                    command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = $id";
+                    command.Parameters.AddWithValue("$id", wallpaperId);
                     command.ExecuteNonQuery();
+
+                    command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
+                    command.ExecuteNonQuery();
+                } else {
+                    // No ID found, delete by path directly
                     command.Parameters.Clear();
+                    command.CommandText = "DELETE FROM Wallpapers WHERE FolderPath = @path";
+                    command.Parameters.AddWithValue("@path", folderPath);
+                    command.ExecuteNonQuery();
                 }
-                // 删除壁纸记录
-                command.CommandText = "DELETE FROM Wallpapers WHERE FolderPath = @path";
-                command.Parameters.AddWithValue("@path", folderPath);
-                command.ExecuteNonQuery();
             }
         }
 
@@ -1536,17 +1557,36 @@ namespace WallpaperEngine.Data {
         {
             var stats = new Dictionary<string, int>();
 
-            // 为每个分类查询壁纸数量
-            foreach (var category in allCategories) {
-                var categoryId = GetCategoryIdByName(category);
-                int count;
-                if (categoryId != null) {
-                    count = GetCategoryWallpaperCount(categoryId);
-                } else {
-                    // 虚拟分类或不存在
-                    count = 0;
+            lock (m_lock) {
+                EnsureConnectionOpen();
+
+                // Virtual categories: get total count and uncategorized count in two queries
+                using var totalCmd = m_connection.CreateCommand();
+                totalCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers";
+                int totalCount = Convert.ToInt32(totalCmd.ExecuteScalar());
+
+                using var uncatCmd = m_connection.CreateCommand();
+                uncatCmd.CommandText = "SELECT COUNT(*) FROM Wallpapers WHERE CategoryId = @catId";
+                uncatCmd.Parameters.AddWithValue("@catId", CategoryConstants.UNCATEGORIZED_ID);
+                int uncategorizedCount = Convert.ToInt32(uncatCmd.ExecuteScalar());
+
+                // All regular categories in one GROUP BY query
+                using var cmd = m_connection.CreateCommand();
+                cmd.CommandText = @"
+                    SELECT c.Name, COUNT(w.Id) AS WallpaperCount
+                    FROM Categories c
+                    LEFT JOIN Wallpapers w ON c.Id = w.CategoryId
+                    GROUP BY c.Id, c.Name";
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read()) {
+                    var name = reader["Name"].ToString() ?? "";
+                    var count = Convert.ToInt32(reader["WallpaperCount"]);
+                    stats[name] = count;
                 }
-                stats[category] = count;
+
+                // Add virtual categories
+                stats["所有分类"] = totalCount;
+                stats["未分类"] = uncategorizedCount;
             }
 
             return stats;

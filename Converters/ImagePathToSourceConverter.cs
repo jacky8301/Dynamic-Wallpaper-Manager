@@ -22,6 +22,10 @@ namespace WallpaperEngine.Converters {
                     Log.Warning("Image path is null, empty, or does not exist: {ImagePath}. Using default image.", value);
                     return GetDefaultImage();
                 }
+                bool loadOriginal = parameter is string p && p.Equals("original", StringComparison.OrdinalIgnoreCase);
+                if (loadOriginal) {
+                    return LoadOriginalImage(imagePath);
+                }
                 if (ImageCache.TryGetValue(imagePath, out var cachedImage)) {
                     return cachedImage;
                 }
@@ -43,6 +47,18 @@ namespace WallpaperEngine.Converters {
                 Log.Fatal(ex, "Failed to load image from path: {ImagePath}", value);
                 return GetDefaultImage();
             }
+        }
+
+        private static BitmapImage LoadOriginalImage(string filePath)
+        {
+            BitmapImage bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.CreateOptions = BitmapCreateOptions.IgnoreImageCache;
+            bitmap.UriSource = new Uri(filePath, UriKind.Absolute);
+            bitmap.EndInit();
+            bitmap.Freeze();
+            return bitmap;
         }
 
         private static object GetDefaultImage()

@@ -79,8 +79,7 @@ namespace WallpaperEngine.Services {
         /// <returns>缓存文件的完整路径</returns>
         private static string GetCachePath(string originalPath)
         {
-            using var sha = SHA256.Create();
-            byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(originalPath.ToLowerInvariant()));
+            byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(originalPath.ToLowerInvariant()));
             string hex = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
             return Path.Combine(_cacheDir, hex + ".jpg");
         }

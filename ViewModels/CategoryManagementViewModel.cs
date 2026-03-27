@@ -21,14 +21,6 @@ namespace WallpaperEngine.ViewModels
         private readonly ICategoryService _categoryService;
 
         /// <summary>
-        /// 受保护的虚拟分类列表（所有分类、未分类），不是硬编码的默认分类
-        /// </summary>
-        private readonly List<string> _defaultCategories = new()
-        {
-            "所有分类", "未分类"
-        };
-
-        /// <summary>
         /// 分类列表（包含受保护的虚拟分类和自定义分类）
         /// </summary>
         [ObservableProperty]
@@ -135,36 +127,6 @@ namespace WallpaperEngine.ViewModels
             {
                 IsLoading = false;
             }
-        }
-
-        /// <summary>
-        /// 构建完整的分类列表（受保护的虚拟分类 + 数据库中的自定义分类）
-        /// </summary>
-        /// <returns>所有分类的列表</returns>
-        private List<string> BuildCategoryList()
-        {
-            var allCategories = new List<string>(_defaultCategories);
-
-            // 注意：硬编码的默认分类已移除，_defaultCategories只包含受保护的虚拟分类
-
-            // 从数据库获取自定义分类
-            try
-            {
-                var customCategories = _dbManager.GetCustomCategories();
-                foreach (var category in customCategories)
-                {
-                    if (!allCategories.Contains(category))
-                    {
-                        allCategories.Add(category);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "获取自定义分类列表失败");
-            }
-
-            return allCategories;
         }
 
         /// <summary>

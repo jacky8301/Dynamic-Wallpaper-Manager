@@ -186,12 +186,6 @@ namespace WallpaperEngine.ViewModels {
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 };
 
-                previewWindow.Closed += (s, e) => {
-                    if (previewWindow.DialogResult == true) {
-                        // 用户点击了"应用壁纸"
-                    }
-                };
-
                 previewWindow.ShowDialog();
             } catch (Exception ex) {
                 await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
@@ -425,11 +419,9 @@ namespace WallpaperEngine.ViewModels {
         /// <param name="selectedWallpaper">要选中的壁纸</param>
         private void UpdateSelection(WallpaperItem selectedWallpaper)
         {
-            foreach (var wallpaper in Wallpapers.Where(w => w.IsSelected)) {
-                wallpaper.IsSelected = false;
-            }
-
+            ClearSelection();
             selectedWallpaper.IsSelected = true;
+            SelectedWallpapers.Add(selectedWallpaper);
             SelectedWallpaper = selectedWallpaper;
             _dataContextService.CurrentWallpaper = selectedWallpaper;
         }
@@ -772,9 +764,6 @@ namespace WallpaperEngine.ViewModels {
                 });
             }
         }
-
-        /// <summary>受保护的分类名称集合，不允许重命名或删除</summary>
-        private static readonly HashSet<string> ProtectedCategories = new() { "所有分类", "未分类" };
 
         /// <summary>
         /// 重命名分类命令，同步更新数据库、内存中的壁纸和详情页分类列表

@@ -788,11 +788,9 @@ namespace WallpaperEngine.ViewModels {
 
         private void UpdateSelection(WallpaperItem selectedWallpaper)
         {
-            foreach (var wallpaper in FavoriteWallpapers.Where(w => w.IsSelected)) {
-                wallpaper.IsSelected = false;
-            }
-
+            ClearSelection();
             selectedWallpaper.IsSelected = true;
+            SelectedWallpapers.Add(selectedWallpaper);
             SelectedWallpaper = selectedWallpaper;
             _dataContextService.CurrentWallpaper = selectedWallpaper;
         }

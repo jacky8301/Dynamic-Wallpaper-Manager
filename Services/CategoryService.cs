@@ -60,13 +60,15 @@ namespace WallpaperEngine.Services
         {
             try
             {
-                // 检查默认分类是否已存在，如果不存在则创建
+                // Load all existing category names in one query, then check in memory
+                var existingNames = _dbManager.GetAllCategories()
+                    .Select(c => c.Name)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
                 foreach (var defaultCategory in CategoryConstants.DefaultCategories)
                 {
-                    var categoryId = _dbManager.GetCategoryIdByName(defaultCategory.Name);
-                    if (categoryId == null)
+                    if (!existingNames.Contains(defaultCategory.Name))
                     {
-                        // 分类不存在，创建它
                         _dbManager.AddCategory(defaultCategory.Name);
                         Log.Information("已创建默认分类: {CategoryName}", defaultCategory.Name);
                     }
@@ -337,16 +339,8 @@ namespace WallpaperEngine.Services
         /// <returns>分类名称到壁纸数量的字典</returns>
         public async Task<Dictionary<string, int>> GetCategoryStatisticsAsync()
         {
-            var allCategories = await GetAllCategoriesAsync();
-            var stats = new Dictionary<string, int>();
-
-            foreach (var category in allCategories)
-            {
-                var count = await GetCategoryWallpaperCountAsync(category.Id);
-                stats[category.Name] = count;
-            }
-
-            return stats;
+            await InitializeAsync();
+            return await Task.Run(() => _dbManager.GetCategoryStatistics(new List<string>()));
         }
 
         /// <summary>

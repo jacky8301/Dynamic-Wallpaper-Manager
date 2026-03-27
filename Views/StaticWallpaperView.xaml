@@ -16,8 +16,8 @@
     </UserControl.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
             <ColumnDefinition Width="3*" />
-            <ColumnDefinition Width="1*" />
         </Grid.ColumnDefinitions>
 
         <!--  左侧：工具栏 + 壁纸网格  -->
@@ -194,7 +194,7 @@
                     Background="#F5F5F5"
                     CornerRadius="6">
                     <Image
-                        Source="{Binding SelectedWallpaper.FilePath, Converter={StaticResource ImageToSourceConverter}}"
+                        Source="{Binding SelectedWallpaper.FilePath, Converter={StaticResource ImageToSourceConverter}, ConverterParameter=original}"
                         Stretch="Uniform" />
                 </Border>
 

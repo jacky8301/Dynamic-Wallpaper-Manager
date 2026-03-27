@@ -258,13 +258,7 @@ namespace WallpaperEngine.ViewModels {
                 // 保存最后应用的壁纸信息
                 var mainVm = Ioc.Default.GetService<MainViewModel>();
                 mainVm?.SaveLastWallpaper("static", wallpaper.FilePath);
-
-                await MaterialDialogService.ShowDialogAsync(new MaterialDialogParams {
-                    Message = $"已将「{wallpaper.FileName}」设置为桌面壁纸。",
-                    Title = "成功",
-                    ShowCancelButton = false,
-                    DialogType = DialogType.Information
-                });
+                Log.Information("已将静态壁纸设置为桌面壁纸: {FileName}", wallpaper.FileName);
             } else {
                 await MaterialDialogService.ShowErrorAsync("设置桌面壁纸失败，请检查图片文件是否存在。", "错误");
             }
