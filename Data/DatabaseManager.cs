@@ -1181,6 +1181,28 @@ namespace WallpaperEngine.Data {
         }
 
         /// <summary>
+        /// 移除合集中不存在于Wallpapers表的壁纸引用
+        /// </summary>
+        /// <param name="collectionId">合集 ID</param>
+        /// <param name="invalidWallpaperIds">不存在的壁纸ID列表</param>
+        public void RemoveInvalidCollectionItems(string collectionId, List<string> invalidWallpaperIds)
+        {
+            if (invalidWallpaperIds.Count == 0) return;
+
+            lock (m_lock) {
+                EnsureConnectionOpen();
+                foreach (string wallpaperId in invalidWallpaperIds) {
+                    using var command = m_connection.CreateCommand();
+                    command.CommandText = "DELETE FROM CollectionItems WHERE CollectionId = @collectionId AND WallpaperId = @wallpaperId";
+                    command.Parameters.AddWithValue("@collectionId", collectionId);
+                    command.Parameters.AddWithValue("@wallpaperId", wallpaperId);
+                    command.ExecuteNonQuery();
+                }
+                Log.Information("已从合集 {CollectionId} 移除 {Count} 个无效壁纸引用", collectionId, invalidWallpaperIds.Count);
+            }
+        }
+
+        /// <summary>
         /// 获取包含指定壁纸的所有合集
         /// </summary>
         /// <param name="wallpaperId">壁纸ID</param>

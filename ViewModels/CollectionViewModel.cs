@@ -103,7 +103,16 @@ namespace WallpaperEngine.ViewModels {
 
             try {
                 var wallpaperIds = _dbManager.GetCollectionItems(SelectedCollection.Id);
-                foreach (var wallpaper in _dbManager.GetWallpapersByIds(wallpaperIds)) {
+                var wallpapers = _dbManager.GetWallpapersByIds(wallpaperIds);
+
+                // 移除不存在的壁纸引用
+                var foundIds = new HashSet<string>(wallpapers.Select(w => w.Id));
+                var invalidIds = wallpaperIds.Where(id => !foundIds.Contains(id)).ToList();
+                if (invalidIds.Count > 0) {
+                    _dbManager.RemoveInvalidCollectionItems(SelectedCollection.Id, invalidIds);
+                }
+
+                foreach (var wallpaper in wallpapers) {
                     CollectionWallpapers.Add(wallpaper);
                 }
             } catch (Exception ex) {
