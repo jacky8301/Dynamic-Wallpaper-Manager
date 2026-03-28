@@ -1,5 +1,9 @@
-﻿using MaterialDesignThemes.Wpf;
+﻿using CommunityToolkit.Mvvm.DependencyInjection;
+using MaterialDesignThemes.Wpf;
 using System.Windows;
+using System.Windows.Controls;
+using WallpaperEngine.Models;
+using WallpaperEngine.Services;
 using WallpaperEngine.ViewModels;
 
 namespace WallpaperEngine.Views {
@@ -18,6 +22,7 @@ namespace WallpaperEngine.Views {
         public CustomTitleBar()
         {
             InitializeComponent();
+            ThemePresetList.ItemsSource = ThemePreset.Presets;
         }
 
         // 查找父窗口并执行操作
@@ -30,6 +35,25 @@ namespace WallpaperEngine.Views {
         {
             AboutDialog dialog = new() { DataContext = new AboutDialogViewModel() };
             await DialogHost.Show(dialog, "MainRootDialog");
+        }
+
+        private void ThemeButton_Click(object sender, RoutedEventArgs e)
+        {
+            ThemePopup.IsOpen = !ThemePopup.IsOpen;
+        }
+
+        private void ThemePresetItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button button && button.Tag is string presetName) {
+                ThemePopup.IsOpen = false;
+                ThemeService themeService = Ioc.Default.GetRequiredService<ThemeService>();
+                themeService.ApplyPreset(presetName);
+
+                // 保存到设置
+                SettingsViewModel settingsVm = Ioc.Default.GetRequiredService<SettingsViewModel>();
+                settingsVm.ThemePresetName = presetName;
+                settingsVm.SaveSettings();
+            }
         }
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)

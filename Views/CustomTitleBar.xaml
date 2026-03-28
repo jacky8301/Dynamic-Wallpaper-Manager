@@ -29,6 +29,80 @@
 
             <!--  窗口控制按钮  -->
             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                <!--  主题切换按钮  -->
+                <Button
+                    x:Name="ThemeButton"
+                    Width="40"
+                    Height="40"
+                    Click="ThemeButton_Click"
+                    Style="{StaticResource MaterialDesignToolButton}"
+                    ToolTip="切换主题配色"
+                    WindowChrome.IsHitTestVisibleInChrome="True">
+                    <materialDesign:PackIcon
+                        Width="16"
+                        Height="16"
+                        Foreground="White"
+                        Kind="Palette" />
+                </Button>
+                <!--  主题预设弹出面板  -->
+                <Popup
+                    x:Name="ThemePopup"
+                    AllowsTransparency="True"
+                    Placement="Bottom"
+                    PlacementTarget="{Binding ElementName=ThemeButton}"
+                    StaysOpen="False">
+                    <Border
+                        Margin="8"
+                        Padding="4"
+                        Background="White"
+                        BorderBrush="#E0E0E0"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <Border.Effect>
+                            <DropShadowEffect
+                                BlurRadius="10"
+                                Opacity="0.3"
+                                ShadowDepth="2" />
+                        </Border.Effect>
+                        <ItemsControl x:Name="ThemePresetList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button
+                                        Height="36"
+                                        Margin="2"
+                                        Padding="8,4"
+                                        HorizontalContentAlignment="Left"
+                                        Click="ThemePresetItem_Click"
+                                        Cursor="Hand"
+                                        Tag="{Binding Name}">
+                                        <Button.Style>
+                                            <Style BasedOn="{StaticResource MaterialDesignFlatButton}" TargetType="Button">
+                                                <Setter Property="Foreground" Value="#333333" />
+                                            </Style>
+                                        </Button.Style>
+                                        <StackPanel Orientation="Horizontal">
+                                            <!--  主色预览  -->
+                                            <Border
+                                                Width="16"
+                                                Height="16"
+                                                Margin="0,0,4,0"
+                                                Background="{Binding PrimaryBrush}"
+                                                CornerRadius="8" />
+                                            <!--  强调色预览  -->
+                                            <Border
+                                                Width="16"
+                                                Height="16"
+                                                Margin="0,0,8,0"
+                                                Background="{Binding SecondaryBrush}"
+                                                CornerRadius="8" />
+                                            <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
+                </Popup>
                 <!--  关于按钮  -->
                 <Button
                     x:Name="AboutButton"

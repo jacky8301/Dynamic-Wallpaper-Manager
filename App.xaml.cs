@@ -50,6 +50,7 @@ namespace WallpaperEngine {
                     .AddSingleton<CollectionViewModel>()
                     .AddSingleton<CategoryManagementViewModel>()
                     .AddSingleton<StaticWallpaperViewModel>()
+                    .AddSingleton<ThemeService>()
                     .BuildServiceProvider();
             Ioc.Default.ConfigureServices(_serviceProvider);
         }
@@ -75,6 +76,11 @@ namespace WallpaperEngine {
             _singleInstanceManager.StartListening();
 
             base.OnStartup(e);
+
+            // 启动时应用保存的主题配色
+            SettingsViewModel settingsVm = Ioc.Default.GetRequiredService<SettingsViewModel>();
+            ThemeService themeService = Ioc.Default.GetRequiredService<ThemeService>();
+            themeService.ApplyPreset(settingsVm.ThemePresetName);
         }
 
         /// <summary>

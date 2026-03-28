@@ -29,5 +29,11 @@ namespace WallpaperEngine.Models {
         /// </summary>
         [ObservableProperty]
         private string _wallpaperFitMode = "Fill";
+
+        /// <summary>
+        /// 当前选择的主题配色预设名称
+        /// </summary>
+        [ObservableProperty]
+        private string _themePresetName = "经典紫";
     }
 }

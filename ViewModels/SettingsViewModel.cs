@@ -40,6 +40,14 @@ namespace WallpaperEngine.ViewModels {
         }
 
         /// <summary>
+        /// 当前选择的主题配色预设名称
+        /// </summary>
+        public string ThemePresetName {
+            get => _settings.ThemePresetName;
+            set => SetProperty(_settings.ThemePresetName, value, _settings, (s, v) => s.ThemePresetName = v);
+        }
+
+        /// <summary>
         /// 浏览路径命令，打开文件选择对话框选择Wallpaper Engine可执行文件
         /// </summary>
         [RelayCommand]
