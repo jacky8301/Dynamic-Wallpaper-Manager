@@ -601,7 +601,11 @@ namespace WallpaperEngine.ViewModels {
                     // 先停止 Wallpaper Engine 动态壁纸，再设置静态壁纸
                     DesktopWallpaperService.StopWallpaperEngine(Settings.WallpaperEnginePath);
 
-                    bool success = DesktopWallpaperService.SetDesktopWallpaper(path);
+                    WallpaperFitMode fitMode = WallpaperFitMode.Fill;
+                    if (Enum.TryParse<WallpaperFitMode>(settings.WallpaperFitMode, out WallpaperFitMode savedMode)) {
+                        fitMode = savedMode;
+                    }
+                    bool success = DesktopWallpaperService.SetDesktopWallpaper(path, fitMode);
                     if (success) {
                         Log.Information("已恢复静态壁纸: {Path}", path);
                     }
