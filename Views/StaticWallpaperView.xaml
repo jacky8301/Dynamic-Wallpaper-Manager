@@ -223,6 +223,20 @@
                         <TextBlock Foreground="Gray" Text="文件大小: " />
                         <TextBlock Text="{Binding SelectedWallpaper.FormattedFileSize}" />
                     </StackPanel>
+                    <StackPanel Margin="0,8,0,0" Orientation="Horizontal">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="Gray"
+                            Text="显示方式: " />
+                        <ComboBox
+                            Width="120"
+                            Margin="4,0,0,0"
+                            Padding="8,4"
+                            ItemsSource="{Binding FitModeOptions}"
+                            SelectedValue="{Binding SelectedFitMode}"
+                            SelectedValuePath="Value"
+                            Style="{StaticResource MaterialDesignOutlinedComboBox}" />
+                    </StackPanel>
                 </StackPanel>
 
                 <!--  设置壁纸按钮  -->

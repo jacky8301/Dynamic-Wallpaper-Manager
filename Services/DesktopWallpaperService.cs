@@ -1,8 +1,10 @@
+using Microsoft.Win32;
 using Serilog;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using WallpaperEngine.Models;
 
 namespace WallpaperEngine.Services {
     /// <summary>
@@ -24,8 +26,9 @@ namespace WallpaperEngine.Services {
         /// 设置桌面壁纸
         /// </summary>
         /// <param name="imagePath">图片文件完整路径</param>
+        /// <param name="fitMode">壁纸显示方式</param>
         /// <returns>是否设置成功</returns>
-        public static bool SetDesktopWallpaper(string imagePath)
+        public static bool SetDesktopWallpaper(string imagePath, WallpaperFitMode fitMode = WallpaperFitMode.Fill)
         {
             if (string.IsNullOrEmpty(imagePath)) {
                 Log.Warning("壁纸路径为空");
@@ -44,6 +47,14 @@ namespace WallpaperEngine.Services {
             }
 
             try {
+                // 设置壁纸显示方式（通过注册表）
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true)) {
+                    if (key != null) {
+                        key.SetValue("WallpaperStyle", WallpaperFitModeHelper.GetWallpaperStyle(fitMode));
+                        key.SetValue("TileWallpaper", WallpaperFitModeHelper.GetTileWallpaper(fitMode));
+                    }
+                }
+
                 int result = SystemParametersInfo(
                     SPI_SETDESKWALLPAPER,
                     0,

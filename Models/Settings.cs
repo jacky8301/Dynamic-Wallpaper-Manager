@@ -23,5 +23,11 @@ namespace WallpaperEngine.Models {
         /// </summary>
         [ObservableProperty]
         private string _lastWallpaperPath = string.Empty;
+
+        /// <summary>
+        /// 静态壁纸显示方式（Fill, Fit, Stretch, Tile, Center, Span）
+        /// </summary>
+        [ObservableProperty]
+        private string _wallpaperFitMode = "Fill";
     }
 }

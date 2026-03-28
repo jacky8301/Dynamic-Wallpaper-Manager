@@ -24,6 +24,7 @@ namespace WallpaperEngine.ViewModels {
     /// </summary>
     public partial class StaticWallpaperViewModel : ObservableObject {
         private readonly DatabaseManager _dbManager;
+        private readonly ISettingsService _settingsService;
 
         /// <summary>静态壁纸集合</summary>
         [ObservableProperty]
@@ -44,9 +45,18 @@ namespace WallpaperEngine.ViewModels {
         [ObservableProperty]
         private string _searchText = string.Empty;
 
-        /// <summary>是否正在导入</summary>
+        /// <summary>是否正在��入</summary>
         [ObservableProperty]
         private bool _isImporting;
+
+        /// <summary>当前选中的壁纸显示方式</summary>
+        [ObservableProperty]
+        private WallpaperFitMode _selectedFitMode = WallpaperFitMode.Fill;
+
+        /// <summary>壁纸显示方式选项列表</summary>
+        public List<FitModeOption> FitModeOptions { get; } = Enum.GetValues<WallpaperFitMode>()
+            .Select(m => new FitModeOption(m, WallpaperFitModeHelper.GetDisplayName(m)))
+            .ToList();
 
         /// <summary>壁纸集合视图，支持筛选</summary>
         public ICollectionView StaticWallpapersView { get; }
@@ -60,9 +70,18 @@ namespace WallpaperEngine.ViewModels {
         public StaticWallpaperViewModel()
         {
             _dbManager = Ioc.Default.GetService<DatabaseManager>();
+            _settingsService = Ioc.Default.GetService<ISettingsService>();
             StaticWallpapersView = CollectionViewSource.GetDefaultView(StaticWallpapers);
             StaticWallpapersView.Filter = FilterWallpapers;
             StaticWallpapers.CollectionChanged += (s, e) => OnPropertyChanged(nameof(WallpaperCount));
+
+            // 从设置中加载壁纸显示方式
+            if (_settingsService != null) {
+                ApplicationSettings settings = _settingsService.LoadSettings();
+                if (Enum.TryParse<WallpaperFitMode>(settings.WallpaperFitMode, out WallpaperFitMode savedMode)) {
+                    _selectedFitMode = savedMode;
+                }
+            }
         }
 
         // ==================== 数据加载 ====================
@@ -105,6 +124,15 @@ namespace WallpaperEngine.ViewModels {
         partial void OnSelectedWallpaperChanged(StaticWallpaperItem? value)
         {
             OnPropertyChanged(nameof(HasSelection));
+        }
+
+        partial void OnSelectedFitModeChanged(WallpaperFitMode value)
+        {
+            if (_settingsService != null) {
+                ApplicationSettings settings = _settingsService.LoadSettings();
+                settings.WallpaperFitMode = value.ToString();
+                _settingsService.SaveSettings(settings);
+            }
         }
 
         // ==================== 导入命令 ====================
@@ -253,7 +281,7 @@ namespace WallpaperEngine.ViewModels {
                 DesktopWallpaperService.StopWallpaperEngine(settings.WallpaperEnginePath);
             }
 
-            bool success = DesktopWallpaperService.SetDesktopWallpaper(wallpaper.FilePath);
+            bool success = DesktopWallpaperService.SetDesktopWallpaper(wallpaper.FilePath, SelectedFitMode);
             if (success) {
                 // 保存最后应用的壁纸信息
                 var mainVm = Ioc.Default.GetService<MainViewModel>();
@@ -447,5 +475,12 @@ namespace WallpaperEngine.ViewModels {
                 AddToSelection(wallpaper);
             }
         }
+    }
+
+    /// <summary>
+    /// 壁纸显示方式选项，用于 ComboBox 绑定
+    /// </summary>
+    public record FitModeOption(WallpaperFitMode Value, string DisplayName) {
+        public override string ToString() => DisplayName;
     }
 }
