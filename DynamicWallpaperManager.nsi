@@ -1,4 +1,4 @@
-; Use Unicode for proper Chinese character support
+﻿; Use Unicode for proper Chinese character support
 Unicode True
 
 !define PRODUCT_NAME "DynamicWallpaperManager"

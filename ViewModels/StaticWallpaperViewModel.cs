@@ -100,6 +100,11 @@ namespace WallpaperEngine.ViewModels {
                     }
                     StaticWallpapersView.Refresh();
                     OnPropertyChanged(nameof(WallpaperCount));
+
+                    // 如果没有选中壁纸，自动选中第一张
+                    if (SelectedWallpaper == null && StaticWallpapers.Count > 0) {
+                        SelectedWallpaper = StaticWallpapers[0];
+                    }
                 });
             } catch (Exception ex) {
                 Log.Warning(ex, "加载静态壁纸列表失败");
