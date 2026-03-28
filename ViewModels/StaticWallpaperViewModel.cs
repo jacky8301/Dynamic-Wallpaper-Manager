@@ -283,9 +283,12 @@ namespace WallpaperEngine.ViewModels {
 
             bool success = DesktopWallpaperService.SetDesktopWallpaper(wallpaper.FilePath, SelectedFitMode);
             if (success) {
-                // 保存最后应用的壁纸信息
+                // 保存最后应用的壁纸信息（包括显示方式）
                 var mainVm = Ioc.Default.GetService<MainViewModel>();
-                mainVm?.SaveLastWallpaper("static", wallpaper.FilePath);
+                if (mainVm != null) {
+                    mainVm.Settings.WallpaperFitMode = SelectedFitMode.ToString();
+                    mainVm.SaveLastWallpaper("static", wallpaper.FilePath);
+                }
                 Log.Information("已将静态壁纸设置为桌面壁纸: {FileName}", wallpaper.FileName);
             } else {
                 await MaterialDialogService.ShowErrorAsync("设置桌面壁纸失败，请检查图片文件是否存在。", "错误");
