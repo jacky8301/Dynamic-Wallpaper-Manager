@@ -2,6 +2,7 @@
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Threading;
 using Serilog;
 using WallpaperEngine.Models;
 
@@ -22,10 +23,18 @@ namespace WallpaperEngine.Services {
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern IntPtr FindWindow(string lpClassName, string lpWindowName);
+
         private const uint SWP_NOSIZE = 0x0001;
         private const uint SWP_NOZORDER = 0x0004;
         private const uint SWP_NOACTIVATE = 0x0010;
         private const int SW_SHOWNORMAL = 1;
+        private const int SW_SHOWMINIMIZED = 6;
+        private const int SW_SHOWMAXIMIZED = 3;
+        private const int SW_RESTORE = 9;
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
 
         /// <summary>
         /// 初始化预览服务并加载应用程序设置
@@ -93,7 +102,12 @@ namespace WallpaperEngine.Services {
 
                 lock (_previewLock) {
                     _currentPreviewProcess = Process.Start(processStartInfo);
-                    return _currentPreviewProcess != null && !_currentPreviewProcess.HasExited;
+                    bool success = _currentPreviewProcess != null && !_currentPreviewProcess.HasExited;
+                    if (success) {
+                        // 尝试设置预览窗口置顶
+                        _ = Task.Run(async () => await TrySetPreviewWindowTopMost(_currentPreviewProcess!, options));
+                    }
+                    return success;
                 }
             } catch (Exception ex) {
                 Log.Error("启动预览失败: {Error}", ex.Message);
@@ -132,6 +146,27 @@ namespace WallpaperEngine.Services {
             }
             if (options.Activate) {
                 startInfo.ArgumentList.Add("-activate");
+            }
+        }
+
+        private async Task TrySetPreviewWindowTopMost(Process process, PreviewOptions options)
+        {
+            if (process == null) return;
+            // 等待窗口创建
+            for (int i = 0; i < 10; i++)
+            {
+                if (process.HasExited) break;
+                process.Refresh();
+                if (process.MainWindowHandle != IntPtr.Zero)
+                {
+                    // 确保窗口不是最小化状态
+                    ShowWindow(process.MainWindowHandle, SW_RESTORE);
+                    // 设置窗口置顶
+                    SetWindowPos(process.MainWindowHandle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
+                    Log.Debug("已设置预览窗口置顶");
+                    break;
+                }
+                await Task.Delay(100);
             }
         }
 
