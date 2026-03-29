@@ -948,14 +948,7 @@ namespace WallpaperEngine.Data {
         {
             lock (m_lock) {
                 EnsureConnectionOpen();
-                Log.Information("删除壁纸记录: {Id}", wallpaperId);
-                using var command = m_connection.CreateCommand();
-                command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = $id";
-                command.Parameters.AddWithValue("$id", wallpaperId);
-                command.ExecuteNonQuery();
-
-                command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
-                command.ExecuteNonQuery();
+                DeleteWallpaperCore(wallpaperId);
             }
         }
 
@@ -972,22 +965,29 @@ namespace WallpaperEngine.Data {
                 command.Parameters.AddWithValue("@path", folderPath);
                 var wallpaperId = command.ExecuteScalar() as string;
                 if (!string.IsNullOrEmpty(wallpaperId)) {
-                    // Delegate to DeleteWallpaper for the actual delete sequence
-                    command.Parameters.Clear();
-                    command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = $id";
-                    command.Parameters.AddWithValue("$id", wallpaperId);
-                    command.ExecuteNonQuery();
-
-                    command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
-                    command.ExecuteNonQuery();
+                    DeleteWallpaperCore(wallpaperId);
                 } else {
-                    // No ID found, delete by path directly
                     command.Parameters.Clear();
                     command.CommandText = "DELETE FROM Wallpapers WHERE FolderPath = @path";
                     command.Parameters.AddWithValue("@path", folderPath);
                     command.ExecuteNonQuery();
                 }
             }
+        }
+
+        /// <summary>
+        /// 删除壁纸及关联收藏记录的内部实现（调用者须持有 m_lock）
+        /// </summary>
+        private void DeleteWallpaperCore(string wallpaperId)
+        {
+            Log.Information("删除壁纸记录: {Id}", wallpaperId);
+            using var command = m_connection.CreateCommand();
+            command.CommandText = "DELETE FROM Favorites WHERE WallpaperId = $id";
+            command.Parameters.AddWithValue("$id", wallpaperId);
+            command.ExecuteNonQuery();
+
+            command.CommandText = "DELETE FROM Wallpapers WHERE Id = $id";
+            command.ExecuteNonQuery();
         }
 
         /// <summary>
@@ -1390,46 +1390,6 @@ namespace WallpaperEngine.Data {
                 command.Parameters.AddWithValue("@lastUpdated", DateTime.Now.ToString("O"));
 
                 command.ExecuteNonQuery();
-            }
-        }
-
-        /// <summary>
-        /// 获取壁纸的文件统计信息（文件数量和总大小）
-        /// </summary>
-        /// <param name="wallpaperId">壁纸 ID</param>
-        /// <returns>文件数量和总大小的元组</returns>
-        public (int FileCount, long TotalSize) GetWallpaperFileStats(string wallpaperId)
-        {
-            lock (m_lock) {
-                EnsureConnectionOpen();
-                using var command = m_connection.CreateCommand();
-                command.CommandText = "SELECT FileCount, TotalSize FROM WallpaperStats WHERE WallpaperId = @id";
-                command.Parameters.AddWithValue("@id", wallpaperId);
-
-                using var reader = command.ExecuteReader();
-                if (reader.Read()) {
-                    return (reader.GetInt32(0), reader.GetInt64(1));
-                }
-                return (0, 0);
-            }
-        }
-
-        /// <summary>
-        /// 获取所有自定义分类名称，按名称排序
-        /// </summary>
-        /// <returns>分类名称列表</returns>
-        public List<string> GetCustomCategories()
-        {
-            lock (m_lock) {
-                EnsureConnectionOpen();
-                var categories = new List<string>();
-                using var command = m_connection.CreateCommand();
-                command.CommandText = "SELECT Name FROM Categories WHERE IsDefault = 0 ORDER BY Name";
-                using var reader = command.ExecuteReader();
-                while (reader.Read()) {
-                    categories.Add(reader.GetString(0));
-                }
-                return categories;
             }
         }
 

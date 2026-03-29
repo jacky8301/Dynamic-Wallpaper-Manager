@@ -45,6 +45,16 @@ namespace WallpaperEngine.Models
         public const string UNCATEGORIZED_ID = "00000000-0000-0000-0000-000000000001";
 
         /// <summary>
+        /// "所有分类"显示名称
+        /// </summary>
+        public const string ALL_CATEGORIES_NAME = "所有分类";
+
+        /// <summary>
+        /// "未分类"显示名称
+        /// </summary>
+        public const string UNCATEGORIZED_NAME = "未分类";
+
+        /// <summary>
         /// 默认分类定义列表（不包括虚拟分类）
         /// 包含10个合理的默认分类，基于Wallpaper Engine常见标签
         /// </summary>
@@ -67,7 +77,7 @@ namespace WallpaperEngine.Models
         /// </summary>
         public static readonly IReadOnlyList<string> ProtectedCategoryNames = new List<string>
         {
-            "所有分类", "未分类"
+            ALL_CATEGORIES_NAME, UNCATEGORIZED_NAME
         };
 
         /// <summary>
@@ -97,8 +107,8 @@ namespace WallpaperEngine.Models
         /// <returns>虚拟分类名称，如果不是虚拟分类则返回null</returns>
         public static string? GetVirtualCategoryName(string categoryId)
         {
-            if (categoryId == ALL_CATEGORIES_ID) return "所有分类";
-            if (categoryId == UNCATEGORIZED_ID) return "未分类";
+            if (categoryId == ALL_CATEGORIES_ID) return ALL_CATEGORIES_NAME;
+            if (categoryId == UNCATEGORIZED_ID) return UNCATEGORIZED_NAME;
             return null;
         }
 
