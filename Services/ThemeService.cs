@@ -23,9 +23,6 @@ namespace WallpaperEngine.Services {
             ApplyPreset(preset);
         }
 
-        /// <summary>
-        /// 应用指定的配色预设
-        /// </summary>
         public void ApplyPreset(ThemePreset preset)
         {
             try {

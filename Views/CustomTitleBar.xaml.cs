@@ -49,7 +49,6 @@ namespace WallpaperEngine.Views {
                 ThemeService themeService = Ioc.Default.GetRequiredService<ThemeService>();
                 themeService.ApplyPreset(presetName);
 
-                // 保存到设置
                 SettingsViewModel settingsVm = Ioc.Default.GetRequiredService<SettingsViewModel>();
                 settingsVm.ThemePresetName = presetName;
                 settingsVm.SaveSettings();
