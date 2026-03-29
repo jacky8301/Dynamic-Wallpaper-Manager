@@ -74,7 +74,8 @@
             </Style>
         </ResourceDictionary>
     </Window.Resources>
-    <materialDesign:DialogHost Identifier="MainRootDialog">
+    <materialDesign:DialogHost Identifier="MainRootDialog"
+                               materialDesign:TransitionAssist.DisableTransitions="True">
         <Grid>
             <Grid>
                 <!--  你的主界面内容  -->
