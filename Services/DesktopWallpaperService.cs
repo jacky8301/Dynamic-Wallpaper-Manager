@@ -4,6 +4,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using WallpaperEngine.Common;
 using WallpaperEngine.Models;
 
 namespace WallpaperEngine.Services {
@@ -18,9 +19,7 @@ namespace WallpaperEngine.Services {
         private const int SPIF_UPDATEINIFILE = 0x01;
         private const int SPIF_SENDWININICHANGE = 0x02;
 
-        private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase) {
-            ".jpg", ".jpeg", ".png", ".bmp", ".webp"
-        };
+        // 支持的图片扩展名使用 FileTypeHelper.SupportedImageExtensions
 
         /// <summary>
         /// 设置桌面壁纸
@@ -41,7 +40,7 @@ namespace WallpaperEngine.Services {
             }
 
             string extension = Path.GetExtension(imagePath);
-            if (!SupportedExtensions.Contains(extension)) {
+            if (!FileTypeHelper.IsImageFile(extension)) {
                 Log.Warning("不支持的图片格式: {Extension}", extension);
                 return false;
             }
@@ -106,8 +105,7 @@ namespace WallpaperEngine.Services {
         /// </summary>
         public static bool IsSupportedImage(string filePath)
         {
-            string extension = Path.GetExtension(filePath);
-            return SupportedExtensions.Contains(extension);
+            return FileTypeHelper.IsImageFilePath(filePath);
         }
     }
 }

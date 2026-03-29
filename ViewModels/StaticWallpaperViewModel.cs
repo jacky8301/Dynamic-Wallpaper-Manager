@@ -15,6 +15,7 @@ using System.Windows.Media.Imaging;
 using WallpaperEngine.Data;
 using WallpaperEngine.Models;
 using WallpaperEngine.Services;
+using WallpaperEngine.Common;
 using WallpaperEngine.Views;
 using Application = System.Windows.Application;
 
@@ -149,7 +150,7 @@ namespace WallpaperEngine.ViewModels {
             if (IsImporting) return;
             Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog {
                 Title = "选择图片文件",
-                Filter = "图片文件|*.jpg;*.jpeg;*.png;*.bmp;*.webp|所有文件|*.*",
+                Filter = FileTypeHelper.ImageFileFilter,
                 Multiselect = true
             };
 
@@ -172,7 +173,7 @@ namespace WallpaperEngine.ViewModels {
 
             IsImporting = true;
             try {
-                string[] supportedExtensions = { "*.jpg", "*.jpeg", "*.png", "*.bmp", "*.webp" };
+                var supportedExtensions = FileTypeHelper.SupportedImageFileFilters.ToArray();
                 var files = new List<string>();
                 foreach (string ext in supportedExtensions) {
                     files.AddRange(Directory.GetFiles(dialog.SelectedPath, ext, SearchOption.TopDirectoryOnly));

@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using CommunityToolkit.Mvvm.Input;
 using Serilog;
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using WallpaperEngine.Data;
@@ -13,11 +14,12 @@ namespace WallpaperEngine.ViewModels {
     /// <summary>
     /// 壁纸详情视图模型，负责壁纸详细信息的展示和编辑，包括标签、类型、分类管理
     /// </summary>
-    public partial class WallpaperDetailViewModel : ObservableObject {
+    public partial class WallpaperDetailViewModel : ObservableObject, IDisposable {
         private readonly DatabaseManager _dbManager;
         private readonly IDataContextService _dataContextService;
         private readonly ICategoryService _categoryService;
         private WallpaperItem _originalItem;
+        private bool _disposed;
 
         /// <summary>当前显示的壁纸项</summary>
         [ObservableProperty]
@@ -498,6 +500,19 @@ namespace WallpaperEngine.ViewModels {
             System.Windows.Application.Current.Dispatcher.InvokeAsync(async () => {
                 await MaterialDialogService.ShowErrorAsync(message, "错误");
             });
+        }
+
+        /// <summary>
+        /// 释放资源并取消事件订阅
+        /// </summary>
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                _categoryService.CategoryChanged -= OnCategoryChanged;
+                _disposed = true;
+            }
+            GC.SuppressFinalize(this);
         }
     }
 }

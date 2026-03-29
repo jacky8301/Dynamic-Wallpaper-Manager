@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using Serilog;
+using WallpaperEngine.Common;
 
 namespace WallpaperEngine.Models {
     /// <summary>
@@ -202,10 +203,7 @@ namespace WallpaperEngine.Models {
             /// <summary>
             /// 是否为图片文件（支持 jpg、jpeg、png、bmp、webp 格式）
             /// </summary>
-            public bool IsImageFile => FileType.ToLower() switch {
-                ".jpg" or ".jpeg" or ".png" or ".bmp" or ".webp" => true,
-                _ => false
-            };
+            public bool IsImageFile => FileTypeHelper.IsImageFile(FileType);
         }
 
         /// <summary>
