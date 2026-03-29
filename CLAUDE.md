@@ -8,6 +8,18 @@ Dynamic Wallpaper Manager is a WPF desktop application for managing wallpapers f
 
 The application features a comprehensive category system with intelligent suggestions, centralized category management service, and 10 sensible default categories to help users get started.
 
+## Development Environment
+
+**Prerequisites:**
+- **.NET 8 SDK** - Required for building and running the application
+- **Visual Studio 2022+** (optional) - Recommended for WPF development with full debugging support
+- **NSIS** - Required for building the installer package
+
+**First-time setup:**
+1. Install .NET 8 SDK from https://dotnet.microsoft.com
+2. Clone the repository
+3. Run `dotnet restore` to restore dependencies
+
 ## Build Commands
 
 ```bash
@@ -45,7 +57,8 @@ The installer script `DynamicWallpaperManager.nsi` packages the x86 release buil
 
 1. Ensure NSIS (Nullsoft Scriptable Install System) is installed.
 2. Build the x86 release version: `dotnet build -c Release -p:Platform=x86`
-3. Run NSIS on the `.nsi` file, or use the command line:
+3. The build automatically generates `version.nsh` from `version.json` for NSIS version information
+4. Run NSIS on the `.nsi` file, or use the command line:
    ```bash
    makensis DynamicWallpaperManager.nsi
    ```
@@ -54,6 +67,12 @@ The installer script `DynamicWallpaperManager.nsi` packages the x86 release buil
 ## Development Workflow
 
 - **Code style**: The project uses a detailed `.editorconfig` to enforce coding conventions (4‑space indentation, explicit types, expression‑bodied members, etc.). No additional linter or formatter is required; Visual Studio / dotnet format will respect these settings.
+- **Key dependencies**:
+  - `CommunityToolkit.Mvvm` - MVVM source generators and observable properties
+  - `MaterialDesignThemes` - Modern WPF UI components
+  - `Serilog` - Structured logging with file and console sinks
+  - `Microsoft.Data.Sqlite` - SQLite database access
+  - `VirtualizingWrapPanel` - Performance-optimized grid layout
 - **Dependency injection**: All services and view‑models are registered as singletons in `App.xaml.cs` using `CommunityToolkit.Mvvm.DependencyInjection`. View‑models are split into partial classes for maintainability (see Architecture).
 - **Logging**: Serilog is configured to write to the console and a rolling file (`log/dynamic_wallpaper_manager.log`). Log levels can be adjusted in `App.xaml.cs`.
 - **Database**: SQLite database is automatically created at `%USERPROFILE%\DynamicWallpaperManager\wallpapers.db` on first run. No manual migration steps are needed; schema updates are handled by `DatabaseManager.InitializeDatabase()`, which performs automatic schema migration (e.g., adding missing columns, rebuilding tables if necessary).
@@ -149,6 +168,7 @@ The application features a centralized category management system with intellige
 - **VirtualizingWrapPanel**: The wallpaper grid uses `VirtualizingWrapPanel` to virtualize items and maintain performance with large collections.
 - **Custom styles**: XAML styles are defined in the `Styles/` folder and referenced from `App.xaml`.
 - **Dialog Services**: `MaterialDialogService` provides standardized dialog boxes (confirmation, input, error). Input dialogs accept optional `defaultText` parameter to pre-populate the text field, commonly used for rename operations.
+- **Preview Window**: The wallpaper preview window supports "Always on Top" functionality for convenient comparison while browsing.
 
 ### Static Wallpaper Management
 
